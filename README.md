@@ -167,10 +167,6 @@ Open http://localhost:5173. The **System Check** page should show **API: Online*
 
 ---
 
-## Documentation
-
-- [Project documentation](docs/AquaBophelo_Project_Documentation.md): requirements, architecture, data model, API plan, design system
-- [Step 0 bootstrap brief](docs/Antigravity_Step0_Bootstrap.md): how the foundation was set up
 
 ---
 
