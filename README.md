@@ -63,8 +63,6 @@ AquaBophelo/
 └── README.md
 ```
 
-Full details live in [`docs/AquaBophelo_Project_Documentation.md`](docs/AquaBophelo_Project_Documentation.md).
-
 ---
 
 ## Getting started
