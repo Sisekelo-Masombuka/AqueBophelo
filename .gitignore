@@ -1,0 +1,14 @@
+## .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+
+## Node / Frontend
+node_modules/
+dist/
+*.log
+.env*.local
