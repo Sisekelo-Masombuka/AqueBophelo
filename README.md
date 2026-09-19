@@ -42,7 +42,7 @@ Phase 4 (Implementation & Presentation) due **1 October 2026**.
 
 | Member | Role |
 |---|---|
-| Sisekelo "Cuba" Masombuka | Backend |
+| Sisekelo Masombuka | Backend |
 | Nosipho Mbatha | Backend |
 | Nomcebo Nkosi | Frontend |
 | Jabulile Shabalala | Frontend |
