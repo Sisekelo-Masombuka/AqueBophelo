@@ -2,7 +2,7 @@
 
 **A water monitoring and truck tracking web system for Sol Plaatje Municipality, Kimberley, Northern Cape.**
 
-Final-year capstone project · Diploma in ICT · Sol Plaatje University · `PROJECT(20262FNPRT630)`
+Project · Diploma in ICT · Sol Plaatje University · `PROJECT(20262FNPRT630)`
 Phase 4 (Implementation & Presentation) due **1 October 2026**.
 
 ---
