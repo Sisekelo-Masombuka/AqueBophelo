@@ -1,4 +1,4 @@
-# AquaBophelo 💧🚚
+# AquaBophelo
 
 **A water monitoring and truck tracking web system for Sol Plaatje Municipality, Kimberley, Northern Cape.**
 
