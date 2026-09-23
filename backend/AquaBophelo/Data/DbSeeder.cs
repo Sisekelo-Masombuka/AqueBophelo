@@ -124,5 +124,64 @@ public static class DbSeeder
                 await userManager.AddToRoleAsync(adminUser, "Admin");
             }
         }
+
+        // 5. Seed Driver User
+        var driverEmail = "driver@aquabophelo.gov.za";
+        var driverUser = await userManager.FindByEmailAsync(driverEmail);
+        if (driverUser == null)
+        {
+            driverUser = new ApplicationUser
+            {
+                UserName = driverEmail,
+                Email = driverEmail,
+                FullName = "Sipho Dlamini (Driver)",
+                EmailConfirmed = true,
+                AreaId = defaultArea?.Id
+            };
+
+            var result = await userManager.CreateAsync(driverUser, "Driver#Aqua2026");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(driverUser, "Driver");
+            }
+        }
+
+        // 6. Seed Sample Delivery Route with Stops
+        if (!context.Routes.Any())
+        {
+            var galesheweArea = context.Areas.FirstOrDefault(a => a.Name == "Galeshewe") ?? defaultArea;
+            var sampleRoute = new TruckRoute
+            {
+                Name = "Galeshewe Zone 3 Morning Route",
+                AreaId = galesheweArea?.Id,
+                Stops = new List<RouteStop>
+                {
+                    new RouteStop
+                    {
+                        Name = "Galeshewe Community Hall",
+                        Latitude = -28.7150,
+                        Longitude = 24.7280,
+                        Sequence = 1
+                    },
+                    new RouteStop
+                    {
+                        Name = "Kagisho Clinic Water Point",
+                        Latitude = -28.7210,
+                        Longitude = 24.7350,
+                        Sequence = 2
+                    },
+                    new RouteStop
+                    {
+                        Name = "Mayibuye Primary School",
+                        Latitude = -28.7280,
+                        Longitude = 24.7410,
+                        Sequence = 3
+                    }
+                }
+            };
+
+            context.Routes.Add(sampleRoute);
+            await context.SaveChangesAsync();
+        }
     }
 }
