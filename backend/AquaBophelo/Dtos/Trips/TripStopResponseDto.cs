@@ -12,8 +12,8 @@ public class TripStopResponseDto
     public DateTime? ArrivedAt { get; set; }
     public bool Completed { get; set; }
 
-    // Human-readable South African timestamp
+    // Human-readable Central Africa Time timestamp
     public string ArrivedAtFormatted => ArrivedAt.HasValue
-        ? ArrivedAt.Value.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (SAST)"
+        ? ArrivedAt.Value.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (CAT)"
         : "Not arrived yet";
 }

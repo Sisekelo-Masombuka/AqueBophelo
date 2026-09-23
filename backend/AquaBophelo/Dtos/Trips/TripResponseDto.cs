@@ -13,10 +13,10 @@ public class TripResponseDto
     public DateTime? EndedAt { get; set; }
     public string Status { get; set; } = string.Empty;
 
-    // Human-readable South African timestamps
-    public string StartedAtFormatted => StartedAt.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (SAST)";
+    // Human-readable Central Africa Time (CAT) timestamps
+    public string StartedAtFormatted => StartedAt.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (CAT)";
     public string EndedAtFormatted => EndedAt.HasValue
-        ? EndedAt.Value.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (SAST)"
+        ? EndedAt.Value.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (CAT)"
         : "In progress";
 
     public List<TripStopResponseDto> Stops { get; set; } = new();

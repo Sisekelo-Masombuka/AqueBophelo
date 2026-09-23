@@ -203,7 +203,7 @@ public class TripsController : ControllerBase
             stopId = tripStop.Id,
             completed = true,
             arrivedAt = tripStop.ArrivedAt,
-            arrivedAtFormatted = tripStop.ArrivedAt?.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (SAST)"
+            arrivedAtFormatted = tripStop.ArrivedAt?.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (CAT)"
         });
     }
 

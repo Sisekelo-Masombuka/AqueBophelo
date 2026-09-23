@@ -13,4 +13,9 @@ public class TruckResponseDto
     public double? LastLatitude { get; set; }
     public double? LastLongitude { get; set; }
     public DateTime? LastSeenAt { get; set; }
+
+    // Human-readable Central Africa Time (CAT)
+    public string? LastSeenAtFormatted => LastSeenAt.HasValue
+        ? LastSeenAt.Value.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (CAT)"
+        : "Never seen";
 }
