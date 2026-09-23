@@ -12,5 +12,12 @@ public class TripResponseDto
     public DateTime StartedAt { get; set; }
     public DateTime? EndedAt { get; set; }
     public string Status { get; set; } = string.Empty;
+
+    // Human-readable South African timestamps
+    public string StartedAtFormatted => StartedAt.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (SAST)";
+    public string EndedAtFormatted => EndedAt.HasValue
+        ? EndedAt.Value.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (SAST)"
+        : "In progress";
+
     public List<TripStopResponseDto> Stops { get; set; } = new();
 }

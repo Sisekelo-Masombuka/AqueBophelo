@@ -11,4 +11,9 @@ public class TripStopResponseDto
     public int Sequence { get; set; }
     public DateTime? ArrivedAt { get; set; }
     public bool Completed { get; set; }
+
+    // Human-readable South African timestamp
+    public string ArrivedAtFormatted => ArrivedAt.HasValue
+        ? ArrivedAt.Value.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (SAST)"
+        : "Not arrived yet";
 }

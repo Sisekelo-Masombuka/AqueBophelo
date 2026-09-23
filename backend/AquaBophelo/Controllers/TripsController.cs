@@ -111,11 +111,13 @@ public class TripsController : ControllerBase
             return BadRequest(new { message = $"Truck '{truck.RegistrationNumber}' is already on an active trip." });
         }
 
-        // 3. Verify driver exists and has Driver role
-        var driver = await _userManager.FindByIdAsync(dto.DriverId);
+        // 3. Verify driver exists and has Driver role (supports GUID or email address)
+        var driver = await _userManager.FindByIdAsync(dto.DriverId)
+                     ?? await _userManager.FindByEmailAsync(dto.DriverId);
+
         if (driver == null)
         {
-            return BadRequest(new { message = $"Driver with ID '{dto.DriverId}' was not found." });
+            return BadRequest(new { message = $"Driver '{dto.DriverId}' was not found. Please provide a valid Driver ID or Email address." });
         }
 
         var isDriver = await _userManager.IsInRoleAsync(driver, "Driver");
@@ -138,7 +140,7 @@ public class TripsController : ControllerBase
         var trip = new Trip
         {
             TruckId = dto.TruckId,
-            DriverId = dto.DriverId,
+            DriverId = driver.Id,
             RouteId = dto.RouteId,
             StartedAt = DateTime.UtcNow,
             Status = "Active"
@@ -200,7 +202,8 @@ public class TripsController : ControllerBase
             message = $"Stop '{tripStop.RouteStop?.Name ?? stopId.ToString()}' marked as completed.",
             stopId = tripStop.Id,
             completed = true,
-            arrivedAt = tripStop.ArrivedAt
+            arrivedAt = tripStop.ArrivedAt,
+            arrivedAtFormatted = tripStop.ArrivedAt?.AddHours(2).ToString("dd MMM yyyy, hh:mm tt") + " (SAST)"
         });
     }
 
