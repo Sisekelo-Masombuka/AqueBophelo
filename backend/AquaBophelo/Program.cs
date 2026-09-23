@@ -72,5 +72,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<PingHub>("/hubs/ping");
+app.MapHub<TruckHub>("/hubs/trucks");
 
 app.Run();
