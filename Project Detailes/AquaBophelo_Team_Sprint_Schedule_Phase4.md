@@ -63,10 +63,10 @@
 - [x] Create `Controllers/AreasController.cs` (`GET /api/v1/areas`).
 
 #### 👤 Nomcebo — Frontend
-- [ ] Create `src/auth/AuthContext.jsx` (token storage in `localStorage`, auto-attach Bearer token in `client.js`).
-- [ ] Create `src/auth/ProtectedRoute.jsx` (route guards for Resident, Driver, and Admin roles).
-- [ ] Create `src/pages/Login.jsx` & `src/pages/Register.jsx` (Resident self-registration with inline validation and HCI error prevention).
-- [ ] Create `src/components/DamPanel.jsx` & `src/components/TrendChart.jsx` (Chart.js 7/30/90-day toggles).
+- [x] Create `src/auth/AuthContext.jsx` (token storage in `localStorage`, auto-attach Bearer token in `client.js`).
+- [x] Create `src/auth/ProtectedRoute.jsx` (route guards for Resident, Driver, and Admin roles).
+- [x] Create `src/pages/Login.jsx` & `src/pages/Register.jsx` (Resident self-registration with inline validation and HCI error prevention).
+- [x] Create `src/components/DamPanel.jsx` & `src/components/TrendChart.jsx` (Chart.js 7/30/90-day toggles).
 
 #### 👤 Jabulile — Frontend
 - [ ] Create `src/pages/admin/ManageDams.jsx` (Admin panel to manage dams and record manual water levels).
@@ -89,8 +89,8 @@
   - Server $\rightarrow$ Clients: `LocationUpdated`, `TripStarted`, `TripEnded`, `StopCompleted`.
 
 #### 👤 Nomcebo — Frontend
-- [ ] Create `src/pages/resident/ResidentDashboard.jsx`: dam level gauges, status badges, trend charts, active alert feed.
-- [ ] Create `src/components/AlertSubscriptionsModal.jsx` (Resident SMS/Email area alert subscription modal).
+- [x] Create `src/pages/resident/ResidentDashboard.jsx`: dam level gauges, status badges, trend charts, active alert feed.
+- [x] Create `src/components/AlertSubscriptionsModal.jsx` (Resident SMS/Email area alert subscription modal).
 
 #### 👤 Jabulile — Frontend (HCI Touch Targets & Driver Screen)
 - [ ] Create `src/pages/driver/DriverTripScreen.jsx`: Mobile UI with **oversized touch targets ($\ge 48\text{px}$)** for one-tap operation while driving ("Start Trip", "Mark Stop Complete", "End Trip").
