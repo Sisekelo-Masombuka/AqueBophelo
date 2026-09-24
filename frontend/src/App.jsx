@@ -7,6 +7,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ResidentDashboard from './pages/resident/ResidentDashboard';
 import DamsPage from './pages/resident/DamsPage';
+import LiveTrucksPage from './pages/resident/LiveTrucksPage';
+import AlertsPage from './pages/resident/AlertsPage';
 
 function PlaceholderPage({ title, description }) {
   return (
@@ -39,24 +41,8 @@ export function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<ResidentDashboard />} />
             <Route path="dams" element={<DamsPage />} />
-            <Route
-              path="trucks"
-              element={
-                <PlaceholderPage
-                  title="Live Water Tanker Tracking"
-                  description="Real-time GPS tanker tracking on the Kimberley Mapbox / Leaflet map."
-                />
-              }
-            />
-            <Route
-              path="alerts"
-              element={
-                <PlaceholderPage
-                  title="Municipal Water Alerts"
-                  description="Community announcements and SMS / Email subscription preferences."
-                />
-              }
-            />
+            <Route path="trucks" element={<LiveTrucksPage />} />
+            <Route path="alerts" element={<AlertsPage />} />
 
             {/* Driver Role-Guarded Routes */}
             <Route
