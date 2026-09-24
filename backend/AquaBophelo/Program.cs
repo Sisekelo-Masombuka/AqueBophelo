@@ -1,9 +1,15 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using AquaBophelo.Data;
 using AquaBophelo.Hubs;
 using AquaBophelo.Models;
+using AquaBophelo.Services;
+using AquaBophelo.Services.Interfaces;
+using AquaBophelo.Services.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +31,54 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
+
+// Configure JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "AquaBopheloSecretSecurityKey2026SolPlaatjeSuperSecretKey!";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "AquaBopheloAPI";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "AquaBopheloClient";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+    };
+
+    // Configure SignalR WebSocket JWT Authentication token parsing
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
+
+// Register Domain Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<DryRunNotificationService>();
+builder.Services.AddScoped<INotificationService, SendGridEmailService>();
+builder.Services.AddScoped<IAlertService, AlertService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddScoped<IAlertEvaluator, AlertEvaluator>();
+builder.Services.AddScoped<IDamService, DamService>();
 
 // Configure CORS for Frontend React SPA
 builder.Services.AddCors(options =>
