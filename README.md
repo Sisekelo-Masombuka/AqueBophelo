@@ -24,17 +24,18 @@ Phase 4 (Implementation & Presentation) due **1 October 2026**.
 
 ---
 
-## Tech stack
+## Tech stack & Design Grounding
 
 | Layer | Technology |
 |---|---|
-| Frontend | React (JavaScript) · Vite · Tailwind CSS · React Router · Leaflet (maps) · Chart.js (charts) |
+| Frontend | React (JavaScript) · Vite · Tailwind CSS · React Router · **Mapbox GL JS (maps)** · Chart.js (charts) |
 | Backend | ASP.NET Core Web API (C#) · Entity Framework Core · SQL Server / Azure SQL |
 | Auth | ASP.NET Core Identity + JWT, role-based (Resident / Driver / Admin) |
 | Real-time | SignalR |
 | API docs | OpenAPI + Scalar |
-| Notifications | SMS (provider to be confirmed) · SendGrid email |
+| Notifications | SMS · SendGrid email |
 | Hosting | Vercel / Netlify (frontend) · Azure App Service + Azure SQL (backend) |
+| **UX & HCI** | **Human-Computer Interaction (HCI) Principles · Nielsen's 10 Usability Heuristics · WCAG 2.1 AA Accessibility** |
 
 ---
 

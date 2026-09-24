@@ -243,7 +243,7 @@ If the folder is already a Git repository, Git detects the moves as renames and 
 | Layer | Technology |
 |---|---|
 | Frontend | React.js + Tailwind CSS |
-| Maps | Leaflet.js |
+| Maps | **Mapbox GL JS (Mapbox)** |
 | Charts | Chart.js |
 | Backend | ASP.NET Core Web API (C#), controllers-based |
 | ORM | Entity Framework Core |
@@ -257,6 +257,7 @@ If the folder is already a Git repository, Git detects the moves as renames and 
 | Backend hosting | Azure App Service + Azure SQL (free student tier) |
 | IDE / OS | Visual Studio 2022 Community, Windows |
 | Source control | GitHub |
+
 
 Notes:
 - No Docker. No top-level statements (classic `Program` class style). Controllers enabled. OpenAPI enabled.
@@ -511,13 +512,29 @@ Role-based navigation: the sidebar renders only the links allowed for the logged
 
 ---
 
-## 11. Design system and UI direction [CONFIRMED direction]
+## 11. Design system, HCI principles and UI direction [CONFIRMED direction]
 
-**Direction:** dark theme, **dashboard-first**, data-dense. The team reviewed two landing-page mockups and **rejected the marketing / magazine-style layout**. The landing page should look like the real product in action — live map, sidebar navigation, dam level panels, status indicators. Principle: *show the product working, not a pitch for it.*
+**Direction:** Dark theme, **dashboard-first**, data-dense. The team reviewed landing-page mockups and confirmed a **dashboard-first layout**. The product presents real-time data immediately — interactive Mapbox map, sidebar navigation, dam level gauges, and status indicators. Principle: *show the product working, not a pitch for it.*
 
-**Palette:** deep navy background, with a status colour system of cyan / amber / green / red. Exact hex values were not fixed; suggested tokens [PROPOSED]:
+**Map Engine:** Switched from Leaflet to **Mapbox GL JS (Mapbox)** for high-performance vector rendering, smooth truck animation, and high-contrast dark maps.
 
-| Token | Suggested value | Use |
+### 11.1 Human-Computer Interaction (HCI) & Usability Principles
+The frontend design strictly applies **HCI principles** and **Nielsen's 10 Usability Heuristics**:
+
+1. **Visibility of System Status:** Connection status pills (SignalR Connected, Reconnecting, Offline) and server timestamps are visible at all times. Live maps display moving truck markers with heading directional arrows.
+2. **Match Between System and the Real World:** Uses South African municipal terminology (Sol Plaatje, Galeshewe, Dam Levels in MegaLitres, Tanker registration numbers, SAST timestamps).
+3. **User Control and Freedom:** Drivers can easily cancel or pause active broadcasts; Residents can filter dam historical trends by 7, 30, or 90 days.
+4. **Consistency and Standards:** Uniform dark palette across Resident, Driver, and Admin screens with consistent icon iconography (Lucide React).
+5. **Error Prevention:** Driver screens feature confirmation prompts before ending a trip to prevent accidental termination while driving.
+6. **Recognition Rather than Recall:** Color-coded status badges always include descriptive text labels and status icons (never color-only) to assist visually impaired or colorblind users (WCAG 2.1 AA compliant).
+7. **Flexibility and Efficiency of Use:** Role-scoped navigation sidebars display only relevant actions for the logged-in role (Resident / Driver / Admin).
+8. **Aesthetic and Minimalist Design:** Data-dense layout eliminating cluttered marketing graphics to prioritize operational metrics.
+9. **Help Users Recognize, Diagnose, and Recover from Errors:** User-friendly error banners (e.g. "Unable to connect to backend server. Retrying in 5 seconds...") instead of raw stack trace errors.
+10. **Mobile Touch Target Optimization ($\ge 48\text{px}$):** Driver interfaces feature oversized touch targets suitable for one-tap operation on mobile devices under outdoor/moving conditions.
+
+**Palette:** deep navy background (`#0B1220`), with a status color system of cyan / amber / green / red:
+
+| Token | Value | Use |
 |---|---|---|
 | `--bg` | `#0B1220` | App background |
 | `--surface` | `#111B2E` | Cards, panels |
@@ -529,11 +546,7 @@ Role-based navigation: the sidebar renders only the links allowed for the logged
 | `--amber` | `#F59E0B` | Watch / warning |
 | `--red` | `#EF4444` | Low / critical / error |
 
-**Typography:** Inter, Poppins and Roboto were the chosen families. Suggested use: Inter for UI and data, Poppins for headings [PROPOSED].
-
-**UX references:** USGS National Water Dashboard (water monitoring patterns) and Samsara (live fleet GPS tracking patterns).
-
-**Usability rules:** status is never colour-only; large touch targets on driver screens; consistent layouts across roles; clear feedback on every action.
+**Typography:** Inter for UI data & controls, Poppins for headings.
 
 ---
 
