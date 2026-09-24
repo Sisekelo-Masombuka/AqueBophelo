@@ -9,4 +9,16 @@ export const apiClient = axios.create({
   },
 });
 
+// Auto-attach JWT Bearer token if present in localStorage
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('aquabophelo_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 export default apiClient;

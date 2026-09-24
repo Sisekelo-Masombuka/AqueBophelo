@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import { Menu, Droplet, Bell, Radio, ShieldCheck } from 'lucide-react';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { Menu, Droplet, LogOut } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
 import Sidebar from '../components/Sidebar';
 
-export function MainLayout({ currentRole = 'Resident', onRoleChange }) {
+export function MainLayout() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const { user, logout, switchRole } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const currentRole = user?.role || 'Resident';
 
   return (
     <div className="min-h-screen bg-[#0B1220] text-[#E6EDF7] flex flex-col md:flex-row">
@@ -58,7 +68,7 @@ export function MainLayout({ currentRole = 'Resident', onRoleChange }) {
             </div>
           </div>
 
-          {/* Right Header Badges: Connection status & Role selector */}
+          {/* Right Header Badges: Connection status, Role switcher, User Pill, Logout */}
           <div className="flex items-center space-x-2 md:space-x-3">
             {/* HCI Status Indicator: Live System Status */}
             <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E] text-xs font-medium">
@@ -67,22 +77,34 @@ export function MainLayout({ currentRole = 'Resident', onRoleChange }) {
             </div>
 
             {/* Role Switcher (Allows Cuba, Nomcebo and team to preview role views easily) */}
-            {onRoleChange && (
-              <select
-                value={currentRole}
-                onChange={(e) => onRoleChange(e.target.value)}
-                className="bg-[#0B1220] border border-[#1F2C45] text-xs text-[#E6EDF7] rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-[#22D3EE]"
-                aria-label="Preview Role"
-              >
-                <option value="Resident">Resident View</option>
-                <option value="Driver">Driver View</option>
-                <option value="Admin">Admin View</option>
-              </select>
-            )}
+            <select
+              value={currentRole}
+              onChange={(e) => switchRole(e.target.value)}
+              className="bg-[#0B1220] border border-[#1F2C45] text-xs text-[#E6EDF7] rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-[#22D3EE]"
+              aria-label="Preview Role"
+            >
+              <option value="Resident">Resident View</option>
+              <option value="Driver">Driver View</option>
+              <option value="Admin">Admin View</option>
+            </select>
 
-            <div className="w-8 h-8 rounded-full bg-[#22D3EE]/20 text-[#22D3EE] flex items-center justify-center font-bold text-xs border border-[#22D3EE]/40">
-              {currentRole[0]}
+            {/* User badge with initial */}
+            <div
+              className="w-8 h-8 rounded-full bg-[#22D3EE]/20 text-[#22D3EE] flex items-center justify-center font-bold text-xs border border-[#22D3EE]/40"
+              title={user?.fullName || currentRole}
+            >
+              {user?.fullName ? user.fullName[0] : currentRole[0]}
             </div>
+
+            {/* Logout button */}
+            <button
+              onClick={handleLogout}
+              className="p-1.5 text-[#8A9BB8] hover:text-[#EF4444] hover:bg-[#1F2C45] rounded-lg transition-colors"
+              title="Sign Out"
+              aria-label="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </header>
 
