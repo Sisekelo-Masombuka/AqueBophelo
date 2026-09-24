@@ -14,7 +14,7 @@
 
 | Developer | Primary Domain | Status Summary | Remaining Focus Areas |
 |---|---|---|---|
-| **Sisekelo (Cuba)** | Backend Lead | **Step 1 DB Foundation Done ✅** | Auth Controller (JWT), Dams/Readings APIs, Alert Engine, Azure Deployment |
+| **Sisekelo (Cuba)** | Backend Lead | **Days 1 - 4 Backend Complete ✅** | Cloud Deployment (Azure), Simulator Engine |
 | **Nosipho** | Backend | **Fleet & Trips APIs Done ✅** | Location persistence optimization, Admin Reports Summary API |
 | **Nomcebo** | Frontend | **Auth & Resident UI Done ✅** | Mapbox GL JS map integration on Resident Live Trucks page |
 | **Jabulile** | Frontend | **Base Layout & Map Done ✅** | Mapbox GL JS upgrade, Driver Mobile Broadcast Screen (touch targets $\ge 48\text{px}$), Admin Command Center |
@@ -61,12 +61,13 @@
 - [x] Create `src/pages/Login.jsx` & `src/pages/Register.jsx` (Resident self-registration with inline validation and HCI error prevention).
 - [x] Create `src/components/DamPanel.jsx` & `src/components/TrendChart.jsx` (Chart.js 7/30/90-day toggles).
 
-#### 👤 Sisekelo (Cuba) — Backend Lead (Next Immediate Tasks ⏳)
-- [ ] Create `Dtos/AuthDtos.cs` (`RegisterDto`, `LoginDto`, `AuthResponseDto`).
-- [ ] Create `Services/AuthService.cs` & `IAuthService.cs` (JWT token generation with claims for UserId, Email, Role).
-- [ ] Create `Controllers/AuthController.cs` (`POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`).
-- [ ] Create `Controllers/DamsController.cs` (`GET /api/v1/dams`, `GET /api/v1/dams/{id}`, `POST /api/v1/dams`, `PUT /api/v1/dams/{id}`).
-- [ ] Create `Controllers/DamReadingsController.cs` (`GET /api/v1/dams/{id}/readings`, `POST /api/v1/dams/{id}/readings`).
+#### 👤 Sisekelo (Cuba) — Backend Lead (Completed ✅)
+- [x] Create `Dtos/Auth/AuthDtos.cs` (`RegisterDto`, `LoginDto`, `AuthResponseDto`, `UserProfileDto`).
+- [x] Create `Services/AuthService.cs` & `IAuthService.cs` (JWT token generation with claims for UserId, Email, Role).
+- [x] Create `Controllers/AuthController.cs` (`POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`).
+- [x] Create `Dtos/Dams/DamDtos.cs` & `Services/DamService.cs` & `IDamService.cs`.
+- [x] Create `Controllers/DamsController.cs` (`GET /api/v1/dams`, `GET /api/v1/dams/{id}`, `POST /api/v1/dams`, `PUT /api/v1/dams/{id}`).
+- [x] Create `Controllers/DamReadingsController.cs` (`GET /api/v1/dams/{id}/readings`, `POST /api/v1/dams/{id}/readings`).
 
 #### 👤 Jabulile — Frontend Developer (Remaining Tasks ⏳)
 - [ ] Create `src/pages/admin/ManageDams.jsx` (Admin panel to manage dams and record manual water levels).
@@ -88,10 +89,10 @@
 - [x] Create `src/components/AlertSubscriptionsModal.jsx` (Resident SMS/Email area alert subscription modal).
 - [x] Create `src/pages/resident/DamsPage.jsx`, `src/pages/resident/LiveTrucksPage.jsx`, `src/pages/resident/AlertsPage.jsx`.
 
-#### 👤 Sisekelo (Cuba) — Backend Lead (Next Immediate Tasks ⏳)
-- [ ] Create `Services/AlertService.cs` & `Controllers/AlertsController.cs` (`GET /api/v1/alerts`, `POST /api/v1/alerts`).
-- [ ] Create `Controllers/SubscriptionsController.cs` (`GET`, `POST`, `DELETE /api/v1/subscriptions`).
-- [ ] Create `BackgroundServices/AlertEvaluator.cs`: evaluates dam level changes on new readings and auto-generates Amber/Red alert records when thresholds cross (<50%, <30%, <15%).
+#### 👤 Sisekelo (Cuba) — Backend Lead (Completed ✅)
+- [x] Create `Services/AlertService.cs` & `Controllers/AlertsController.cs` (`GET /api/v1/alerts`, `POST /api/v1/alerts`).
+- [x] Create `Services/SubscriptionService.cs` & `Controllers/SubscriptionsController.cs` (`GET`, `POST`, `DELETE /api/v1/subscriptions`).
+- [x] Create `Services/AlertEvaluator.cs`: evaluates dam level changes on new readings and auto-generates Amber/Red alert records when thresholds cross (<50%, <30%, <15%).
 
 #### 👤 Jabulile — Frontend Developer (Remaining Tasks ⏳)
 - [ ] Create `src/pages/driver/DriverTripScreen.jsx`: Mobile UI with **oversized touch targets ($\ge 48\text{px}$)** for one-tap operation while driving ("Start Trip", "Mark Stop Complete", "End Trip").
@@ -99,11 +100,11 @@
 
 ---
 
-### 🟡 4. Friday, 25 September 2026 — Notifications, Mapbox Real-Time & Admin Command Center
+### 🟢 4. Friday, 25 September 2026 — Notifications, Mapbox Real-Time & Admin Command Center
 
-#### 👤 Sisekelo (Cuba) — Backend Lead
-- [ ] Implement `INotificationService` with `DryRunNotificationService` (logs to `NotificationLog` table) and `SendGridEmailService`.
-- [ ] Connect `AlertEvaluator.cs` to trigger automatic SMS/Email dispatch when dam levels change status bands.
+#### 👤 Sisekelo (Cuba) — Backend Lead (Completed ✅)
+- [x] Implement `INotificationService` with `DryRunNotificationService` (logs to `NotificationLog` table) and `SendGridEmailService`.
+- [x] Connect `AlertEvaluator.cs` to trigger automatic SMS/Email dispatch when dam levels change status bands.
 
 #### 👤 Nosipho — Backend Developer
 - [ ] Optimize `TruckLocation` persistence: store latest position on `Truck` entity (`LastLatitude`, `LastLongitude`, `LastSeenAt`) for fast lookup, write full history records every 10 seconds.
