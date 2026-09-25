@@ -3,21 +3,21 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import ProtectedRoute from './auth/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
+import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ResidentDashboard from './pages/resident/ResidentDashboard';
 import DamsPage from './pages/resident/DamsPage';
 import LiveTrucksPage from './pages/resident/LiveTrucksPage';
 import AlertsPage from './pages/resident/AlertsPage';
-
-function PlaceholderPage({ title, description }) {
-  return (
-    <div className="bg-[#111B2E] border border-[#1F2C45] rounded-xl p-8 text-center max-w-xl mx-auto mt-8">
-      <h2 className="text-xl font-bold text-[#E6EDF7] mb-2">{title}</h2>
-      <p className="text-sm text-[#8A9BB8]">{description}</p>
-    </div>
-  );
-}
+import DriverTripScreen from './pages/driver/DriverTripScreen';
+import DriverStopsScreen from './pages/driver/DriverStopsScreen';
+import AdminOverview from './pages/admin/AdminOverview';
+import ManageDams from './pages/admin/ManageDams';
+import ManageTrucks from './pages/admin/ManageTrucks';
+import ManageRoutes from './pages/admin/ManageRoutes';
+import ManageUsers from './pages/admin/ManageUsers';
+import BroadcastAlertPage from './pages/admin/BroadcastAlertPage';
 
 export function App() {
   return (
@@ -49,10 +49,7 @@ export function App() {
               path="driver/trip"
               element={
                 <ProtectedRoute allowedRoles={['Driver', 'Admin']}>
-                  <PlaceholderPage
-                    title="Active Driver Trip"
-                    description="Driver trip controls, active route navigation, and delivery status."
-                  />
+                  <DriverTripScreen />
                 </ProtectedRoute>
               }
             />
@@ -60,81 +57,27 @@ export function App() {
               path="driver/stops"
               element={
                 <ProtectedRoute allowedRoles={['Driver', 'Admin']}>
-                  <PlaceholderPage
-                    title="Route Delivery Stops"
-                    description="List of scheduled community water points and stop completion buttons."
-                  />
+                  <DriverStopsScreen />
                 </ProtectedRoute>
               }
             />
 
-            {/* Admin Role-Guarded Routes */}
+            {/* Admin Role-Guarded Routes inside AdminLayout */}
             <Route
               path="admin"
               element={
                 <ProtectedRoute allowedRoles={['Admin']}>
-                  <PlaceholderPage
-                    title="Municipal Command Center"
-                    description="Operational overview of municipal dams, active tankers, and resident alerts."
-                  />
+                  <AdminLayout />
                 </ProtectedRoute>
               }
-            />
-            <Route
-              path="admin/dams"
-              element={
-                <ProtectedRoute allowedRoles={['Admin']}>
-                  <PlaceholderPage
-                    title="Manage Dams & Readings"
-                    description="Add reservoir readings and configure threshold alert triggers."
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="admin/trucks"
-              element={
-                <ProtectedRoute allowedRoles={['Admin']}>
-                  <PlaceholderPage
-                    title="Fleet & Driver Management"
-                    description="Register water tankers and assign municipal drivers."
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="admin/routes"
-              element={
-                <ProtectedRoute allowedRoles={['Admin']}>
-                  <PlaceholderPage
-                    title="Routes & Delivery Stops"
-                    description="Configure scheduled delivery zones and water drop points."
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="admin/users"
-              element={
-                <ProtectedRoute allowedRoles={['Admin']}>
-                  <PlaceholderPage
-                    title="User & Role Administration"
-                    description="Manage municipal staff, driver accounts, and resident permissions."
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="admin/alerts"
-              element={
-                <ProtectedRoute allowedRoles={['Admin']}>
-                  <PlaceholderPage
-                    title="Broadcast Emergency Alert"
-                    description="Dispatch SMS and Email alerts to subscribed Sol Plaatje residents."
-                  />
-                </ProtectedRoute>
-              }
-            />
+            >
+              <Route index element={<AdminOverview />} />
+              <Route path="dams" element={<ManageDams />} />
+              <Route path="trucks" element={<ManageTrucks />} />
+              <Route path="routes" element={<ManageRoutes />} />
+              <Route path="users" element={<ManageUsers />} />
+              <Route path="alerts" element={<BroadcastAlertPage />} />
+            </Route>
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
