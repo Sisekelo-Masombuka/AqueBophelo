@@ -3,12 +3,16 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import ProtectedRoute from './auth/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
+import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ResidentDashboard from './pages/resident/ResidentDashboard';
 import DamsPage from './pages/resident/DamsPage';
 import LiveTrucksPage from './pages/resident/LiveTrucksPage';
 import AlertsPage from './pages/resident/AlertsPage';
+import ManageDams from './pages/admin/ManageDams';
+import ManageTrucks from './pages/admin/ManageTrucks';
+import ManageRoutes from './pages/admin/ManageRoutes';
 
 function PlaceholderPage({ title, description }) {
   return (
@@ -68,73 +72,46 @@ export function App() {
               }
             />
 
-            {/* Admin Role-Guarded Routes */}
+            {/* Admin Role-Guarded Routes inside AdminLayout */}
             <Route
               path="admin"
               element={
                 <ProtectedRoute allowedRoles={['Admin']}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route
+                index
+                element={
                   <PlaceholderPage
                     title="Municipal Command Center"
                     description="Operational overview of municipal dams, active tankers, and resident alerts."
                   />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="admin/dams"
-              element={
-                <ProtectedRoute allowedRoles={['Admin']}>
-                  <PlaceholderPage
-                    title="Manage Dams & Readings"
-                    description="Add reservoir readings and configure threshold alert triggers."
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="admin/trucks"
-              element={
-                <ProtectedRoute allowedRoles={['Admin']}>
-                  <PlaceholderPage
-                    title="Fleet & Driver Management"
-                    description="Register water tankers and assign municipal drivers."
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="admin/routes"
-              element={
-                <ProtectedRoute allowedRoles={['Admin']}>
-                  <PlaceholderPage
-                    title="Routes & Delivery Stops"
-                    description="Configure scheduled delivery zones and water drop points."
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="admin/users"
-              element={
-                <ProtectedRoute allowedRoles={['Admin']}>
+                }
+              />
+              <Route path="dams" element={<ManageDams />} />
+              <Route path="trucks" element={<ManageTrucks />} />
+              <Route path="routes" element={<ManageRoutes />} />
+              <Route
+                path="users"
+                element={
                   <PlaceholderPage
                     title="User & Role Administration"
                     description="Manage municipal staff, driver accounts, and resident permissions."
                   />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="admin/alerts"
-              element={
-                <ProtectedRoute allowedRoles={['Admin']}>
+                }
+              />
+              <Route
+                path="alerts"
+                element={
                   <PlaceholderPage
                     title="Broadcast Emergency Alert"
                     description="Dispatch SMS and Email alerts to subscribed Sol Plaatje residents."
                   />
-                </ProtectedRoute>
-              }
-            />
+                }
+              />
+            </Route>
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
