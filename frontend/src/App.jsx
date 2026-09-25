@@ -13,6 +13,8 @@ import AlertsPage from './pages/resident/AlertsPage';
 import ManageDams from './pages/admin/ManageDams';
 import ManageTrucks from './pages/admin/ManageTrucks';
 import ManageRoutes from './pages/admin/ManageRoutes';
+import DriverTripScreen from './pages/driver/DriverTripScreen';
+import DriverStopsScreen from './pages/driver/DriverStopsScreen';
 
 function PlaceholderPage({ title, description }) {
   return (
@@ -53,10 +55,7 @@ export function App() {
               path="driver/trip"
               element={
                 <ProtectedRoute allowedRoles={['Driver', 'Admin']}>
-                  <PlaceholderPage
-                    title="Active Driver Trip"
-                    description="Driver trip controls, active route navigation, and delivery status."
-                  />
+                  <DriverTripScreen />
                 </ProtectedRoute>
               }
             />
@@ -64,10 +63,7 @@ export function App() {
               path="driver/stops"
               element={
                 <ProtectedRoute allowedRoles={['Driver', 'Admin']}>
-                  <PlaceholderPage
-                    title="Route Delivery Stops"
-                    description="List of scheduled community water points and stop completion buttons."
-                  />
+                  <DriverStopsScreen />
                 </ProtectedRoute>
               }
             />
