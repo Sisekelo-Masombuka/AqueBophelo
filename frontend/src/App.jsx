@@ -10,20 +10,14 @@ import ResidentDashboard from './pages/resident/ResidentDashboard';
 import DamsPage from './pages/resident/DamsPage';
 import LiveTrucksPage from './pages/resident/LiveTrucksPage';
 import AlertsPage from './pages/resident/AlertsPage';
+import DriverTripScreen from './pages/driver/DriverTripScreen';
+import DriverStopsScreen from './pages/driver/DriverStopsScreen';
+import AdminOverview from './pages/admin/AdminOverview';
 import ManageDams from './pages/admin/ManageDams';
 import ManageTrucks from './pages/admin/ManageTrucks';
 import ManageRoutes from './pages/admin/ManageRoutes';
-import DriverTripScreen from './pages/driver/DriverTripScreen';
-import DriverStopsScreen from './pages/driver/DriverStopsScreen';
-
-function PlaceholderPage({ title, description }) {
-  return (
-    <div className="bg-[#111B2E] border border-[#1F2C45] rounded-xl p-8 text-center max-w-xl mx-auto mt-8">
-      <h2 className="text-xl font-bold text-[#E6EDF7] mb-2">{title}</h2>
-      <p className="text-sm text-[#8A9BB8]">{description}</p>
-    </div>
-  );
-}
+import ManageUsers from './pages/admin/ManageUsers';
+import BroadcastAlertPage from './pages/admin/BroadcastAlertPage';
 
 export function App() {
   return (
@@ -77,36 +71,12 @@ export function App() {
                 </ProtectedRoute>
               }
             >
-              <Route
-                index
-                element={
-                  <PlaceholderPage
-                    title="Municipal Command Center"
-                    description="Operational overview of municipal dams, active tankers, and resident alerts."
-                  />
-                }
-              />
+              <Route index element={<AdminOverview />} />
               <Route path="dams" element={<ManageDams />} />
               <Route path="trucks" element={<ManageTrucks />} />
               <Route path="routes" element={<ManageRoutes />} />
-              <Route
-                path="users"
-                element={
-                  <PlaceholderPage
-                    title="User & Role Administration"
-                    description="Manage municipal staff, driver accounts, and resident permissions."
-                  />
-                }
-              />
-              <Route
-                path="alerts"
-                element={
-                  <PlaceholderPage
-                    title="Broadcast Emergency Alert"
-                    description="Dispatch SMS and Email alerts to subscribed Sol Plaatje residents."
-                  />
-                }
-              />
+              <Route path="users" element={<ManageUsers />} />
+              <Route path="alerts" element={<BroadcastAlertPage />} />
             </Route>
 
             {/* Fallback */}

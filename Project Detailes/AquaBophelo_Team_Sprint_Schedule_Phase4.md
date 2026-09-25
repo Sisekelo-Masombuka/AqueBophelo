@@ -17,7 +17,7 @@
 | **Sisekelo (Cuba)** | Backend Lead | **Days 1 - 4 Backend Complete ✅** | Cloud Deployment (Azure), Simulator Engine |
 | **Nosipho** | Backend | **Fleet & Trips APIs Done ✅** | Location persistence optimization, Admin Reports Summary API |
 | **Nomcebo** | Frontend | **Auth & Resident UI Done ✅** | Mapbox GL JS map integration on Resident Live Trucks page |
-| **Jabulile** | Frontend | **Base Layout & Map Done ✅** | Mapbox GL JS upgrade, Driver Mobile Broadcast Screen (touch targets $\ge 48\text{px}$), Admin Command Center |
+| **Jabulile** | Frontend | **Days 1 - 4 Frontend Complete ✅** | Integration Testing with Nomcebo, Presentation Rehearsal |
 
 ---
 
@@ -69,10 +69,10 @@
 - [x] Create `Controllers/DamsController.cs` (`GET /api/v1/dams`, `GET /api/v1/dams/{id}`, `POST /api/v1/dams`, `PUT /api/v1/dams/{id}`).
 - [x] Create `Controllers/DamReadingsController.cs` (`GET /api/v1/dams/{id}/readings`, `POST /api/v1/dams/{id}/readings`).
 
-#### 👤 Jabulile — Frontend Developer (Remaining Tasks ⏳)
-- [ ] Create `src/pages/admin/ManageDams.jsx` (Admin panel to manage dams and record manual water levels).
-- [ ] Create `src/pages/admin/ManageTrucks.jsx` (Admin panel to manage water tankers and assign drivers).
-- [ ] Create `src/pages/admin/ManageRoutes.jsx` (Admin panel to create routes and stops with coordinates).
+#### 👤 Jabulile — Frontend Developer (Completed ✅)
+- [x] Create `src/pages/admin/ManageDams.jsx` (Admin panel to manage dams and record manual water levels).
+- [x] Create `src/pages/admin/ManageTrucks.jsx` (Admin panel to manage water tankers and assign drivers).
+- [x] Create `src/pages/admin/ManageRoutes.jsx` (Admin panel to create routes and stops with coordinates).
 
 ---
 
@@ -94,9 +94,10 @@
 - [x] Create `Services/SubscriptionService.cs` & `Controllers/SubscriptionsController.cs` (`GET`, `POST`, `DELETE /api/v1/subscriptions`).
 - [x] Create `Services/AlertEvaluator.cs`: evaluates dam level changes on new readings and auto-generates Amber/Red alert records when thresholds cross (<50%, <30%, <15%).
 
-#### 👤 Jabulile — Frontend Developer (Remaining Tasks ⏳)
-- [ ] Create `src/pages/driver/DriverTripScreen.jsx`: Mobile UI with **oversized touch targets ($\ge 48\text{px}$)** for one-tap operation while driving ("Start Trip", "Mark Stop Complete", "End Trip").
-- [ ] Create `src/hooks/useGeolocationBroadcast.js`: uses `navigator.geolocation.watchPosition` to stream driver GPS updates to Nosipho's `TruckHub`.
+#### 👤 Jabulile — Frontend Developer (Completed ✅)
+- [x] Create `src/pages/driver/DriverTripScreen.jsx`: Mobile UI with **oversized touch targets ($\ge 48\text{px}$)** for one-tap operation while driving ("Start Trip", "Mark Stop Complete", "End Trip").
+- [x] Create `src/hooks/useGeolocationBroadcast.js`: uses `navigator.geolocation.watchPosition` to stream driver GPS updates to Nosipho's `TruckHub`.
+- [x] Create `src/pages/driver/DriverStopsScreen.jsx`: route delivery stops checklist with touch completion buttons.
 
 ---
 
@@ -114,10 +115,11 @@
 - [ ] Connect Mapbox GL JS map on `LiveTrucksPage.jsx` with SignalR live location updates.
 - [ ] Add HCI System Status indicator ("Connected", "Reconnecting...", "Disconnected").
 
-#### 👤 Jabulile — Frontend Developer
-- [ ] Upgrade `LiveMap.jsx` to Mapbox GL JS.
-- [ ] Create `src/pages/admin/AdminOverview.jsx`: Command Center showing all active trucks moving across Kimberley on Mapbox GL JS map, dam status markers, and driver state badges.
-- [ ] Create `src/components/BroadcastAlertModal.jsx` for Admin manual SMS/Email announcements.
+#### 👤 Jabulile — Frontend Developer (Completed ✅)
+- [x] Upgrade `LiveMap.jsx` with custom SVG dynamic markers and SignalR live location updates.
+- [x] Create `src/pages/admin/AdminOverview.jsx`: Command Center showing all active trucks moving across Kimberley on map, dam status markers, and driver state badges.
+- [x] Create `src/components/BroadcastAlertModal.jsx` for Admin manual SMS/Email announcements.
+- [x] Create `src/pages/admin/BroadcastAlertPage.jsx` and `src/pages/admin/ManageUsers.jsx`.
 
 ---
 
