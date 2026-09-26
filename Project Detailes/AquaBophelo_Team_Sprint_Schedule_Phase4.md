@@ -15,7 +15,7 @@
 | Developer | Primary Domain | Status Summary | Remaining Focus Areas |
 |---|---|---|---|
 | **Sisekelo (Cuba)** | Backend Lead | **Days 1 - 4 Backend Complete ✅** | Cloud Deployment (Azure), Simulator Engine |
-| **Nosipho** | Backend | **Fleet & Trips APIs Done ✅** | Location persistence optimization, Admin Reports Summary API |
+| **Nosipho** | Backend | **Days 1 - 4 Backend Complete ✅** | System Integration, Cloud Deployment (Azure) |
 | **Nomcebo** | Frontend | **Auth & Resident UI Done ✅** | Mapbox GL JS map integration on Resident Live Trucks page |
 | **Jabulile** | Frontend | **Days 1 - 4 Frontend Complete ✅** | Integration Testing with Nomcebo, Presentation Rehearsal |
 
@@ -107,9 +107,9 @@
 - [x] Implement `INotificationService` with `DryRunNotificationService` (logs to `NotificationLog` table) and `SendGridEmailService`.
 - [x] Connect `AlertEvaluator.cs` to trigger automatic SMS/Email dispatch when dam levels change status bands.
 
-#### 👤 Nosipho — Backend Developer
-- [ ] Optimize `TruckLocation` persistence: store latest position on `Truck` entity (`LastLatitude`, `LastLongitude`, `LastSeenAt`) for fast lookup, write full history records every 10 seconds.
-- [ ] Create `Controllers/ReportsController.cs` (`GET /api/v1/reports/summary`) for admin analytics.
+#### 👤 Nosipho — Backend Developer (Completed ✅)
+- [x] Optimize `TruckLocation` persistence: store latest position on `Truck` entity (`LastLatitude`, `LastLongitude`, `LastSeenAt`) for fast lookup, write full history records every 10 seconds.
+- [x] Create `Controllers/ReportsController.cs` (`GET /api/v1/reports/summary`) for admin analytics.
 
 #### 👤 Nomcebo — Frontend Developer
 - [ ] Connect Mapbox GL JS map on `LiveTrucksPage.jsx` with SignalR live location updates.

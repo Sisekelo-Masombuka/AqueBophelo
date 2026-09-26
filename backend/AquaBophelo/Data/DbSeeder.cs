@@ -183,5 +183,44 @@ public static class DbSeeder
             context.Routes.Add(sampleRoute);
             await context.SaveChangesAsync();
         }
+
+        // 7. Seed Sample Water Tanker Trucks
+        if (!context.Trucks.Any())
+        {
+            var trucks = new List<Truck>
+            {
+                new Truck
+                {
+                    RegistrationNumber = "NC-542-KM",
+                    CapacityLitres = 10000,
+                    Status = "Available",
+                    DriverId = driverUser?.Id,
+                    LastLatitude = -28.7183,
+                    LastLongitude = 24.7319,
+                    LastSeenAt = DateTime.UtcNow
+                },
+                new Truck
+                {
+                    RegistrationNumber = "NC-882-KM",
+                    CapacityLitres = 15000,
+                    Status = "Available",
+                    LastLatitude = -28.7419,
+                    LastLongitude = 24.7719,
+                    LastSeenAt = DateTime.UtcNow
+                },
+                new Truck
+                {
+                    RegistrationNumber = "NC-104-KM",
+                    CapacityLitres = 10000,
+                    Status = "Available",
+                    LastLatitude = -28.6921,
+                    LastLongitude = 24.7088,
+                    LastSeenAt = DateTime.UtcNow
+                }
+            };
+
+            await context.Trucks.AddRangeAsync(trucks);
+            await context.SaveChangesAsync();
+        }
     }
 }
