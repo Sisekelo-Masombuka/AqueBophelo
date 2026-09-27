@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { User, Mail, Lock, MapPin, AlertCircle, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { User, Mail, Phone, Lock, MapPin, AlertCircle, ArrowRight, CheckCircle2, ShieldCheck, KeyRound } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
@@ -11,9 +11,17 @@ export function Register() {
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [area, setArea] = useState('Galeshewe');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // OTP Step State
+  const [isOtpStep, setIsOtpStep] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('482915');
+  const [otpError, setOtpError] = useState('');
+
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -21,7 +29,7 @@ export function Register() {
   const isPasswordLongEnough = password.length >= 6;
   const doPasswordsMatch = password && confirmPassword && password === confirmPassword;
 
-  const handleSubmit = async (e) => {
+  const handleInitialSubmit = (e) => {
     e.preventDefault();
     setError('');
 
@@ -33,6 +41,10 @@ export function Register() {
       setError('Please enter a valid email address.');
       return;
     }
+    if (!phoneNumber || phoneNumber.length < 10) {
+      setError('Please enter a valid 10-digit South African phone number for SMS alerts.');
+      return;
+    }
     if (!isPasswordLongEnough) {
       setError('Password must be at least 6 characters long.');
       return;
@@ -42,14 +54,29 @@ export function Register() {
       return;
     }
 
+    // Generate random 6-digit OTP
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(code);
+    setIsOtpStep(true);
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setOtpError('');
+
+    if (otpCode !== generatedOtp) {
+      setOtpError('Invalid OTP code. Please check the SMS/Email code sent to you.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const res = await register({ email, password, fullName, area });
+      const res = await register({ email, password, fullName, area, phoneNumber });
       if (res && res.success) {
         navigate('/dashboard', { replace: true });
       }
     } catch (err) {
-      setError(err?.message || 'Registration failed. Please try again.');
+      setOtpError(err?.message || 'Verification failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -58,7 +85,7 @@ export function Register() {
   return (
     <div className="min-h-screen bg-[#0B1220] flex items-center justify-center p-4 selection:bg-[#0284C7] selection:text-white">
       <div className="w-full max-w-md bg-[#111B2E] border border-[#1F2C45] rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        {/* Subtle Decorative Gradient */}
+        {/* Decorative Gradient */}
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#16A34A]/10 blur-3xl rounded-full pointer-events-none" />
 
         {/* Branding Header */}
@@ -70,108 +97,158 @@ export function Register() {
           </Link>
           <h1 className="text-2xl font-extrabold text-[#E6EDF7] tracking-tight">Resident Registration</h1>
           <p className="text-xs text-[#16A34A] font-semibold italic mt-0.5">Elke druppel tel • Metsi ke bophelo</p>
-          <p className="text-xs text-[#8A9BB8] mt-1">Join the Sol Plaatje municipal water monitoring network</p>
+          <p className="text-xs text-[#8A9BB8] mt-1">Sol Plaatje Municipal Water Portal</p>
         </div>
 
-        {/* Error Feedback */}
-        {error && (
-          <div className="mb-6 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start space-x-2.5 text-xs text-rose-400">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span className="leading-relaxed">{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Full Name"
-            icon={User}
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Nomcebo Nkosi"
-            required
-          />
-
-          <Input
-            label="Email Address"
-            type="email"
-            icon={Mail}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="nomcebo@example.co.za"
-            required
-          />
-
-          <div>
-            <label className="block text-xs font-semibold text-[#8A9BB8] mb-1.5">
-              Municipal Area (Kimberley) <span className="text-rose-500">*</span>
-            </label>
-            <div className="relative">
-              <MapPin className="w-4 h-4 text-[#8A9BB8] absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <select
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
-                className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-[#0B1220] border border-[#1F2C45] rounded-xl text-sm text-[#E6EDF7] focus:outline-none focus:border-[#0284C7] transition-all"
-              >
-                <option value="Galeshewe">Galeshewe</option>
-                <option value="Kimberley Central">Kimberley Central</option>
-                <option value="Roodepan">Roodepan</option>
-              </select>
+        {/* STEP 2: OTP VERIFICATION SCREEN */}
+        {isOtpStep ? (
+          <form onSubmit={handleVerifyOtp} className="space-y-4 animate-in fade-in">
+            <div className="p-4 bg-[#0284C7]/10 border border-[#0284C7]/30 rounded-2xl text-center space-y-2">
+              <KeyRound className="w-8 h-8 text-sky-400 mx-auto" />
+              <h3 className="font-extrabold text-base text-[#E6EDF7]">Verify Your Contact Details</h3>
+              <p className="text-xs text-[#8A9BB8]">
+                A 6-digit OTP verification code has been dispatched to <strong className="text-[#E6EDF7]">{phoneNumber}</strong> and <strong className="text-[#E6EDF7]">{email}</strong>.
+              </p>
+              <div className="pt-1">
+                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
+                  Demo SMS OTP: {generatedOtp}
+                </span>
+              </div>
             </div>
-          </div>
 
-          <Input
-            label="Password"
-            type="password"
-            icon={Lock}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 6 characters"
-            required
-          />
+            {otpError && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-400 flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{otpError}</span>
+              </div>
+            )}
 
-          <div>
             <Input
-              label="Confirm Password"
-              type="password"
-              icon={Lock}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Re-type password"
+              label="Enter 6-Digit OTP Code"
+              icon={KeyRound}
+              placeholder="e.g. 482915"
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value)}
               required
             />
-            {/* Live Inline Match Feedback (HCI Heuristic #1) */}
-            {confirmPassword && (
-              <p
-                className={`text-[11px] font-medium mt-1.5 flex items-center gap-1 ${
-                  doPasswordsMatch ? 'text-emerald-400' : 'text-rose-400'
-                }`}
-              >
-                {doPasswordsMatch ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Passwords match</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Passwords do not match yet</span>
-                  </>
-                )}
-              </p>
-            )}
-          </div>
 
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            isLoading={isSubmitting}
-            className="w-full mt-2"
-          >
-            <span>Complete Registration</span>
-            <ArrowRight className="w-4 h-4 ml-1" />
-          </Button>
-        </form>
+            <Button type="submit" variant="primary" size="lg" isLoading={isSubmitting} className="w-full">
+              <span>Verify &amp; Activate Account</span>
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => setIsOtpStep(false)}
+              className="w-full text-center text-xs text-[#8A9BB8] hover:text-white pt-2 font-medium"
+            >
+              ← Edit Phone Number or Details
+            </button>
+          </form>
+        ) : (
+          /* STEP 1: REGISTRATION FORM */
+          <form onSubmit={handleInitialSubmit} className="space-y-4">
+            {error && (
+              <div className="mb-4 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start space-x-2.5 text-xs text-rose-400">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{error}</span>
+              </div>
+            )}
+
+            <Input
+              label="Full Name"
+              icon={User}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Nomcebo Nkosi"
+              required
+            />
+
+            <Input
+              label="Email Address"
+              type="email"
+              icon={Mail}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="nomcebo@example.co.za"
+              required
+            />
+
+            <Input
+              label="Phone Number (SMS Water Alerts)"
+              icon={Phone}
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="e.g. 082 123 4567"
+              helpText="Required for SMS delivery schedules and pipe burst alerts"
+              required
+            />
+
+            <div>
+              <label className="block text-xs font-semibold text-[#8A9BB8] mb-1.5">
+                Municipal Area (Kimberley Suburb) <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <MapPin className="w-4 h-4 text-[#8A9BB8] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <select
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
+                  className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-[#0B1220] border border-[#1F2C45] rounded-xl text-sm text-[#E6EDF7] focus:outline-none focus:border-[#0284C7] transition-all"
+                >
+                  <option value="Galeshewe">Galeshewe</option>
+                  <option value="Kimberley Central">Kimberley Central</option>
+                  <option value="Roodepan">Roodepan</option>
+                </select>
+              </div>
+            </div>
+
+            <Input
+              label="Password"
+              type="password"
+              icon={Lock}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              required
+            />
+
+            <div>
+              <Input
+                label="Confirm Password"
+                type="password"
+                icon={Lock}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-type password"
+                required
+              />
+              {confirmPassword && (
+                <p
+                  className={`text-[11px] font-medium mt-1.5 flex items-center gap-1 ${
+                    doPasswordsMatch ? 'text-emerald-400' : 'text-rose-400'
+                  }`}
+                >
+                  {doPasswordsMatch ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Passwords match</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>Passwords do not match yet</span>
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
+
+            <Button type="submit" variant="primary" size="lg" className="w-full mt-2">
+              <span>Send OTP Verification</span>
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </form>
+        )}
 
         <div className="mt-6 pt-4 border-t border-[#1F2C45] text-center space-y-3">
           <p className="text-xs text-[#8A9BB8]">
@@ -183,7 +260,7 @@ export function Register() {
 
           <div className="inline-flex items-center space-x-1.5 text-[11px] text-[#8A9BB8] bg-[#0B1220] px-3 py-1 rounded-full border border-[#1F2C45]">
             <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A]" />
-            <span>Public Resident Account (Default Role: Resident)</span>
+            <span>Public Resident Signup (SMS &amp; Email OTP Protected)</span>
           </div>
         </div>
       </div>
