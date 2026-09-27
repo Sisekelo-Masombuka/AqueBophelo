@@ -58,8 +58,8 @@ export function Register() {
       <div className="w-full max-w-md bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-6 sm:p-8 shadow-2xl">
         {/* Branding Header */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-[#22D3EE]/10 text-[#22D3EE] rounded-xl flex items-center justify-center mx-auto mb-3">
-            <Droplet className="w-7 h-7" />
+          <div className="w-14 h-14 bg-[#22D3EE]/10 border border-[#22D3EE]/30 rounded-2xl flex items-center justify-center mx-auto mb-3 p-1.5 shadow-lg">
+            <img src="/AquaBophelo_logo.svg" alt="AquaBophelo Logo" className="w-10 h-10 object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-[#E6EDF7] tracking-tight">Resident Registration</h1>
           <p className="text-xs text-[#8A9BB8] mt-1">

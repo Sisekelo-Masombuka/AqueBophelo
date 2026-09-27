@@ -32,11 +32,11 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
         {/* Logo and Mobile Close */}
         <div className="flex items-center justify-between px-2 py-4 border-b border-[#1F2C45] mb-6">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-[#22D3EE]/10 rounded-lg text-[#22D3EE]">
-              <Droplet className="w-6 h-6" />
+            <div className="w-9 h-9 p-1 bg-[#22D3EE]/10 rounded-xl border border-[#22D3EE]/30 flex items-center justify-center shrink-0">
+              <img src="/AquaBophelo_logo.svg" alt="AquaBophelo Logo" className="w-7 h-7 object-contain" />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-none text-[#E6EDF7]">AquaBophelo</h1>
+              <h1 className="font-bold text-lg leading-none text-[#E6EDF7] tracking-tight">AquaBophelo</h1>
               <p className="text-[10px] text-[#8A9BB8] mt-1">Sol Plaatje Municipality</p>
             </div>
           </div>

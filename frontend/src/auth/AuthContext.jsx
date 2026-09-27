@@ -116,18 +116,36 @@ export function AuthProvider({ children }) {
         saveAuthSession(response.data.token, newUser);
         return { success: true, user: newUser };
       }
+      return { success: false, error: 'Registration response missing authentication token.' };
     } catch (apiError) {
-      console.warn('Backend registration fallback active:', apiError);
-      const newUser = {
-        id: `usr-${Date.now()}`,
-        email,
-        fullName: fullName || email.split('@')[0],
-        role: 'Resident',
-        area: 'Galeshewe',
-      };
-      const demoToken = `jwt-demo-resident-${Date.now()}`;
-      saveAuthSession(demoToken, newUser);
-      return { success: true, user: newUser };
+      // If the backend responded at all (e.g. 400 duplicate email, weak password), surface the real error —
+      // do NOT silently create a fake local account and report success.
+      if (apiError.response) {
+        const errorMsg = apiError.response.data?.message || 'Registration failed. Please check your details and try again.';
+        return { success: false, error: errorMsg };
+      }
+
+      // Only fall back to offline demo mode on a genuine network connection failure.
+      const isNetworkFailure =
+        apiError.code === 'ERR_NETWORK' ||
+        apiError.code === 'ECONNABORTED' ||
+        (apiError.request && !apiError.response);
+
+      if (isNetworkFailure) {
+        console.warn('Backend server unreachable (network failure), activating offline demo mode for testing:', apiError);
+        const newUser = {
+          id: `usr-${Date.now()}`,
+          email,
+          fullName: fullName || email.split('@')[0],
+          role: 'Resident',
+          area: 'Galeshewe',
+        };
+        const demoToken = `jwt-demo-resident-${Date.now()}`;
+        saveAuthSession(demoToken, newUser);
+        return { success: true, user: newUser };
+      }
+
+      return { success: false, error: apiError.message || 'Registration failed.' };
     } finally {
       setIsLoading(false);
     }

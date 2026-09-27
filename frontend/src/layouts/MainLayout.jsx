@@ -99,17 +99,17 @@ export function MainLayout() {
             {/* Logout button */}
             <button
               onClick={handleLogout}
-              className="p-1.5 text-[#8A9BB8] hover:text-[#EF4444] hover:bg-[#1F2C45] rounded-lg transition-colors"
-              title="Sign Out"
-              aria-label="Sign Out"
+              className="p-2 rounded-lg text-[#8A9BB8] hover:text-[#EF4444] hover:bg-[#1F2C45] transition-colors"
+              title="Logout"
+              aria-label="Logout"
             >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
         </header>
 
-        {/* Dynamic Nested Page Content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        {/* Page Body View Container */}
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto">
           <Outlet />
         </main>
       </div>
