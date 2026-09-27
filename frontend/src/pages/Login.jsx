@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck, KeyRound } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
 export function Login() {
   const { login } = useAuth();
@@ -15,6 +16,7 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
   // HCI Error Prevention: inline validation
   const validateForm = () => {
@@ -97,15 +99,27 @@ export function Login() {
             required
           />
 
-          <Input
-            label="Password"
-            type="password"
-            icon={Lock}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
+          <div>
+            <Input
+              label="Password"
+              type="password"
+              icon={Lock}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
+            <div className="flex justify-end mt-1.5">
+              <button
+                type="button"
+                onClick={() => setIsForgotModalOpen(true)}
+                className="text-xs text-sky-400 hover:underline font-medium inline-flex items-center space-x-1"
+              >
+                <KeyRound className="w-3 h-3" />
+                <span>Forgot Password?</span>
+              </button>
+            </div>
+          </div>
 
           <Button
             type="submit"
@@ -124,7 +138,7 @@ export function Login() {
           <p className="text-xs text-[#8A9BB8]">
             Don&apos;t have a resident account yet?{' '}
             <Link to="/register" className="text-sky-400 hover:underline font-bold">
-              Register here
+              Sign Up
             </Link>
           </p>
 
@@ -134,6 +148,8 @@ export function Login() {
           </div>
         </div>
       </div>
+
+      <ForgotPasswordModal isOpen={isForgotModalOpen} onClose={() => setIsForgotModalOpen(false)} />
     </div>
   );
 }

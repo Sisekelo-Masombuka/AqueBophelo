@@ -11,6 +11,7 @@ import ResidentDashboard from './pages/resident/ResidentDashboard';
 import DamsPage from './pages/resident/DamsPage';
 import LiveTrucksPage from './pages/resident/LiveTrucksPage';
 import AlertsPage from './pages/resident/AlertsPage';
+import ProfilePage from './pages/ProfilePage';
 import DriverTripScreen from './pages/driver/DriverTripScreen';
 import DriverStopsScreen from './pages/driver/DriverStopsScreen';
 import AdminOverview from './pages/admin/AdminOverview';
@@ -61,6 +62,7 @@ export function App() {
             <Route path="dams" element={<DamsPage />} />
             <Route path="trucks" element={<LiveTrucksPage />} />
             <Route path="alerts" element={<AlertsPage />} />
+            <Route path="profile" element={<ProfilePage />} />
 
             {/* Driver Role-Guarded Routes */}
             <Route

@@ -10,6 +10,7 @@ import {
   X,
   Globe,
   ShieldCheck,
+  User,
 } from 'lucide-react';
 
 export function Sidebar({ currentRole = 'Resident', onClose }) {
@@ -18,11 +19,13 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
     { id: 'dams', path: '/dams', label: 'Dam Monitoring', icon: Droplet },
     { id: 'trucks', path: '/trucks', label: 'Live Trucks', icon: Truck },
     { id: 'alerts', path: '/alerts', label: 'My Alerts', icon: AlertTriangle },
+    { id: 'profile', path: '/profile', label: 'My Profile', icon: User },
   ];
 
   const driverLinks = [
     { id: 'mytrip', path: '/driver/trip', label: 'Current Trip', icon: Truck },
     { id: 'stops', path: '/driver/stops', label: 'Route Stops', icon: MapPin },
+    { id: 'profile', path: '/profile', label: 'My Profile', icon: User },
   ];
 
   const adminLinks = [
@@ -32,6 +35,7 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
     { id: 'manage-routes', path: '/admin/routes', label: 'Routes & Stops', icon: MapPin },
     { id: 'manage-users', path: '/admin/users', label: 'Users & Roles', icon: Users },
     { id: 'broadcast-alerts', path: '/admin/alerts', label: 'Broadcast Alert', icon: AlertTriangle },
+    { id: 'profile', path: '/profile', label: 'My Profile', icon: User },
   ];
 
   const links = currentRole === 'Admin' ? adminLinks : currentRole === 'Driver' ? driverLinks : residentLinks;
@@ -106,7 +110,7 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
               <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A]" />
               <span>Role: {currentRole}</span>
             </p>
-            <p className="text-[10px] text-[#8A9BB8] mt-0.5">Sol Plaatje Municipality</p>
+            <p className="text-[10px] text-[#8A9BB8] mt-0.5">Sol Plaatje Municipality (CAT)</p>
           </div>
         </div>
       </div>

@@ -43,7 +43,7 @@ export function LandingPage() {
       capacityMegaLitres: 92.5,
       volumeMegaLitres: 57.8,
       latestLevel: 62.5,
-      lastUpdated: 'Today at 10:42 (SAST)',
+      lastUpdated: 'Today at 10:42 (CAT)',
     },
     {
       id: 2,
@@ -54,7 +54,7 @@ export function LandingPage() {
       capacityMegaLitres: 150.0,
       volumeMegaLitres: 123.0,
       latestLevel: 82.0,
-      lastUpdated: 'Today at 07:15 (SAST)',
+      lastUpdated: 'Today at 07:15 (CAT)',
     },
   ];
 
@@ -117,7 +117,7 @@ export function LandingPage() {
               Sol Plaatje Municipality
             </span>
             <span className="hidden sm:inline text-[#1F2C45]">|</span>
-            <span className="hidden sm:inline text-[11px] text-[#8A9BB8]">Kimberley, Northern Cape</span>
+            <span className="hidden sm:inline text-[11px] text-[#8A9BB8]">Kimberley, Northern Cape (CAT)</span>
           </div>
 
           <div className="flex items-center space-x-4 text-[11px]">
@@ -170,15 +170,33 @@ export function LandingPage() {
             </a>
           </nav>
 
-          {/* Resident Portal CTA */}
+          {/* Sign In & Sign Up CTAs */}
           <div className="hidden md:flex items-center space-x-4">
-            <button
-              onClick={handlePortalAction}
-              className="min-h-[44px] px-6 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-[#0284C7]/20 flex items-center space-x-2 active:scale-95 cursor-pointer"
-            >
-              <span>{user ? `Resident Portal (${user.role})` : 'Resident Portal'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {user ? (
+              <button
+                onClick={handlePortalAction}
+                className="min-h-[44px] px-6 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-[#0284C7]/20 flex items-center space-x-2 active:scale-95 cursor-pointer"
+              >
+                <span>Dashboard ({user.role})</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-sm font-bold text-[#8A9BB8] hover:text-white px-3 py-2 transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  className="min-h-[44px] px-5 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-[#0284C7]/20 flex items-center space-x-2 active:scale-95"
+                >
+                  <span>Sign Up</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Drawer Button */}
@@ -208,12 +226,34 @@ export function LandingPage() {
             <a href="#about" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-[#8A9BB8] py-1">
               About
             </a>
-            <button
-              onClick={handlePortalAction}
-              className="w-full text-center py-2.5 text-sm font-bold bg-[#0284C7] text-white rounded-xl mt-2"
-            >
-              Resident Portal
-            </button>
+
+            <div className="pt-3 border-t border-[#1F2C45] flex flex-col space-y-2">
+              {user ? (
+                <button
+                  onClick={handlePortalAction}
+                  className="w-full text-center py-2.5 text-sm font-bold bg-[#0284C7] text-white rounded-xl"
+                >
+                  Go to Dashboard ({user.role})
+                </button>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 text-sm font-bold text-[#8A9BB8] border border-[#1F2C45] rounded-xl hover:text-white"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 text-sm font-bold bg-[#0284C7] text-white rounded-xl"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         )}
       </header>
@@ -344,7 +384,7 @@ export function LandingPage() {
           </div>
 
           <p className="text-center text-xs text-[#8A9BB8]">
-            Last updated: <span className="font-bold text-[#E6EDF7]">10:42 SAST</span> (Verified by Sol Plaatje Telemetry)
+            Last updated: <span className="font-bold text-[#E6EDF7]">10:42 CAT</span> (Verified by Sol Plaatje Telemetry)
           </p>
         </div>
       </section>
@@ -547,7 +587,7 @@ export function LandingPage() {
             </div>
             <div>
               <p className="font-bold text-sm text-[#E6EDF7]">AquaBophelo</p>
-              <p className="text-[11px] text-[#8A9BB8]">Sol Plaatje Municipality — Kimberley, Northern Cape</p>
+              <p className="text-[11px] text-[#8A9BB8]">Sol Plaatje Municipality — Kimberley, Northern Cape (CAT)</p>
             </div>
           </div>
 
