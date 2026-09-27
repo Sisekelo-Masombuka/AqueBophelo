@@ -6,7 +6,7 @@ import Sidebar from '../components/Sidebar';
 
 export function MainLayout() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const { user, logout, switchRole } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -76,17 +76,10 @@ export function MainLayout() {
               <span>System Live</span>
             </div>
 
-            {/* Role Switcher (Allows Cuba, Nomcebo and team to preview role views easily) */}
-            <select
-              value={currentRole}
-              onChange={(e) => switchRole(e.target.value)}
-              className="bg-[#0B1220] border border-[#1F2C45] text-xs text-[#E6EDF7] rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-[#22D3EE]"
-              aria-label="Preview Role"
-            >
-              <option value="Resident">Resident View</option>
-              <option value="Driver">Driver View</option>
-              <option value="Admin">Admin View</option>
-            </select>
+            {/* Role Badge */}
+            <span className="hidden sm:inline-block px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-bold">
+              {currentRole}
+            </span>
 
             {/* User badge with initial */}
             <div

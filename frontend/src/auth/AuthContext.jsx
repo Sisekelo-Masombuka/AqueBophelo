@@ -158,21 +158,6 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('aquabophelo_user');
   };
 
-  const switchRole = (newRole) => {
-    if (!user) return;
-    const updatedUser = {
-      ...user,
-      role: newRole,
-      fullName:
-        newRole === 'Admin'
-          ? 'Sol Plaatje Municipal Admin'
-          : newRole === 'Driver'
-          ? 'Sipho Dlamini (Driver)'
-          : 'Nomcebo Nkosi (Resident)',
-    };
-    saveAuthSession(token || 'demo-token', updatedUser);
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -183,7 +168,6 @@ export function AuthProvider({ children }) {
         login,
         register,
         logout,
-        switchRole,
       }}
     >
       {children}

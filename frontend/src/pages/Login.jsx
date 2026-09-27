@@ -9,8 +9,8 @@ export function Login() {
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
 
-  const [email, setEmail] = useState('nomcebo@aquabophelo.gov.za');
-  const [password, setPassword] = useState('Resident#Aqua2026');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,22 +37,25 @@ export function Login() {
     try {
       const res = await login(email, password);
       if (res && res.success) {
-        navigate(from, { replace: true });
+        // Role-based initial destination
+        const userRole = res.user?.role || 'Resident';
+        let targetPath = from;
+
+        if (!from || from === '/' || from === '/dashboard') {
+          if (userRole === 'Admin') targetPath = '/admin';
+          else if (userRole === 'Driver') targetPath = '/driver/trip';
+          else targetPath = '/dashboard';
+        }
+
+        navigate(targetPath, { replace: true });
       } else {
-        setError('Invalid email or password. Please try again.');
+        setError(res?.error || 'Invalid email or password. Please try again.');
       }
     } catch (err) {
       setError(err?.message || 'Login failed. Please check your network connection.');
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Quick Demo Account Selectors
-  const setQuickRole = (demoEmail, demoPassword) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setError('');
   };
 
   return (
@@ -67,39 +70,6 @@ export function Login() {
           <p className="text-xs text-[#8A9BB8] mt-1">
             Sol Plaatje Municipality — Kimberley, Northern Cape
           </p>
-        </div>
-
-        {/* Demo Fast-Login Pills for Testing */}
-        <div className="mb-6 p-3 bg-[#0B1220] rounded-xl border border-[#1F2C45]">
-          <p className="text-[11px] font-semibold text-[#8A9BB8] uppercase tracking-wider mb-2 text-center">
-            Demo Fast-Login (HCI Quick Role Switch)
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => setQuickRole('nomcebo@aquabophelo.gov.za', 'Resident#Aqua2026')}
-              className="py-1.5 px-2 bg-[#111B2E] hover:bg-[#1F2C45] text-xs text-[#22D3EE] rounded-lg border border-[#22D3EE]/30 flex items-center justify-center gap-1 transition-colors"
-            >
-              <User className="w-3 h-3" />
-              <span>Resident</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setQuickRole('driver@aquabophelo.gov.za', 'Driver#Aqua2026')}
-              className="py-1.5 px-2 bg-[#111B2E] hover:bg-[#1F2C45] text-xs text-[#F59E0B] rounded-lg border border-[#F59E0B]/30 flex items-center justify-center gap-1 transition-colors"
-            >
-              <Truck className="w-3 h-3" />
-              <span>Driver</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setQuickRole('admin@aquabophelo.gov.za', 'Admin#Aqua2026')}
-              className="py-1.5 px-2 bg-[#111B2E] hover:bg-[#1F2C45] text-xs text-[#22C55E] rounded-lg border border-[#22C55E]/30 flex items-center justify-center gap-1 transition-colors"
-            >
-              <ShieldCheck className="w-3 h-3" />
-              <span>Admin</span>
-            </button>
-          </div>
         </div>
 
         {/* Error Notification */}
