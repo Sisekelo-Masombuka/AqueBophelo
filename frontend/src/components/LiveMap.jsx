@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import * as maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   Truck,
   User,
@@ -20,13 +20,8 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
-const CUSTOM_TOKEN =
-  import.meta.env.VITE_MAPBOX_TOKEN ||
-  (typeof window !== 'undefined' ? localStorage.getItem('aquabophelo_mapbox_token') : '') ||
-  '';
-
-// High-performance tokenless Dark Matter basemap style (Guarantees map tiles always render)
-const CARTO_DARK_STYLE = {
+// Open-Source Dark Matter Basemap Style (100% Tokenless OpenStreetMap / CartoDB)
+const MAPLIBRE_DARK_STYLE = {
   version: 8,
   sources: {
     'carto-dark': {
@@ -38,7 +33,8 @@ const CARTO_DARK_STYLE = {
         'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       ],
       tileSize: 256,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
     },
   },
   layers: [
@@ -272,7 +268,6 @@ export function LiveMap({
   const [activeTruck, setActiveTruck] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [freshnessTime, setFreshnessTime] = useState(Date.now());
-  const [tileEngine, setTileEngine] = useState('CartoDB Dark');
 
   // Keep freshness clock ticking every 3 seconds for live relative time
   useEffect(() => {
@@ -288,25 +283,14 @@ export function LiveMap({
     }
   }, [selectedTruckId, trucks]);
 
-  // Initialize Mapbox GL JS map safely with automatic style fallback
+  // Initialize MapLibre GL JS map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
     try {
-      const hasCustomToken =
-        CUSTOM_TOKEN &&
-        CUSTOM_TOKEN.startsWith('pk.');
-
-      mapboxgl.accessToken = hasCustomToken ? CUSTOM_TOKEN : '';
-
-      // Choose official vector style if custom token present, otherwise default to tokenless CartoDB Dark style
-      const mapStyle = hasCustomToken
-        ? 'mapbox://styles/mapbox/dark-v11'
-        : CARTO_DARK_STYLE;
-
-      const map = new mapboxgl.Map({
+      const map = new maplibregl.Map({
         container: mapContainerRef.current,
-        style: mapStyle,
+        style: MAPLIBRE_DARK_STYLE,
         center: KIMBERLEY_CENTER,
         zoom: zoom,
         pitch: 32,
@@ -314,27 +298,7 @@ export function LiveMap({
         attributionControl: true,
       });
 
-      setTileEngine(hasCustomToken ? 'Mapbox 3D Vector' : 'CartoDB Dark Matter');
-
-      // Auto-fallback to CartoDB Dark raster style if Mapbox vector tile authorization fails
-      map.on('error', (e) => {
-        if (
-          e &&
-          e.error &&
-          e.error.message &&
-          (e.error.message.includes('access token') || e.error.message.includes('Forbidden') || e.error.message.includes('401'))
-        ) {
-          console.warn('Mapbox vector token restricted. Switching to automatic CartoDB Dark tile engine.');
-          try {
-            map.setStyle(CARTO_DARK_STYLE);
-            setTileEngine('CartoDB Dark Matter (Fallback)');
-          } catch (styleErr) {
-            console.warn('Style fallback warning:', styleErr);
-          }
-        }
-      });
-
-      map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
+      map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
 
       // If user starts panning/dragging the map, gracefully disable follow mode
       map.on('dragstart', () => {
@@ -400,7 +364,7 @@ export function LiveMap({
         mapRef.current = null;
       };
     } catch (err) {
-      console.error('Failed to initialize map:', err);
+      console.error('Failed to initialize MapLibre GL map:', err);
     }
   }, [zoom]);
 
@@ -535,7 +499,7 @@ export function LiveMap({
           handleSelectTruck(truck);
         });
 
-        const marker = new mapboxgl.Marker({
+        const marker = new maplibregl.Marker({
           element: el,
           rotationAlignment: 'map',
         })
@@ -571,7 +535,7 @@ export function LiveMap({
       if (!markersRef.current.dams[dam.id]) {
         const el = createDamDOMElement(dam);
 
-        const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(`
+        const popup = new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(`
           <div style="background: #111B2E; color: #E6EDF7; padding: 10px; border-radius: 10px; min-width: 180px; font-family: sans-serif; border: 1px solid #1F2C45;">
             <div style="font-weight: bold; font-size: 13px; color: #22D3EE; margin-bottom: 4px;">${dam.name}</div>
             <div style="font-size: 11px; color: #8A9BB8;">Capacity: <strong style="color: #E6EDF7;">${dam.capacityMegaLitres} ML</strong></div>
@@ -579,7 +543,7 @@ export function LiveMap({
           </div>
         `);
 
-        const marker = new mapboxgl.Marker({ element: el })
+        const marker = new maplibregl.Marker({ element: el })
           .setLngLat([dam.longitude, dam.latitude])
           .setPopup(popup)
           .addTo(map);
@@ -598,14 +562,14 @@ export function LiveMap({
       className="w-full rounded-2xl overflow-hidden border border-[#1F2C45] shadow-2xl relative select-none"
       style={{ height }}
     >
-      {/* Mapbox Canvas Container */}
+      {/* MapLibre Canvas Container */}
       <div ref={mapContainerRef} className="w-full h-full" style={{ backgroundColor: '#0B1220' }} />
 
       {/* Top Left: Map Status Indicator */}
       <div className="absolute top-4 left-4 z-20 flex items-center space-x-2">
         <div className="px-3 py-1.5 rounded-xl bg-[#0B1220]/90 backdrop-blur-md border border-[#1F2C45] text-xs font-semibold text-[#E6EDF7] shadow-xl flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></span>
-          <span>{tileEngine}</span>
+          <span>MapLibre GL + OpenStreetMap</span>
           <span className="text-[#8A9BB8]">·</span>
           <span className="text-[#22D3EE] font-mono">{trucks.length} Active Tankers</span>
         </div>

@@ -18,10 +18,12 @@
 
 | Developer | Primary Domain | Status Summary | Remaining Focus Areas |
 |---|---|---|---|
+| Developer | Primary Domain | Status Summary | Remaining Focus Areas |
+|---|---|---|---|
 | **Sisekelo (Cuba)** | Backend Lead | **Days 1 - 5 Backend & Integration Complete ✅** | Azure App Service Deployment, Demo Telemetry Simulator |
 | **Nosipho** | Backend | **Fleet, Trips & Analytics APIs Complete ✅** | Cloud Database Sync & Postman Collection Export |
 | **Nomcebo** | Frontend | **Auth, Resident UI & SignalR Stream Complete ✅** | Vercel / Netlify Frontend Deployment |
-| **Jabulile** | Frontend | **Admin Suite, Driver Screens & Map Engine Complete ✅** | Mapbox GL Visual Polish & Presentation Dry-Run |
+| **Jabulile** | Frontend | **Admin Suite, Driver Screens & Map Engine Complete ✅** | MapLibre GL JS + OpenStreetMap Visual Polish & Presentation Dry-Run |
 
 ---
 
@@ -105,7 +107,7 @@
 
 ---
 
-### 🟢 4. Friday, 25 September 2026 — Notifications, Mapbox Real-Time & Admin Command Center
+### 🟢 4. Friday, 25 September 2026 — Notifications, MapLibre GL Real-Time & Admin Command Center
 
 #### 👤 Sisekelo (Cuba) — Backend Lead (Completed ✅)
 - [x] Implement `INotificationService` with `DryRunNotificationService` (logs to `NotificationLog` table) and `SendGridEmailService`.
@@ -121,7 +123,7 @@
 - [x] Create `src/context/ToastContext.jsx` and `src/components/EmptyState.jsx`.
 
 #### 👤 Jabulile — Frontend Developer (Completed ✅)
-- [x] Upgrade `LiveMap.jsx` with custom SVG dynamic markers, Mapbox GL 3D vector engine, and CartoDB Dark fallback.
+- [x] Upgrade `LiveMap.jsx` with custom SVG dynamic markers, MapLibre GL 3D vector engine, and CartoDB Dark Matter basemap.
 - [x] Create `src/pages/admin/AdminOverview.jsx`: Command Center showing all active trucks moving across Kimberley on map, dam status markers, and driver state badges.
 - [x] Create `src/components/BroadcastAlertModal.jsx` for Admin manual SMS/Email announcements.
 - [x] Create `src/pages/admin/BroadcastAlertPage.jsx` and `src/pages/admin/ManageUsers.jsx`.
