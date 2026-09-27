@@ -2,25 +2,15 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
-  Truck,
-  User,
   Star,
-  Compass,
   Navigation,
   Clock,
   Gauge,
   X,
-  Radio,
-  CheckCircle2,
-  AlertCircle,
   Crosshair,
-  ShieldCheck,
-  Droplet,
   MapPin,
   Sun,
   Moon,
-  ChevronRight,
-  Layers,
 } from 'lucide-react';
 
 // Kimberley Central Coordinates [lng, lat]

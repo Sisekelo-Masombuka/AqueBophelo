@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AquaBophelo.Data;
@@ -22,6 +23,7 @@ public class RoutesController : ControllerBase
     /// Retrieves all delivery routes with their ordered stops and municipal area
     /// </summary>
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<RouteResponseDto>>> GetAll()
     {
         var routes = await _context.Routes
@@ -39,6 +41,7 @@ public class RoutesController : ControllerBase
     /// Retrieves a single route by ID
     /// </summary>
     [HttpGet("{id:int}")]
+    [AllowAnonymous]
     public async Task<ActionResult<RouteResponseDto>> GetById(int id)
     {
         var route = await _context.Routes
@@ -60,6 +63,7 @@ public class RoutesController : ControllerBase
     /// Creates a new delivery route with ordered stops
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<RouteResponseDto>> Create([FromBody] CreateRouteDto dto)
     {
         if (!ModelState.IsValid)
@@ -110,6 +114,7 @@ public class RoutesController : ControllerBase
     /// Deletes a route and its stops
     /// </summary>
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var route = await _context.Routes

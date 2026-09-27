@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,26 +21,26 @@ public class TrucksController : ControllerBase
         _userManager = userManager;
     }
 
-    
-    
+    /// <summary>
     /// Retrieves all trucks with current status, driver info and GPS location
-    
+    /// </summary>
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<TruckResponseDto>>> GetAll()
     {
         var trucks = await _context.Trucks
             .Include(t => t.Driver)
             .AsNoTracking()
-            .Select(t => MapToDto(t))
             .ToListAsync();
 
-        return Ok(trucks);
+        return Ok(trucks.Select(t => MapToDto(t)));
     }
 
-    
+    /// <summary>
     /// Retrieves a single truck by ID
-    
+    /// </summary>
     [HttpGet("{id:int}")]
+    [AllowAnonymous]
     public async Task<ActionResult<TruckResponseDto>> GetById(int id)
     {
         var truck = await _context.Trucks
@@ -55,10 +56,11 @@ public class TrucksController : ControllerBase
         return Ok(MapToDto(truck));
     }
 
-    
+    /// <summary>
     /// Registers a new water tanker in the municipal fleet
-    
+    /// </summary>
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TruckResponseDto>> Create([FromBody] CreateTruckDto dto)
     {
         if (!ModelState.IsValid)
@@ -88,10 +90,11 @@ public class TrucksController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = truck.Id }, MapToDto(truck));
     }
 
-    
+    /// <summary>
     /// Updates capacity and operational status of a truck
-    
+    /// </summary>
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TruckResponseDto>> Update(int id, [FromBody] UpdateTruckDto dto)
     {
         if (!ModelState.IsValid)
@@ -116,10 +119,11 @@ public class TrucksController : ControllerBase
         return Ok(MapToDto(truck));
     }
 
-    
+    /// <summary>
     /// Assigns or unassigns a driver to a truck
-    
+    /// </summary>
     [HttpPut("{id:int}/driver")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TruckResponseDto>> AssignDriver(int id, [FromBody] AssignDriverDto dto)
     {
         var truck = await _context.Trucks

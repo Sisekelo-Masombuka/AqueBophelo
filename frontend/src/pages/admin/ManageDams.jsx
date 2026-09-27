@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Droplet, Plus, Calendar, Clock, CheckCircle, AlertCircle, ArrowUpRight, Search } from 'lucide-react';
+import { Droplet, Plus, Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import apiClient from '../../api/client';
 import StatusBadge from '../../components/StatusBadge';
 
