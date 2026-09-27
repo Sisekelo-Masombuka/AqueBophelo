@@ -70,6 +70,19 @@ public class TruckHub : Hub
             return;
         }
 
+        // Validate incoming GPS data boundaries (latitude -90..90, longitude -180..180, speed >= 0)
+        if (latitude < -90.0 || latitude > 90.0 || longitude < -180.0 || longitude > 180.0)
+        {
+            _logger.LogWarning("Location rejected: Invalid GPS coordinates ({Lat}, {Lng}) for Trip {TripId}", latitude, longitude, tripId);
+            return;
+        }
+
+        if (speedKmh.HasValue && (speedKmh.Value < 0.0 || speedKmh.Value > 250.0))
+        {
+            _logger.LogWarning("Location rejected: Out-of-range speed ({Speed} km/h) for Trip {TripId}", speedKmh.Value, tripId);
+            return;
+        }
+
         // Verify that the caller is either the assigned driver for this trip/truck or an Admin
         var callingUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         var isAdmin = Context.User?.IsInRole("Admin") ?? false;

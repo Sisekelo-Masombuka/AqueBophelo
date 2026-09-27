@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using AquaBophelo.Models;
 
 namespace AquaBophelo.Data;
@@ -12,8 +13,15 @@ public static class DbSeeder
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        // Ensure DB created
-        await context.Database.EnsureCreatedAsync();
+        // Ensure DB schema migrated or created
+        if (context.Database.IsRelational())
+        {
+            await context.Database.MigrateAsync();
+        }
+        else
+        {
+            await context.Database.EnsureCreatedAsync();
+        }
 
         // 1. Seed Identity Roles
         string[] roles = { "Admin", "Driver", "Resident" };

@@ -28,7 +28,7 @@ Phase 4 (Implementation & Presentation) due **1 October 2026**.
 
 | Layer | Technology |
 |---|---|
-| Frontend | React (JavaScript) · Vite · Tailwind CSS · React Router · **Mapbox GL JS (maps)** · Chart.js (charts) |
+| Frontend | React (JavaScript) · Vite · Tailwind CSS · React Router · **MapLibre GL JS (maps)** · OpenStreetMap · TanStack React Query · Chart.js |
 | Backend | ASP.NET Core Web API (C#) · Entity Framework Core · SQL Server / Azure SQL |
 | Auth | ASP.NET Core Identity + JWT, role-based (Resident / Driver / Admin) |
 | Real-time | SignalR |
