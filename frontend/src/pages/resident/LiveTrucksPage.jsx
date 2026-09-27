@@ -68,7 +68,7 @@ export function LiveTrucksPage() {
     },
   ]);
 
-  const [selectedTruckId, setSelectedTruckId] = useState(1);
+  const [selectedTruckId, setSelectedTruckId] = useState(null);
   const [signalrConnected, setSignalrConnected] = useState(false);
 
   // Connect to SignalR /hubs/trucks to stream live vehicle movements

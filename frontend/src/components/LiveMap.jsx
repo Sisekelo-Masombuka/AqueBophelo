@@ -262,6 +262,49 @@ function createDamDOMElement(dam, isLightMode = false) {
   return el;
 }
 
+// Kimberley Real Road Waypoints (Continuous Street Corridors)
+const ROAD_ROUTES = {
+  1: [
+    [24.7685, -28.7485], // Bultfontein Rd / Memorial
+    [24.7700, -28.7420], // Du Toitspan Rd (Sol Plaatje University)
+    [24.7675, -28.7395], // Lennox St Junction
+    [24.7645, -28.7360], // Chapel St (City Hall)
+    [24.7580, -28.7315], // Phakamile Mabija Rd
+    [24.7510, -28.7270], // Pniel Rd
+    [24.7430, -28.7210], // Barkly Rd (Galeshewe Entrance)
+    [24.7350, -28.7145], // Galeshewe Main Road
+    [24.7260, -28.7065], // Nobengula Ave / Kagisho Rd
+    [24.7180, -28.6975], // Roodepan Community Water Point
+  ],
+  2: [
+    [24.7725, -28.7425], // Kimberley Central Depot
+    [24.7660, -28.7405], // Market Square
+    [24.7585, -28.7355], // Hull Street
+    [24.7505, -28.7305], // Circular Road Junction
+    [24.7435, -28.7255], // Galeshewe Zone 1
+    [24.7365, -28.7210], // Tshwaragano Way
+    [24.7295, -28.7160], // Galeshewe Zone 2 Reservoir
+  ],
+  3: [
+    [24.7612, -28.7511], // Newton Reservoir
+    [24.7655, -28.7535], // Reservoir Road
+    [24.7695, -28.7475], // Memorial Road (N12)
+    [24.7680, -28.7410], // Jan Smuts Boulevard
+    [24.7645, -28.7365], // Chapel St Junction
+  ],
+};
+
+/**
+ * Computes exact compass bearing (heading in degrees) from coordinate A to coordinate B
+ */
+function calculateHeading(fromLng, fromLat, toLng, toLat) {
+  const dLng = toLng - fromLng;
+  const dLat = toLat - fromLat;
+  const angleRad = Math.atan2(dLng, dLat);
+  const deg = Math.round((angleRad * 180) / Math.PI);
+  return (deg + 360) % 360;
+}
+
 export function LiveMap({
   dams = [],
   trucks = [],
@@ -279,44 +322,76 @@ export function LiveMap({
   const [isLightMode, setIsLightMode] = useState(true); // Default to crisp Bolt Light Street view
   const [animatedTrucks, setAnimatedTrucks] = useState(trucks);
 
+  // Maintain continuous movement progress for each truck along its street route
+  const movementStateRef = useRef({});
+
   // Sync prop trucks with animated local state
   useEffect(() => {
     setAnimatedTrucks(trucks);
   }, [trucks]);
 
-  // Sync external selectedTruckId with local state
+  // Sync external selectedTruckId with local state ONLY when explicitly provided
   useEffect(() => {
     if (selectedTruckId) {
       const found = animatedTrucks.find((t) => t.id === selectedTruckId);
       if (found) setActiveTruck(found);
     }
-  }, [selectedTruckId, animatedTrucks]);
+  }, [selectedTruckId]);
 
-  // Smooth live vehicle movement simulation along Kimberley roads
+  // Realistic vehicle movement animation following actual Kimberley road corridors
   useEffect(() => {
-    let step = 0;
     const interval = setInterval(() => {
-      step += 0.03;
-      setAnimatedTrucks((prev) =>
-        prev.map((truck) => {
+      setAnimatedTrucks((prevTrucks) =>
+        prevTrucks.map((truck) => {
           if (truck.status === 'Available' || !truck.lastLatitude) return truck;
 
-          // Smooth road progression vectors
-          const deltaLat = Math.sin(step + truck.id) * 0.0008;
-          const deltaLng = Math.cos(step + truck.id) * 0.0008;
-          const newHeading = Math.round((step * 30 + truck.id * 90) % 360);
+          const routePoints = ROAD_ROUTES[truck.id] || ROAD_ROUTES[1];
+          const numSegments = routePoints.length - 1;
+
+          if (!movementStateRef.current[truck.id]) {
+            movementStateRef.current[truck.id] = {
+              segmentIndex: (truck.id - 1) % numSegments,
+              progress: 0.1,
+              direction: 1,
+            };
+          }
+
+          const state = movementStateRef.current[truck.id];
+          state.progress += 0.04; // Smooth sub-segment step
+
+          if (state.progress >= 1.0) {
+            state.progress = 0.0;
+            state.segmentIndex += state.direction;
+
+            if (state.segmentIndex >= numSegments) {
+              state.segmentIndex = numSegments - 1;
+              state.direction = -1; // Reverse turn on road
+            } else if (state.segmentIndex < 0) {
+              state.segmentIndex = 0;
+              state.direction = 1; // Forward turn on road
+            }
+          }
+
+          const fromPoint = routePoints[state.segmentIndex];
+          const nextIndex = state.segmentIndex + state.direction;
+          const toPoint = routePoints[nextIndex >= 0 && nextIndex < routePoints.length ? nextIndex : state.segmentIndex];
+
+          const currentLng = fromPoint[0] + (toPoint[0] - fromPoint[0]) * state.progress;
+          const currentLat = fromPoint[1] + (toPoint[1] - fromPoint[1]) * state.progress;
+
+          const heading = calculateHeading(fromPoint[0], fromPoint[1], toPoint[0], toPoint[1]);
 
           return {
             ...truck,
-            lastLatitude: truck.lastLatitude + deltaLat,
-            lastLongitude: truck.lastLongitude + deltaLng,
-            heading: newHeading,
-            speedKmh: Math.floor(28 + Math.sin(step) * 10),
+            lastLongitude: currentLng,
+            lastLatitude: currentLat,
+            heading: heading,
+            speedKmh: Math.floor(32 + Math.sin(Date.now() / 1000 + truck.id) * 8),
             lastSeenAt: new Date(),
           };
         })
       );
-    }, 2500);
+    }, 1200);
 
     return () => clearInterval(interval);
   }, []);
@@ -340,6 +415,14 @@ export function LiveMap({
 
       map.on('dragstart', () => {
         setIsFollowing(false);
+      });
+
+      // Dismiss driver details drawer card when clicking empty map canvas
+      map.on('click', (e) => {
+        if (!e.defaultPrevented) {
+          setActiveTruck(null);
+          setIsFollowing(false);
+        }
       });
 
       map.on('load', () => {
@@ -442,20 +525,9 @@ export function LiveMap({
         return;
       }
 
-      // Route coordinates from active truck position to destination points
-      const coordinates = [[activeTruck.lastLongitude, activeTruck.lastLatitude]];
-
-      if (activeTruck.routeStops && Array.isArray(activeTruck.routeStops)) {
-        activeTruck.routeStops.forEach((stop) => {
-          if (stop.longitude && stop.latitude) {
-            coordinates.push([stop.longitude, stop.latitude]);
-          }
-        });
-      } else {
-        const destLng = activeTruck.lastLongitude + (activeTruck.id === 1 ? -0.012 : 0.01);
-        const destLat = activeTruck.lastLatitude + (activeTruck.id === 1 ? 0.014 : -0.011);
-        coordinates.push([destLng, destLat]);
-      }
+      // Route coordinates following exact road waypoints
+      const roadWaypoints = ROAD_ROUTES[activeTruck.id] || ROAD_ROUTES[1];
+      const coordinates = [[activeTruck.lastLongitude, activeTruck.lastLatitude], ...roadWaypoints];
 
       source.setData({
         type: 'FeatureCollection',
