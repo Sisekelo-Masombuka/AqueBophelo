@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Mail;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using AquaBophelo.Data;
 using AquaBophelo.Models;
 using AquaBophelo.Services.Interfaces;
 
@@ -10,15 +12,18 @@ namespace AquaBophelo.Services.Notifications;
 public class SendGridEmailService : INotificationService
 {
     private readonly DryRunNotificationService _fallbackService;
+    private readonly AppDbContext _context;
     private readonly IConfiguration _config;
     private readonly ILogger<SendGridEmailService> _logger;
 
     public SendGridEmailService(
         DryRunNotificationService fallbackService,
+        AppDbContext context,
         IConfiguration config,
         ILogger<SendGridEmailService> logger)
     {
         _fallbackService = fallbackService;
+        _context = context;
         _config = config;
         _logger = logger;
     }
@@ -45,19 +50,36 @@ public class SendGridEmailService : INotificationService
                     EnableSsl = enableSsl
                 };
 
-                var mailMessage = new MailMessage
+                // Gather target recipient emails
+                var recipientEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { smtpUsername };
+
+                var subscriptions = await _context.AlertSubscriptions
+                    .Include(s => s.User)
+                    .Where(s => s.IsActive && (!alert.AreaId.HasValue || s.AreaId == alert.AreaId.Value))
+                    .ToListAsync();
+
+                foreach (var sub in subscriptions)
                 {
-                    From = new MailAddress(smtpUsername, "Sol Plaatje Municipal Water Desk"),
-                    Subject = $"[AquaBophelo Notice] {alert.Title}",
-                    Body = $"Sol Plaatje Municipal Water Alert:\n\n{alert.Title}\nSeverity: {alert.Severity}\n\n{alert.Message}\n\nTime: {alert.CreatedAt:yyyy-MM-dd HH:mm} (CAT)\nElke druppel tel • Metsi ke bophelo",
-                    IsBodyHtml = false
-                };
+                    if (!string.IsNullOrWhiteSpace(sub.User?.Email))
+                    {
+                        recipientEmails.Add(sub.User.Email);
+                    }
+                }
 
-                // Add recipient from alert
-                mailMessage.To.Add(smtpUsername); // Or subscriber email
-                await client.SendMailAsync(mailMessage);
+                foreach (var recipient in recipientEmails)
+                {
+                    var mailMessage = new MailMessage
+                    {
+                        From = new MailAddress(smtpUsername, "Sol Plaatje Municipal Water Desk"),
+                        Subject = $"[AquaBophelo Notice] {alert.Title}",
+                        Body = $"Sol Plaatje Municipal Water Alert:\n\n{alert.Title}\nSeverity: {alert.Severity}\n\n{alert.Message}\n\nTime: {alert.CreatedAt:yyyy-MM-dd HH:mm} (CAT)\nElke druppel tel • Metsi ke bophelo",
+                        IsBodyHtml = false
+                    };
+                    mailMessage.To.Add(recipient);
 
-                _logger.LogInformation("[SmtpEmailService] REAL email dispatched successfully to {To}", smtpUsername);
+                    await client.SendMailAsync(mailMessage);
+                    _logger.LogInformation("[SmtpEmailService] REAL email dispatched successfully to {To}", recipient);
+                }
             }
             catch (Exception ex)
             {
