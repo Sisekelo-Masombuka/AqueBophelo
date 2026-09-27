@@ -12,10 +12,11 @@ public static class DbSeeder
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
+        // Ensure DB created
         await context.Database.EnsureCreatedAsync();
 
-        // 1. Seed Roles
-        string[] roles = new[] { "Admin", "Driver", "Resident" };
+        // 1. Seed Identity Roles
+        string[] roles = { "Admin", "Driver", "Resident" };
         foreach (var role in roles)
         {
             if (!await roleManager.RoleExistsAsync(role))
@@ -31,65 +32,54 @@ public static class DbSeeder
             {
                 new Area { Name = "Galeshewe", Latitude = -28.7183, Longitude = 24.7319 },
                 new Area { Name = "Kimberley Central", Latitude = -28.7419, Longitude = 24.7719 },
-                new Area { Name = "Roodepan", Latitude = -28.6921, Longitude = 24.7088 }
+                new Area { Name = "Roodepan", Latitude = -28.6921, Longitude = 24.7088 },
             };
+
             await context.Areas.AddRangeAsync(areas);
             await context.SaveChangesAsync();
         }
 
-        var defaultArea = context.Areas.FirstOrDefault();
+        var defaultArea = context.Areas.FirstOrDefault(a => a.Name == "Kimberley Central");
 
-        // 3. Seed Dams
+        // 3. Seed Reservoirs & Dams
         if (!context.Dams.Any())
         {
-            var newtonRes = new Dam
+            var dams = new List<Dam>
             {
-                Name = "Newton Reservoir",
-                Latitude = -28.7511,
-                Longitude = 24.7612,
-                CapacityMegaLitres = 92.5,
-                IsActive = true,
-                AreaId = defaultArea?.Id
+                new Dam
+                {
+                    Name = "Newton Reservoir",
+                    Latitude = -28.7511,
+                    Longitude = 24.7612,
+                    CapacityMegaLitres = 92.5,
+                    IsActive = true,
+                    AreaId = defaultArea?.Id
+                },
+                new Dam
+                {
+                    Name = "Riverton Water Works",
+                    Latitude = -28.5369,
+                    Longitude = 24.7061,
+                    CapacityMegaLitres = 150.0,
+                    IsActive = true,
+                    AreaId = defaultArea?.Id
+                }
             };
 
-            var riverton = new Dam
-            {
-                Name = "Riverton Water Works",
-                Latitude = -28.5369,
-                Longitude = 24.7061,
-                CapacityMegaLitres = 150.0,
-                IsActive = true,
-                AreaId = defaultArea?.Id
-            };
-
-            await context.Dams.AddRangeAsync(newtonRes, riverton);
+            await context.Dams.AddRangeAsync(dams);
             await context.SaveChangesAsync();
 
-            // Seed initial readings
-            var now = DateTime.UtcNow;
+            // Initial baseline readings
+            var newton = dams.First(d => d.Name == "Newton Reservoir");
+            var riverton = dams.First(d => d.Name == "Riverton Water Works");
+
             context.DamReadings.AddRange(
                 new DamReading
                 {
-                    DamId = newtonRes.Id,
-                    LevelPercent = 68.5,
-                    VolumeMegaLitres = 63.36,
-                    RecordedAt = now.AddDays(-2),
-                    Source = "Manual"
-                },
-                new DamReading
-                {
-                    DamId = newtonRes.Id,
-                    LevelPercent = 64.0,
-                    VolumeMegaLitres = 59.20,
-                    RecordedAt = now.AddDays(-1),
-                    Source = "Manual"
-                },
-                new DamReading
-                {
-                    DamId = newtonRes.Id,
+                    DamId = newton.Id,
                     LevelPercent = 62.5,
-                    VolumeMegaLitres = 57.81,
-                    RecordedAt = now,
+                    VolumeMegaLitres = 57.8,
+                    RecordedAt = DateTime.UtcNow,
                     Source = "Manual"
                 },
                 new DamReading
@@ -97,56 +87,59 @@ public static class DbSeeder
                     DamId = riverton.Id,
                     LevelPercent = 82.0,
                     VolumeMegaLitres = 123.0,
-                    RecordedAt = now,
+                    RecordedAt = DateTime.UtcNow,
                     Source = "Manual"
                 }
             );
+
             await context.SaveChangesAsync();
         }
 
         // 4. Seed Admin User
         var adminEmail = "admin@aquabophelo.gov.za";
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
+
         if (adminUser == null)
         {
             adminUser = new ApplicationUser
             {
                 UserName = adminEmail,
                 Email = adminEmail,
-                FullName = "Sol Plaatje Municipal Admin",
                 EmailConfirmed = true,
+                FullName = "Sol Plaatje Municipal Admin",
                 AreaId = defaultArea?.Id
             };
 
-            var result = await userManager.CreateAsync(adminUser, "Admin#Aqua2026");
+            var result = await userManager.CreateAsync(adminUser, "Admin123!");
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(adminUser, "Admin");
             }
         }
 
-        // 5. Seed Driver User
+        // 5. Seed Sample Driver User
         var driverEmail = "driver@aquabophelo.gov.za";
         var driverUser = await userManager.FindByEmailAsync(driverEmail);
+
         if (driverUser == null)
         {
             driverUser = new ApplicationUser
             {
                 UserName = driverEmail,
                 Email = driverEmail,
-                FullName = "Sipho Dlamini (Driver)",
                 EmailConfirmed = true,
+                FullName = "Sipho Dlamini (Driver)",
                 AreaId = defaultArea?.Id
             };
 
-            var result = await userManager.CreateAsync(driverUser, "Driver#Aqua2026");
+            var result = await userManager.CreateAsync(driverUser, "Driver123!");
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(driverUser, "Driver");
             }
         }
 
-        // 6. Seed Sample Delivery Route with Stops
+        // 6. Seed Sample Delivery Route
         if (!context.Routes.Any())
         {
             var galesheweArea = context.Areas.FirstOrDefault(a => a.Name == "Galeshewe") ?? defaultArea;
@@ -181,6 +174,45 @@ public static class DbSeeder
             };
 
             context.Routes.Add(sampleRoute);
+            await context.SaveChangesAsync();
+        }
+
+        // 7. Seed Sample Water Tanker Trucks
+        if (!context.Trucks.Any())
+        {
+            var trucks = new List<Truck>
+            {
+                new Truck
+                {
+                    RegistrationNumber = "NC-542-KM",
+                    CapacityLitres = 10000,
+                    Status = "Available",
+                    DriverId = driverUser?.Id,
+                    LastLatitude = -28.7183,
+                    LastLongitude = 24.7319,
+                    LastSeenAt = DateTime.UtcNow
+                },
+                new Truck
+                {
+                    RegistrationNumber = "NC-882-KM",
+                    CapacityLitres = 15000,
+                    Status = "Available",
+                    LastLatitude = -28.7419,
+                    LastLongitude = 24.7719,
+                    LastSeenAt = DateTime.UtcNow
+                },
+                new Truck
+                {
+                    RegistrationNumber = "NC-104-KM",
+                    CapacityLitres = 10000,
+                    Status = "Available",
+                    LastLatitude = -28.6921,
+                    LastLongitude = 24.7088,
+                    LastSeenAt = DateTime.UtcNow
+                }
+            };
+
+            await context.Trucks.AddRangeAsync(trucks);
             await context.SaveChangesAsync();
         }
     }

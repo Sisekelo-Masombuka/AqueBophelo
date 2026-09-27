@@ -20,10 +20,37 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
-const MAPBOX_TOKEN =
+const CUSTOM_TOKEN =
   import.meta.env.VITE_MAPBOX_TOKEN ||
   (typeof window !== 'undefined' ? localStorage.getItem('aquabophelo_mapbox_token') : '') ||
   '';
+
+// High-performance tokenless Dark Matter basemap style (Guarantees map tiles always render)
+const CARTO_DARK_STYLE = {
+  version: 8,
+  sources: {
+    'carto-dark': {
+      type: 'raster',
+      tiles: [
+        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      ],
+      tileSize: 256,
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    },
+  },
+  layers: [
+    {
+      id: 'carto-dark-layer',
+      type: 'raster',
+      source: 'carto-dark',
+      minzoom: 0,
+      maxzoom: 22,
+    },
+  ],
+};
 
 // Kimberley Central Coordinates [lng, lat]
 const KIMBERLEY_CENTER = [24.7719, -28.7419];
@@ -245,6 +272,7 @@ export function LiveMap({
   const [activeTruck, setActiveTruck] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [freshnessTime, setFreshnessTime] = useState(Date.now());
+  const [tileEngine, setTileEngine] = useState('CartoDB Dark');
 
   // Keep freshness clock ticking every 3 seconds for live relative time
   useEffect(() => {
@@ -260,79 +288,120 @@ export function LiveMap({
     }
   }, [selectedTruckId, trucks]);
 
-  // Initialize Mapbox GL JS map
+  // Initialize Mapbox GL JS map safely with automatic style fallback
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    mapboxgl.accessToken = MAPBOX_TOKEN;
+    try {
+      const hasCustomToken =
+        CUSTOM_TOKEN &&
+        CUSTOM_TOKEN.startsWith('pk.');
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: KIMBERLEY_CENTER,
-      zoom: zoom,
-      pitch: 32,
-      bearing: -8,
-      attributionControl: true,
-    });
+      mapboxgl.accessToken = hasCustomToken ? CUSTOM_TOKEN : '';
 
-    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
+      // Choose official vector style if custom token present, otherwise default to tokenless CartoDB Dark style
+      const mapStyle = hasCustomToken
+        ? 'mapbox://styles/mapbox/dark-v11'
+        : CARTO_DARK_STYLE;
 
-    // If user starts panning/dragging the map, gracefully disable follow mode (Uber style)
-    map.on('dragstart', () => {
-      setIsFollowing(false);
-    });
-
-    map.on('load', () => {
-      mapRef.current = map;
-
-      // Add GeoJSON source and glowing layer for route polyline
-      map.addSource('selected-truck-route', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: [],
-        },
+      const map = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: mapStyle,
+        center: KIMBERLEY_CENTER,
+        zoom: zoom,
+        pitch: 32,
+        bearing: -8,
+        attributionControl: true,
       });
 
-      // Route Glow Outline Layer
-      map.addLayer({
-        id: 'truck-route-glow',
-        type: 'line',
-        source: 'selected-truck-route',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-        },
-        paint: {
-          'line-color': '#22D3EE',
-          'line-width': 8,
-          'line-opacity': 0.35,
-          'line-blur': 6,
-        },
+      setTileEngine(hasCustomToken ? 'Mapbox 3D Vector' : 'CartoDB Dark Matter');
+
+      // Auto-fallback to CartoDB Dark raster style if Mapbox vector tile authorization fails
+      map.on('error', (e) => {
+        if (
+          e &&
+          e.error &&
+          e.error.message &&
+          (e.error.message.includes('access token') || e.error.message.includes('Forbidden') || e.error.message.includes('401'))
+        ) {
+          console.warn('Mapbox vector token restricted. Switching to automatic CartoDB Dark tile engine.');
+          try {
+            map.setStyle(CARTO_DARK_STYLE);
+            setTileEngine('CartoDB Dark Matter (Fallback)');
+          } catch (styleErr) {
+            console.warn('Style fallback warning:', styleErr);
+          }
+        }
       });
 
-      // Route Main Directional Line Layer
-      map.addLayer({
-        id: 'truck-route-main',
-        type: 'line',
-        source: 'selected-truck-route',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-        },
-        paint: {
-          'line-color': '#22D3EE',
-          'line-width': 3.5,
-          'line-dasharray': [1.5, 1],
-        },
-      });
-    });
+      map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
+      // If user starts panning/dragging the map, gracefully disable follow mode
+      map.on('dragstart', () => {
+        setIsFollowing(false);
+      });
+
+      map.on('load', () => {
+        mapRef.current = map;
+
+        try {
+          // Add GeoJSON source and glowing layer for route polyline
+          map.addSource('selected-truck-route', {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: [],
+            },
+          });
+
+          // Route Glow Outline Layer
+          map.addLayer({
+            id: 'truck-route-glow',
+            type: 'line',
+            source: 'selected-truck-route',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round',
+            },
+            paint: {
+              'line-color': '#22D3EE',
+              'line-width': 8,
+              'line-opacity': 0.35,
+              'line-blur': 6,
+            },
+          });
+
+          // Route Main Directional Line Layer
+          map.addLayer({
+            id: 'truck-route-main',
+            type: 'line',
+            source: 'selected-truck-route',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round',
+            },
+            paint: {
+              'line-color': '#22D3EE',
+              'line-width': 3.5,
+              'line-dasharray': [1.5, 1],
+            },
+          });
+        } catch (layerErr) {
+          console.warn('Map layer setup warning:', layerErr);
+        }
+      });
+
+      return () => {
+        try {
+          map.remove();
+        } catch (rmErr) {
+          // ignore cleanup errors
+        }
+        mapRef.current = null;
+      };
+    } catch (err) {
+      console.error('Failed to initialize map:', err);
+    }
   }, [zoom]);
 
   // Handle Truck Selection and Smooth Camera Focus
@@ -343,13 +412,17 @@ export function LiveMap({
 
       const map = mapRef.current;
       if (map && truck.lastLongitude && truck.lastLatitude) {
-        map.flyTo({
-          center: [truck.lastLongitude, truck.lastLatitude],
-          zoom: 14.2,
-          speed: 1.2,
-          curve: 1.4,
-          essential: true,
-        });
+        try {
+          map.flyTo({
+            center: [truck.lastLongitude, truck.lastLatitude],
+            zoom: 14.2,
+            speed: 1.2,
+            curve: 1.4,
+            essential: true,
+          });
+        } catch (flyErr) {
+          console.warn('FlyTo error:', flyErr);
+        }
       }
     },
     [onTruckSelect]
@@ -360,57 +433,65 @@ export function LiveMap({
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
-    const source = map.getSource('selected-truck-route');
-    if (!source) return;
+    try {
+      const source = map.getSource('selected-truck-route');
+      if (!source) return;
 
-    if (!activeTruck || activeTruck.status === 'Available' || !activeTruck.lastLongitude) {
-      source.setData({ type: 'FeatureCollection', features: [] });
-      return;
-    }
+      if (!activeTruck || activeTruck.status === 'Available' || !activeTruck.lastLongitude) {
+        source.setData({ type: 'FeatureCollection', features: [] });
+        return;
+      }
 
-    // Waypoints from current truck coordinate towards destination stops
-    const coordinates = [
-      [activeTruck.lastLongitude, activeTruck.lastLatitude],
-    ];
+      // Waypoints from current truck coordinate towards destination stops
+      const coordinates = [
+        [activeTruck.lastLongitude, activeTruck.lastLatitude],
+      ];
 
-    if (activeTruck.routeStops && Array.isArray(activeTruck.routeStops)) {
-      activeTruck.routeStops.forEach((stop) => {
-        if (stop.longitude && stop.latitude) {
-          coordinates.push([stop.longitude, stop.latitude]);
-        }
-      });
-    } else if (activeTruck.destinationCoordinates) {
-      coordinates.push(activeTruck.destinationCoordinates);
-    } else {
-      // Default corridor to showcase connection towards destination zone
-      const destLng = activeTruck.lastLongitude + (activeTruck.id === 1 ? -0.015 : 0.012);
-      const destLat = activeTruck.lastLatitude + (activeTruck.id === 1 ? 0.018 : -0.014);
-      coordinates.push([destLng, destLat]);
-    }
+      if (activeTruck.routeStops && Array.isArray(activeTruck.routeStops)) {
+        activeTruck.routeStops.forEach((stop) => {
+          if (stop.longitude && stop.latitude) {
+            coordinates.push([stop.longitude, stop.latitude]);
+          }
+        });
+      } else if (activeTruck.destinationCoordinates) {
+        coordinates.push(activeTruck.destinationCoordinates);
+      } else {
+        // Default corridor to showcase connection towards destination zone
+        const destLng = activeTruck.lastLongitude + (activeTruck.id === 1 ? -0.015 : 0.012);
+        const destLat = activeTruck.lastLatitude + (activeTruck.id === 1 ? 0.018 : -0.014);
+        coordinates.push([destLng, destLat]);
+      }
 
-    source.setData({
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          geometry: {
-            type: 'LineString',
-            coordinates,
+      source.setData({
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'LineString',
+              coordinates,
+            },
           },
-        },
-      ],
-    });
+        ],
+      });
+    } catch (err) {
+      console.warn('Route update warning:', err);
+    }
   }, [activeTruck]);
 
   // Follow Mode: Smoothly ease camera to active truck when coordinates update
   useEffect(() => {
     if (isFollowing && activeTruck && mapRef.current) {
       if (activeTruck.lastLongitude && activeTruck.lastLatitude) {
-        mapRef.current.easeTo({
-          center: [activeTruck.lastLongitude, activeTruck.lastLatitude],
-          duration: 900,
-          essential: true,
-        });
+        try {
+          mapRef.current.easeTo({
+            center: [activeTruck.lastLongitude, activeTruck.lastLatitude],
+            duration: 900,
+            essential: true,
+          });
+        } catch (easeErr) {
+          console.warn('EaseTo error:', easeErr);
+        }
       }
     }
   }, [isFollowing, activeTruck]);
@@ -517,16 +598,16 @@ export function LiveMap({
       className="w-full rounded-2xl overflow-hidden border border-[#1F2C45] shadow-2xl relative select-none"
       style={{ height }}
     >
-      {/* Mapbox Canvas */}
+      {/* Mapbox Canvas Container */}
       <div ref={mapContainerRef} className="w-full h-full" style={{ backgroundColor: '#0B1220' }} />
 
       {/* Top Left: Map Status Indicator */}
       <div className="absolute top-4 left-4 z-20 flex items-center space-x-2">
         <div className="px-3 py-1.5 rounded-xl bg-[#0B1220]/90 backdrop-blur-md border border-[#1F2C45] text-xs font-semibold text-[#E6EDF7] shadow-xl flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></span>
-          <span>Mapbox GL Vector Engine</span>
+          <span>{tileEngine}</span>
           <span className="text-[#8A9BB8]">·</span>
-          <span className="text-[#22D3EE] font-mono">{trucks.length} Trucks</span>
+          <span className="text-[#22D3EE] font-mono">{trucks.length} Active Tankers</span>
         </div>
       </div>
 
