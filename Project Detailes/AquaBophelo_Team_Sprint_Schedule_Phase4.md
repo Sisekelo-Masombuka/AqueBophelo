@@ -14,10 +14,14 @@
 
 | Developer | Primary Domain | Status Summary | Remaining Focus Areas |
 |---|---|---|---|
-| **Sisekelo (Cuba)** | Backend Lead | **Days 1 - 4 Backend Complete ✅** | Cloud Deployment (Azure), Simulator Engine |
-| **Nosipho** | Backend | **Fleet & Trips APIs Done ✅** | Location persistence optimization, Admin Reports Summary API |
-| **Nomcebo** | Frontend | **Auth & Resident UI Done ✅** | Mapbox GL JS map integration on Resident Live Trucks page |
-| **Jabulile** | Frontend | **Days 1 - 4 Frontend Complete ✅** | Integration Testing with Nomcebo, Presentation Rehearsal |
+## 📌 Team Responsibilities & Current Status Summary
+
+| Developer | Primary Domain | Status Summary | Remaining Focus Areas |
+|---|---|---|---|
+| **Sisekelo (Cuba)** | Backend Lead | **Days 1 - 5 Backend & Integration Complete ✅** | Azure App Service Deployment, Demo Telemetry Simulator |
+| **Nosipho** | Backend | **Fleet, Trips & Analytics APIs Complete ✅** | Cloud Database Sync & Postman Collection Export |
+| **Nomcebo** | Frontend | **Auth, Resident UI & SignalR Stream Complete ✅** | Vercel / Netlify Frontend Deployment |
+| **Jabulile** | Frontend | **Admin Suite, Driver Screens & Map Engine Complete ✅** | Mapbox GL Visual Polish & Presentation Dry-Run |
 
 ---
 
@@ -107,45 +111,41 @@
 - [x] Implement `INotificationService` with `DryRunNotificationService` (logs to `NotificationLog` table) and `SendGridEmailService`.
 - [x] Connect `AlertEvaluator.cs` to trigger automatic SMS/Email dispatch when dam levels change status bands.
 
-#### 👤 Nosipho — Backend Developer
-- [ ] Optimize `TruckLocation` persistence: store latest position on `Truck` entity (`LastLatitude`, `LastLongitude`, `LastSeenAt`) for fast lookup, write full history records every 10 seconds.
-- [ ] Create `Controllers/ReportsController.cs` (`GET /api/v1/reports/summary`) for admin analytics.
+#### 👤 Nosipho — Backend Developer (Completed ✅)
+- [x] Create `Controllers/ReportsController.cs` (`GET /api/v1/reports/summary`) and `FleetReportSummaryDto.cs` for admin analytics.
+- [x] Update `DbSeeder.cs` with sample tanker fleet seed data.
 
-#### 👤 Nomcebo — Frontend Developer
-- [ ] Connect Mapbox GL JS map on `LiveTrucksPage.jsx` with SignalR live location updates.
-- [ ] Add HCI System Status indicator ("Connected", "Reconnecting...", "Disconnected").
+#### 👤 Nomcebo — Frontend Developer (Completed ✅)
+- [x] Create `src/hooks/useSignalR.js` to connect React views with SignalR live location stream.
+- [x] Create `src/components/ConnectionStatusBadge.jsx` for HCI System Status visibility ("SignalR Live", "Reconnecting...", "Offline").
+- [x] Create `src/context/ToastContext.jsx` and `src/components/EmptyState.jsx`.
 
 #### 👤 Jabulile — Frontend Developer (Completed ✅)
-- [x] Upgrade `LiveMap.jsx` with custom SVG dynamic markers and SignalR live location updates.
+- [x] Upgrade `LiveMap.jsx` with custom SVG dynamic markers, Mapbox GL 3D vector engine, and CartoDB Dark fallback.
 - [x] Create `src/pages/admin/AdminOverview.jsx`: Command Center showing all active trucks moving across Kimberley on map, dam status markers, and driver state badges.
 - [x] Create `src/components/BroadcastAlertModal.jsx` for Admin manual SMS/Email announcements.
 - [x] Create `src/pages/admin/BroadcastAlertPage.jsx` and `src/pages/admin/ManageUsers.jsx`.
 
 ---
 
-### 🟡 5. Saturday, 26 September 2026 — System Integration, End-to-End Testing & Bug Fixes
+### 🟢 5. Saturday, 26 September 2026 — System Integration & Conflict Reconciliation
 
-#### 👥 Sisekelo (Cuba) & Nosipho (Backend Integration)
-- [ ] Review and merge all backend feature branches into `main`.
-- [ ] Test all endpoints in Scalar (`https://localhost:7154/scalar/v1`).
-
-#### 👥 Nomcebo & Jabulile (Frontend Integration)
-- [ ] Merge feature branches into `main`.
-- [ ] Verify complete navigation flow for all 3 user roles (Resident, Driver, Admin).
-
-#### 🤝 Whole Team Collaboration
-- [ ] Joint debugging session to fix Mapbox vector marker rendering, empty state handling, and error toasts.
+#### 👥 Whole Team & Cuba (Backend Lead) (Completed ✅)
+- [x] Reconcile all feature branches (`Nosipho-Branch`, `Nomcebo-Branch`, `Jabulile-Branch`, `backend/cuba-day2-auth-dams`) into `main`.
+- [x] Clean up and delete obsolete feature branches on GitHub.
+- [x] Verify backend build (`dotnet build`) with 0 Warnings and 0 Errors.
+- [x] Verify frontend build (`npm run build`) with 0 Warnings and 0 Errors.
 
 ---
 
 ### 🟡 6. Sunday, 27 September 2026 — Cloud Deployment (Azure + Vercel / Netlify)
 
-#### 👥 Sisekelo (Cuba) & Nosipho (Backend Deployment)
+#### 👥 Sisekelo (Cuba) & Nosipho (Backend Deployment - Next Immediate Tasks ⏳)
 - [ ] Create **Azure App Service** instance for the ASP.NET Core API.
 - [ ] Create **Azure SQL Database** (free student tier) and apply EF Core migrations (`dotnet ef database update`).
 
-#### 👥 Nomcebo & Jabulile (Frontend Deployment)
-- [ ] Deploy `frontend/` directory to **Vercel** or **Netlify**.
+#### 👥 Nomcebo & Jabulile (Frontend Deployment - Next Immediate Tasks ⏳)
+- [ ] Deploy `frontend/` directory to **Vercel** or **Netlify** using configured `vercel.json` and `_redirects`.
 - [ ] Configure environment variable `VITE_API_BASE_URL` pointing to deployed Azure API URL.
 
 ---
