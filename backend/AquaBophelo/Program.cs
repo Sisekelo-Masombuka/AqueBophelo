@@ -33,9 +33,12 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 // Configure JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "AquaBopheloSecretSecurityKey2026SolPlaatjeSuperSecretKey!";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "AquaBopheloAPI";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "AquaBopheloClient";
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("Fatal Security Startup Error: 'Jwt:Key' is not configured in appsettings, environment variables, or user-secrets.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+    ?? throw new InvalidOperationException("Fatal Security Startup Error: 'Jwt:Issuer' is not configured in appsettings, environment variables, or user-secrets.");
+var jwtAudience = builder.Configuration["Jwt:Audience"]
+    ?? throw new InvalidOperationException("Fatal Security Startup Error: 'Jwt:Audience' is not configured in appsettings, environment variables, or user-secrets.");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -102,6 +105,31 @@ builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// Global Exception Handling Safety Net (Returns clean JSON 500 error instead of raw HTML stack trace)
+app.UseExceptionHandler(exceptionHandlerApp =>
+{
+    exceptionHandlerApp.Run(async context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+
+        var exceptionHandlerPathFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
+        var exception = exceptionHandlerPathFeature?.Error;
+
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogError(exception, "Unhandled exception occurred while processing request path {Path}", context.Request.Path);
+
+        var response = new
+        {
+            message = "An internal server error occurred while processing your request.",
+            path = context.Request.Path.Value,
+            timestamp = DateTime.UtcNow
+        };
+
+        await context.Response.WriteAsJsonAsync(response);
+    });
+});
 
 // Seed Database
 using (var scope = app.Services.CreateScope())

@@ -108,13 +108,21 @@ public class AuthService : IAuthService
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-            new Claim(ClaimTypes.Name, user.FullName),
-            new Claim(ClaimTypes.Role, primaryRole)
+            new Claim(ClaimTypes.Name, user.FullName)
         };
 
-        var jwtKey = _configuration["Jwt:Key"] ?? "AquaBopheloSecretSecurityKey2026SolPlaatjeSuperSecretKey!";
-        var jwtIssuer = _configuration["Jwt:Issuer"] ?? "AquaBopheloAPI";
-        var jwtAudience = _configuration["Jwt:Audience"] ?? "AquaBopheloClient";
+        // Attach claims for all assigned roles (e.g. Admin, Driver, Resident)
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
+        var jwtKey = _configuration["Jwt:Key"]
+            ?? throw new InvalidOperationException("Fatal Security Error: 'Jwt:Key' is not configured in appsettings, environment variables, or user-secrets.");
+        var jwtIssuer = _configuration["Jwt:Issuer"]
+            ?? throw new InvalidOperationException("Fatal Security Error: 'Jwt:Issuer' is not configured in appsettings, environment variables, or user-secrets.");
+        var jwtAudience = _configuration["Jwt:Audience"]
+            ?? throw new InvalidOperationException("Fatal Security Error: 'Jwt:Audience' is not configured in appsettings, environment variables, or user-secrets.");
         var expiryMinutes = double.TryParse(_configuration["Jwt:ExpiryMinutes"], out var mins) ? mins : 120;
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));

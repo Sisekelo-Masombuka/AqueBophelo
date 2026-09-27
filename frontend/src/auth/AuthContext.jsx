@@ -17,18 +17,9 @@ export function AuthProvider({ children }) {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
       } else {
-        // Default to a friendly demo Resident user so the app is immediately navigable
-        const defaultResident = {
-          id: 'res-1',
-          fullName: 'Nomcebo Nkosi',
-          email: 'nomcebo@aquabophelo.gov.za',
-          role: 'Resident',
-          area: 'Galeshewe',
-        };
-        setUser(defaultResident);
-        setToken('demo-token-resident');
-        localStorage.setItem('aquabophelo_token', 'demo-token-resident');
-        localStorage.setItem('aquabophelo_user', JSON.stringify(defaultResident));
+        // Visitors start unauthenticated so they land on the login/register screen
+        setUser(null);
+        setToken(null);
       }
     } catch (err) {
       console.error('Failed to load auth state from localStorage:', err);
@@ -59,33 +50,48 @@ export function AuthProvider({ children }) {
         saveAuthSession(response.data.token, loggedUser);
         return { success: true, user: loggedUser };
       }
+      return { success: false, error: 'Login response missing authentication token.' };
     } catch (apiError) {
-      console.warn('Backend login endpoint unavailable or returned error, evaluating seed fallback:', apiError);
-
-      // 2. Demo & Capstone Seed Credentials fallback
-      let matchedRole = 'Resident';
-      let fullName = 'Sol Plaatje Resident';
-
-      if (email.toLowerCase().includes('admin')) {
-        matchedRole = 'Admin';
-        fullName = 'Sol Plaatje Municipal Admin';
-      } else if (email.toLowerCase().includes('driver')) {
-        matchedRole = 'Driver';
-        fullName = 'Sipho Dlamini (Driver)';
-      } else {
-        fullName = email.split('@')[0];
+      // If backend responded with an HTTP status code (e.g. 401 Unauthorized for wrong password, 400 Bad Request)
+      if (apiError.response) {
+        const errorMsg = apiError.response.data?.message || 'Invalid email or password.';
+        return { success: false, error: errorMsg };
       }
 
-      const demoUser = {
-        id: `usr-${Date.now()}`,
-        email,
-        fullName,
-        role: matchedRole,
-        area: 'Galeshewe',
-      };
-      const demoToken = `jwt-demo-${matchedRole.toLowerCase()}-${Date.now()}`;
-      saveAuthSession(demoToken, demoUser);
-      return { success: true, user: demoUser };
+      // 2. ONLY evaluate offline demo mode fallback on genuine network connection failure (e.g. ERR_NETWORK, timeout)
+      const isNetworkFailure =
+        apiError.code === 'ERR_NETWORK' ||
+        apiError.code === 'ECONNABORTED' ||
+        (apiError.request && !apiError.response);
+
+      if (isNetworkFailure) {
+        console.warn('Backend server unreachable (network failure), activating offline demo mode for testing:', apiError);
+        let matchedRole = 'Resident';
+        let fullName = 'Sol Plaatje Resident';
+
+        if (email.toLowerCase().includes('admin')) {
+          matchedRole = 'Admin';
+          fullName = 'Sol Plaatje Municipal Admin';
+        } else if (email.toLowerCase().includes('driver')) {
+          matchedRole = 'Driver';
+          fullName = 'Sipho Dlamini (Driver)';
+        } else {
+          fullName = email.split('@')[0];
+        }
+
+        const demoUser = {
+          id: `usr-${Date.now()}`,
+          email,
+          fullName,
+          role: matchedRole,
+          area: 'Galeshewe',
+        };
+        const demoToken = `jwt-demo-${matchedRole.toLowerCase()}-${Date.now()}`;
+        saveAuthSession(demoToken, demoUser);
+        return { success: true, user: demoUser };
+      }
+
+      return { success: false, error: apiError.message || 'Authentication failed.' };
     } finally {
       setIsLoading(false);
     }

@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using AquaBophelo.Data;
@@ -51,8 +53,10 @@ public class TruckHub : Hub
     }
 
     /// <summary>
-    /// Called by driver device/phone to broadcast live GPS coordinates
+    /// Called by driver device/phone to broadcast live GPS coordinates.
+    /// Secured: Requires authenticated Driver or Admin role, and verifies driver assignment.
     /// </summary>
+    [Authorize(Roles = "Driver,Admin")]
     public async Task SendLocation(int tripId, double latitude, double longitude, double? speedKmh = null, double? heading = null)
     {
         var trip = await _context.Trips
@@ -64,6 +68,22 @@ public class TruckHub : Hub
         {
             _logger.LogWarning("Location rejected: Trip {TripId} is not active or truck missing.", tripId);
             return;
+        }
+
+        // Verify that the caller is either the assigned driver for this trip/truck or an Admin
+        var callingUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = Context.User?.IsInRole("Admin") ?? false;
+        var assignedDriverId = trip.DriverId ?? trip.Truck.DriverId;
+
+        if (!isAdmin && (string.IsNullOrEmpty(callingUserId) || callingUserId != assignedDriverId))
+        {
+            _logger.LogWarning(
+                "Unauthorized location update attempt for Trip {TripId} by caller {CallingUser}. Assigned driver is {AssignedDriver}.",
+                tripId,
+                callingUserId ?? "Anonymous",
+                assignedDriverId ?? "None"
+            );
+            return; // Gracefully reject without breaking the WebSocket connection
         }
 
         var now = DateTime.UtcNow;

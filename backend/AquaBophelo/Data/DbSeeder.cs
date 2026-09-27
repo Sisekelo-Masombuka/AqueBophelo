@@ -96,6 +96,8 @@ public static class DbSeeder
         }
 
         // 4. Seed Admin User
+        // DEMO ONLY DISCLAIMER: The seeded initial credentials below ("Admin123!") are hardcoded strictly for local development and capstone demonstration testing.
+        // In production deployments, admin credentials must be provisioned dynamically or injected securely via secrets management (e.g., Azure Key Vault / User-Secrets).
         var adminEmail = "admin@aquabophelo.gov.za";
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
@@ -118,6 +120,7 @@ public static class DbSeeder
         }
 
         // 5. Seed Sample Driver User
+        // DEMO ONLY DISCLAIMER: The seeded driver credentials ("Driver123!") are provided strictly for demonstration and testing purposes.
         var driverEmail = "driver@aquabophelo.gov.za";
         var driverUser = await userManager.FindByEmailAsync(driverEmail);
 
