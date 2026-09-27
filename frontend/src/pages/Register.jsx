@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { User, Mail, Phone, Lock, MapPin, AlertCircle, ArrowRight, CheckCircle2, ShieldCheck, KeyRound } from 'lucide-react';
+import { User, Mail, Phone, Lock, MapPin, AlertCircle, ArrowRight, CheckCircle2, ShieldCheck, KeyRound, Clock, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
@@ -16,10 +16,12 @@ export function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // OTP Step State
+  // OTP Step State & 5-minute Countdown Timer (300s)
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState('482915');
+  const [otpTimer, setOtpTimer] = useState(300); // 5 minutes in seconds
+  const [isOtpExpired, setIsOtpExpired] = useState(false);
   const [otpError, setOtpError] = useState('');
 
   const [error, setError] = useState('');
@@ -28,6 +30,23 @@ export function Register() {
   // HCI Error Prevention: live validation rules
   const isPasswordLongEnough = password.length >= 6;
   const doPasswordsMatch = password && confirmPassword && password === confirmPassword;
+
+  // Active 5-minute countdown timer effect
+  useEffect(() => {
+    let interval = null;
+    if (isOtpStep && otpTimer > 0) {
+      interval = setInterval(() => {
+        setOtpTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (otpTimer === 0) {
+      setIsOtpExpired(true);
+      setOtpError('OTP Code has expired (5-minute limit reached). Please click "Resend New OTP" below.');
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isOtpStep, otpTimer]);
 
   const handleInitialSubmit = (e) => {
     e.preventDefault();
@@ -54,15 +73,28 @@ export function Register() {
       return;
     }
 
-    // Generate random 6-digit OTP
+    // Generate random 6-digit OTP and start 5-min timer
+    sendNewOtp();
+    setIsOtpStep(true);
+  };
+
+  const sendNewOtp = () => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(code);
-    setIsOtpStep(true);
+    setOtpTimer(300); // Reset to 5 minutes (300 seconds)
+    setIsOtpExpired(false);
+    setOtpError('');
+    setOtpCode('');
   };
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setOtpError('');
+
+    if (isOtpExpired) {
+      setOtpError('This OTP code has expired. Please click "Resend New OTP" to get a fresh 5-minute code.');
+      return;
+    }
 
     if (otpCode !== generatedOtp) {
       setOtpError('Invalid OTP code. Please check the SMS/Email code sent to you.');
@@ -80,6 +112,13 @@ export function Register() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Format seconds into MM:SS format
+  const formatTimer = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -100,7 +139,7 @@ export function Register() {
           <p className="text-xs text-[#8A9BB8] mt-1">Sol Plaatje Municipal Water Portal</p>
         </div>
 
-        {/* STEP 2: OTP VERIFICATION SCREEN */}
+        {/* STEP 2: OTP VERIFICATION SCREEN WITH 5-MIN EXPIRATION */}
         {isOtpStep ? (
           <form onSubmit={handleVerifyOtp} className="space-y-4 animate-in fade-in">
             <div className="p-4 bg-[#0284C7]/10 border border-[#0284C7]/30 rounded-2xl text-center space-y-2">
@@ -109,17 +148,30 @@ export function Register() {
               <p className="text-xs text-[#8A9BB8]">
                 A 6-digit OTP verification code has been dispatched to <strong className="text-[#E6EDF7]">{phoneNumber}</strong> and <strong className="text-[#E6EDF7]">{email}</strong>.
               </p>
-              <div className="pt-1">
+
+              {/* Live Countdown & Expiry Indicator */}
+              <div className="pt-2 flex items-center justify-center space-x-2">
                 <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
                   Demo SMS OTP: {generatedOtp}
+                </span>
+
+                <span
+                  className={`text-[11px] font-mono font-bold px-3 py-1 rounded-full border flex items-center space-x-1 ${
+                    isOtpExpired
+                      ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                      : 'bg-sky-500/15 text-sky-400 border-sky-500/30'
+                  }`}
+                >
+                  <Clock className="w-3 h-3 mr-1" />
+                  <span>{isOtpExpired ? 'EXPIRED' : `Expires in ${formatTimer(otpTimer)}`}</span>
                 </span>
               </div>
             </div>
 
             {otpError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-400 flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{otpError}</span>
+              <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-400 flex items-start space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{otpError}</span>
               </div>
             )}
 
@@ -129,21 +181,41 @@ export function Register() {
               placeholder="e.g. 482915"
               value={otpCode}
               onChange={(e) => setOtpCode(e.target.value)}
+              disabled={isOtpExpired}
               required
             />
 
-            <Button type="submit" variant="primary" size="lg" isLoading={isSubmitting} className="w-full">
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              isLoading={isSubmitting}
+              isDisabled={isOtpExpired}
+              className="w-full"
+            >
               <span>Verify &amp; Activate Account</span>
               <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
 
-            <button
-              type="button"
-              onClick={() => setIsOtpStep(false)}
-              className="w-full text-center text-xs text-[#8A9BB8] hover:text-white pt-2 font-medium"
-            >
-              ← Edit Phone Number or Details
-            </button>
+            {/* Resend OTP Action */}
+            <div className="pt-2 flex items-center justify-between text-xs">
+              <button
+                type="button"
+                onClick={() => setIsOtpStep(false)}
+                className="text-[#8A9BB8] hover:text-white font-medium"
+              >
+                ← Edit Phone/Email
+              </button>
+
+              <button
+                type="button"
+                onClick={sendNewOtp}
+                className="text-sky-400 hover:underline font-bold flex items-center space-x-1"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Resend New OTP</span>
+              </button>
+            </div>
           </form>
         ) : (
           /* STEP 1: REGISTRATION FORM */
@@ -260,7 +332,7 @@ export function Register() {
 
           <div className="inline-flex items-center space-x-1.5 text-[11px] text-[#8A9BB8] bg-[#0B1220] px-3 py-1 rounded-full border border-[#1F2C45]">
             <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A]" />
-            <span>Public Resident Signup (SMS &amp; Email OTP Protected)</span>
+            <span>Public Resident Signup (5-Min OTP Expiry Protected)</span>
           </div>
         </div>
       </div>
