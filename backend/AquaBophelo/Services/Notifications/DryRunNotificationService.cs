@@ -16,6 +16,13 @@ public class DryRunNotificationService : INotificationService
         _logger = logger;
     }
 
+    public async Task<bool> SendEmailAsync(string toEmail, string subject, string bodyText)
+    {
+        _logger.LogInformation("[DryRunNotificationService] Email simulated for {To}: Subject='{Subject}', Body='{Body}'", toEmail, subject, bodyText);
+        await Task.CompletedTask;
+        return true;
+    }
+
     public async Task<int> DispatchAlertNotificationsAsync(Alert alert)
     {
         // Fetch active subscriptions matching alert area (or all if alert has no area constraint)

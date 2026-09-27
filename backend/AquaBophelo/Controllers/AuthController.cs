@@ -11,10 +11,28 @@ namespace AquaBophelo.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly INotificationService _notificationService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, INotificationService notificationService)
     {
         _authService = authService;
+        _notificationService = notificationService;
+    }
+
+    [HttpPost("send-otp")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains("@"))
+        {
+            return BadRequest(new { message = "Invalid email address." });
+        }
+
+        var subject = "AquaBophelo — Your Email Verification Code";
+        var body = $"Sol Plaatje Municipal Water System\n\nYour 6-digit Email Verification OTP is: {request.Code}\n\nThis code will expire in 5 minutes (300 seconds).\nElke druppel tel • Metsi ke bophelo";
+
+        await _notificationService.SendEmailAsync(request.Email, subject, body);
+        return Ok(new { message = $"Verification OTP sent successfully to {request.Email}" });
     }
 
     [HttpPost("register")]
@@ -66,3 +84,5 @@ public class AuthController : ControllerBase
         return Ok(profile);
     }
 }
+
+public record SendOtpRequest(string Email, string Code);

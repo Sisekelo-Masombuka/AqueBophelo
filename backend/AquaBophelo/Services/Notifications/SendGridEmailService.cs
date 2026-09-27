@@ -28,6 +28,47 @@ public class SendGridEmailService : INotificationService
         _logger = logger;
     }
 
+    public async Task<bool> SendEmailAsync(string toEmail, string subject, string bodyText)
+    {
+        var smtpHost = _config["Smtp:Host"];
+        var smtpUsername = _config["Smtp:Username"];
+        var smtpPassword = _config["Smtp:Password"];
+
+        if (!string.IsNullOrWhiteSpace(smtpHost) && !string.IsNullOrWhiteSpace(smtpUsername) && !string.IsNullOrWhiteSpace(smtpPassword))
+        {
+            try
+            {
+                int port = int.TryParse(_config["Smtp:Port"], out var p) ? p : 587;
+                bool enableSsl = bool.TryParse(_config["Smtp:EnableSsl"], out var ssl) ? ssl : true;
+
+                using var client = new SmtpClient(smtpHost, port)
+                {
+                    Credentials = new NetworkCredential(smtpUsername, smtpPassword),
+                    EnableSsl = enableSsl
+                };
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(smtpUsername, "Sol Plaatje Municipal Water Desk"),
+                    Subject = subject,
+                    Body = bodyText,
+                    IsBodyHtml = false
+                };
+                mailMessage.To.Add(toEmail);
+
+                await client.SendMailAsync(mailMessage);
+                _logger.LogInformation("[SmtpEmailService] Direct email dispatched to {To}", toEmail);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[SmtpEmailService] Failed sending email to {To}", toEmail);
+            }
+        }
+
+        return await _fallbackService.SendEmailAsync(toEmail, subject, bodyText);
+    }
+
     public async Task<int> DispatchAlertNotificationsAsync(Alert alert)
     {
         var apiKey = _config["SendGrid:ApiKey"];

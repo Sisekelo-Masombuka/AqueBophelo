@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import api from '../api/client';
 import { User, Mail, Phone, Lock, MapPin, AlertCircle, ArrowRight, CheckCircle2, ShieldCheck, KeyRound, Clock, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -78,13 +79,19 @@ export function Register() {
     setIsOtpStep(true);
   };
 
-  const sendNewOtp = () => {
+  const sendNewOtp = async () => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(code);
     setOtpTimer(300); // Reset to 5 minutes (300 seconds)
     setIsOtpExpired(false);
     setOtpError('');
     setOtpCode('');
+
+    try {
+      await api.post('/auth/send-otp', { email, code });
+    } catch (err) {
+      console.warn('Backend OTP email dispatch notice:', err);
+    }
   };
 
   const handleVerifyOtp = async (e) => {
