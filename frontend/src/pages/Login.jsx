@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { Droplet, Lock, Mail, AlertCircle, ArrowRight, Loader2, ShieldCheck, Truck, User } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 
 export function Login() {
   const { login } = useAuth();
@@ -17,7 +19,7 @@ export function Login() {
   // HCI Error Prevention: inline validation
   const validateForm = () => {
     if (!email || !email.includes('@')) {
-      setError('Please provide a valid email address.');
+      setError('Please enter a valid municipal email address.');
       return false;
     }
     if (!password || password.length < 6) {
@@ -37,7 +39,6 @@ export function Login() {
     try {
       const res = await login(email, password);
       if (res && res.success) {
-        // Role-based initial destination
         const userRole = res.user?.role || 'Resident';
         let targetPath = from;
 
@@ -49,101 +50,88 @@ export function Login() {
 
         navigate(targetPath, { replace: true });
       } else {
-        setError(res?.error || 'Invalid email or password. Please try again.');
+        setError(res?.error || 'Invalid email or password. Please verify your details.');
       }
     } catch (err) {
-      setError(err?.message || 'Login failed. Please check your network connection.');
+      setError(err?.message || 'Unable to connect to AquaBophelo service. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1220] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-6 sm:p-8 shadow-2xl">
+    <div className="min-h-screen bg-[#0B1220] flex items-center justify-center p-4 selection:bg-[#0284C7] selection:text-white">
+      <div className="w-full max-w-md bg-[#111B2E] border border-[#1F2C45] rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        {/* Subtle Decorative Gradient */}
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#0284C7]/10 blur-3xl rounded-full pointer-events-none" />
+
         {/* Branding Header */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-[#22D3EE]/10 border border-[#22D3EE]/30 rounded-2xl flex items-center justify-center mx-auto mb-3 p-1.5 shadow-lg">
-            <img src="/AquaBophelo_logo.svg" alt="AquaBophelo Logo" className="w-10 h-10 object-contain" />
-          </div>
-          <h1 className="text-2xl font-bold text-[#E6EDF7] tracking-tight">AquaBophelo</h1>
-          <p className="text-xs text-[#8A9BB8] mt-1">
-            Sol Plaatje Municipality — Kimberley, Northern Cape
-          </p>
+          <Link to="/" className="inline-block group mb-3">
+            <div className="w-16 h-16 bg-[#0284C7]/10 border border-[#0284C7]/30 rounded-2xl flex items-center justify-center mx-auto p-2 shadow-lg transition-transform group-hover:scale-105">
+              <img src="/AquaBophelo_logo.svg" alt="AquaBophelo Logo" className="w-12 h-12 object-contain" />
+            </div>
+          </Link>
+          <h1 className="text-2xl font-extrabold text-[#E6EDF7] tracking-tight">AquaBophelo</h1>
+          <p className="text-xs text-[#16A34A] font-semibold italic mt-0.5">Elke druppel tel • Metsi ke bophelo</p>
+          <p className="text-xs text-[#8A9BB8] mt-1.5">Sol Plaatje Municipality — Kimberley, Northern Cape</p>
         </div>
 
-        {/* Error Notification */}
+        {/* Error Alert */}
         {error && (
-          <div className="mb-6 p-3 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg flex items-center space-x-2 text-xs text-[#EF4444]">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
+          <div className="mb-6 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start space-x-2.5 text-xs text-rose-400">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="leading-relaxed">{error}</span>
           </div>
         )}
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-[#8A9BB8] mb-1.5">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-[#8A9BB8] absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. resident@aquabophelo.gov.za"
-                className="w-full pl-10 pr-4 py-3 bg-[#0B1220] border border-[#1F2C45] rounded-xl text-sm text-[#E6EDF7] placeholder-[#8A9BB8]/50 focus:outline-hidden focus:border-[#22D3EE] transition-colors"
-                required
-              />
-            </div>
-          </div>
+          <Input
+            label="Email Address"
+            type="email"
+            icon={Mail}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="e.g. resident@solplaatje.gov.za"
+            required
+          />
 
-          <div>
-            <label className="block text-xs font-medium text-[#8A9BB8] mb-1.5">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-[#8A9BB8] absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-3 bg-[#0B1220] border border-[#1F2C45] rounded-xl text-sm text-[#E6EDF7] placeholder-[#8A9BB8]/50 focus:outline-hidden focus:border-[#22D3EE] transition-colors"
-                required
-              />
-            </div>
-          </div>
+          <Input
+            label="Password"
+            type="password"
+            icon={Lock}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+          />
 
-          {/* Submit Action Button with 48px touch target */}
-          <button
+          <Button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full min-h-[48px] mt-2 py-3 px-4 bg-[#22D3EE] hover:bg-[#22D3EE]/90 text-[#0B1220] font-semibold rounded-xl text-sm flex items-center justify-center space-x-2 transition-all shadow-md active:scale-[0.99] disabled:opacity-50"
+            variant="primary"
+            size="lg"
+            isLoading={isSubmitting}
+            className="w-full mt-2"
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Signing in...</span>
-              </>
-            ) : (
-              <>
-                <span>Sign In to AquaBophelo</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
+            <span>Sign In to Water Portal</span>
+            <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
         </form>
 
-        {/* Footer Links */}
-        <div className="mt-6 pt-4 border-t border-[#1F2C45] text-center">
+        {/* Registration Link & Civic Trust Footer */}
+        <div className="mt-8 pt-5 border-t border-[#1F2C45] text-center space-y-3">
           <p className="text-xs text-[#8A9BB8]">
-            Are you a Sol Plaatje resident without an account?{' '}
-            <Link to="/register" className="text-[#22D3EE] hover:underline font-medium">
+            Don&apos;t have a resident account yet?{' '}
+            <Link to="/register" className="text-sky-400 hover:underline font-bold">
               Register here
             </Link>
           </p>
+
+          <div className="inline-flex items-center space-x-1.5 text-[11px] text-[#8A9BB8] bg-[#0B1220] px-3 py-1 rounded-full border border-[#1F2C45]">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A]" />
+            <span>Official Sol Plaatje Municipal Authentication</span>
+          </div>
         </div>
       </div>
     </div>

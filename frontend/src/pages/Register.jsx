@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { Droplet, Lock, Mail, User, MapPin, AlertCircle, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, MapPin, AlertCircle, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 
 export function Register() {
   const { register } = useAuth();
@@ -54,72 +56,61 @@ export function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1220] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-6 sm:p-8 shadow-2xl">
+    <div className="min-h-screen bg-[#0B1220] flex items-center justify-center p-4 selection:bg-[#0284C7] selection:text-white">
+      <div className="w-full max-w-md bg-[#111B2E] border border-[#1F2C45] rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        {/* Subtle Decorative Gradient */}
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#16A34A]/10 blur-3xl rounded-full pointer-events-none" />
+
         {/* Branding Header */}
         <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-[#22D3EE]/10 border border-[#22D3EE]/30 rounded-2xl flex items-center justify-center mx-auto mb-3 p-1.5 shadow-lg">
-            <img src="/AquaBophelo_logo.svg" alt="AquaBophelo Logo" className="w-10 h-10 object-contain" />
-          </div>
-          <h1 className="text-2xl font-bold text-[#E6EDF7] tracking-tight">Resident Registration</h1>
-          <p className="text-xs text-[#8A9BB8] mt-1">
-            Join the Sol Plaatje municipal water monitoring network
-          </p>
+          <Link to="/" className="inline-block group mb-3">
+            <div className="w-16 h-16 bg-[#0284C7]/10 border border-[#0284C7]/30 rounded-2xl flex items-center justify-center mx-auto p-2 shadow-lg transition-transform group-hover:scale-105">
+              <img src="/AquaBophelo_logo.svg" alt="AquaBophelo Logo" className="w-12 h-12 object-contain" />
+            </div>
+          </Link>
+          <h1 className="text-2xl font-extrabold text-[#E6EDF7] tracking-tight">Resident Registration</h1>
+          <p className="text-xs text-[#16A34A] font-semibold italic mt-0.5">Elke druppel tel • Metsi ke bophelo</p>
+          <p className="text-xs text-[#8A9BB8] mt-1">Join the Sol Plaatje municipal water monitoring network</p>
         </div>
 
         {/* Error Feedback */}
         {error && (
-          <div className="mb-6 p-3 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg flex items-center space-x-2 text-xs text-[#EF4444]">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
+          <div className="mb-6 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start space-x-2.5 text-xs text-rose-400">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="leading-relaxed">{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-[#8A9BB8] mb-1.5">
-              Full Name
-            </label>
-            <div className="relative">
-              <User className="w-4 h-4 text-[#8A9BB8] absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Nomcebo Nkosi"
-                className="w-full pl-10 pr-4 py-3 bg-[#0B1220] border border-[#1F2C45] rounded-xl text-sm text-[#E6EDF7] placeholder-[#8A9BB8]/50 focus:outline-hidden focus:border-[#22D3EE]"
-                required
-              />
-            </div>
-          </div>
+          <Input
+            label="Full Name"
+            icon={User}
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Nomcebo Nkosi"
+            required
+          />
+
+          <Input
+            label="Email Address"
+            type="email"
+            icon={Mail}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="nomcebo@example.co.za"
+            required
+          />
 
           <div>
-            <label className="block text-xs font-medium text-[#8A9BB8] mb-1.5">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-[#8A9BB8] absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nomcebo@example.co.za"
-                className="w-full pl-10 pr-4 py-3 bg-[#0B1220] border border-[#1F2C45] rounded-xl text-sm text-[#E6EDF7] placeholder-[#8A9BB8]/50 focus:outline-hidden focus:border-[#22D3EE]"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-[#8A9BB8] mb-1.5">
-              Municipal Area (Kimberley)
+            <label className="block text-xs font-semibold text-[#8A9BB8] mb-1.5">
+              Municipal Area (Kimberley) <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <MapPin className="w-4 h-4 text-[#8A9BB8] absolute left-3.5 top-1/2 -translate-y-1/2" />
               <select
                 value={area}
                 onChange={(e) => setArea(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-[#0B1220] border border-[#1F2C45] rounded-xl text-sm text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-[#0B1220] border border-[#1F2C45] rounded-xl text-sm text-[#E6EDF7] focus:outline-none focus:border-[#0284C7] transition-all"
               >
                 <option value="Galeshewe">Galeshewe</option>
                 <option value="Kimberley Central">Kimberley Central</option>
@@ -128,41 +119,33 @@ export function Register() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-[#8A9BB8] mb-1.5">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-[#8A9BB8] absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
-                className="w-full pl-10 pr-4 py-3 bg-[#0B1220] border border-[#1F2C45] rounded-xl text-sm text-[#E6EDF7] placeholder-[#8A9BB8]/50 focus:outline-hidden focus:border-[#22D3EE]"
-                required
-              />
-            </div>
-          </div>
+          <Input
+            label="Password"
+            type="password"
+            icon={Lock}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="At least 6 characters"
+            required
+          />
 
           <div>
-            <label className="block text-xs font-medium text-[#8A9BB8] mb-1.5">
-              Confirm Password
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-[#8A9BB8] absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-type password"
-                className="w-full pl-10 pr-4 py-3 bg-[#0B1220] border border-[#1F2C45] rounded-xl text-sm text-[#E6EDF7] placeholder-[#8A9BB8]/50 focus:outline-hidden focus:border-[#22D3EE]"
-                required
-              />
-            </div>
+            <Input
+              label="Confirm Password"
+              type="password"
+              icon={Lock}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-type password"
+              required
+            />
             {/* Live Inline Match Feedback (HCI Heuristic #1) */}
             {confirmPassword && (
-              <p className={`text-[11px] mt-1.5 flex items-center gap-1 ${doPasswordsMatch ? 'text-[#22C55E]' : 'text-[#EF4444]'}`}>
+              <p
+                className={`text-[11px] font-medium mt-1.5 flex items-center gap-1 ${
+                  doPasswordsMatch ? 'text-emerald-400' : 'text-rose-400'
+                }`}
+              >
                 {doPasswordsMatch ? (
                   <>
                     <CheckCircle2 className="w-3.5 h-3.5" />
@@ -178,32 +161,30 @@ export function Register() {
             )}
           </div>
 
-          <button
+          <Button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full min-h-[48px] mt-2 py-3 px-4 bg-[#22D3EE] hover:bg-[#22D3EE]/90 text-[#0B1220] font-semibold rounded-xl text-sm flex items-center justify-center space-x-2 transition-all shadow-md disabled:opacity-50"
+            variant="primary"
+            size="lg"
+            isLoading={isSubmitting}
+            className="w-full mt-2"
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Creating account...</span>
-              </>
-            ) : (
-              <>
-                <span>Complete Registration</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
+            <span>Complete Registration</span>
+            <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-[#1F2C45] text-center">
+        <div className="mt-6 pt-4 border-t border-[#1F2C45] text-center space-y-3">
           <p className="text-xs text-[#8A9BB8]">
             Already have an account?{' '}
-            <Link to="/login" className="text-[#22D3EE] hover:underline font-medium">
+            <Link to="/login" className="text-sky-400 hover:underline font-bold">
               Sign In
             </Link>
           </p>
+
+          <div className="inline-flex items-center space-x-1.5 text-[11px] text-[#8A9BB8] bg-[#0B1220] px-3 py-1 rounded-full border border-[#1F2C45]">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A]" />
+            <span>Public Resident Account (Default Role: Resident)</span>
+          </div>
         </div>
       </div>
     </div>
