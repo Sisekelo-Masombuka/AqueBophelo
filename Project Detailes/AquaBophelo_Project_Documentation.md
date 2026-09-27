@@ -27,7 +27,7 @@ This file is the single source of truth for the project. Read it fully before wr
 
 ## 1. Project summary
 
-AquaBophelo is a full-stack web system that helps a South African municipality **monitor water supply (dam levels)** and **track water tankers (trucks) in real time**, while keeping residents informed through dashboards and SMS/email alerts.
+AquaBophelo is a full-stack web system that helps a South African municipality **monitor water supply (dam levels)** and **track water tankers (trucks) in real time**, while keeping residents informed through dashboards and Email alerts (SMS eliminated to avoid gateway costs).
 
 Two core capabilities:
 
@@ -167,16 +167,16 @@ If the folder is already a Git repository, Git detects the moves as renames and 
 ## 4. Users and roles [CONFIRMED roles / PROPOSED capabilities]
 
 ### 4.1 Resident
-- Register / log in.
+- Register / log in (with Email OTP verification, 5-minute expiration).
 - View current dam levels, trends and status colour.
 - View active water trucks on a map and their live positions.
 - See delivery schedules / routes for their area.
-- Subscribe to SMS / email alerts for their area.
+- Subscribe to Email alerts for their area (SMS scratched for zero-cost operation).
 - View alert history.
-- (Optional) Report a water issue (no supply, leak).
+- Report a water issue / ticket (`#SPM-2026-xxxx`).
 
 ### 4.2 Driver
-- Log in on a phone.
+- Log in on a phone (credentials provided by Admin).
 - See the assigned truck and today's route / stops.
 - Start and end a trip.
 - Broadcast live GPS while a trip is active.
@@ -186,7 +186,8 @@ If the folder is already a Git repository, Git detects the moves as renames and 
 - Full dashboard: dams, trucks, drivers, routes, alerts.
 - CRUD for dams, readings, trucks, drivers, areas, routes.
 - Assign drivers to trucks and trucks to routes.
-- Create and send alerts / announcements (SMS + email).
+- Create Driver & Staff accounts (`ManageUsers.jsx`).
+- Create and send Email alerts / broadcasts.
 - Manage users and roles.
 - View reports and history.
 
@@ -212,16 +213,16 @@ If the folder is already a Git repository, Git detects the moves as renames and 
 - FR-T7: Trip history is stored for admin review.
 
 ### 5.3 Notifications and alerts
-- FR-N1: Residents subscribe to alerts by channel (SMS / email) and area.
-- FR-N2: Admin can broadcast a manual alert.
-- FR-N3: System raises automatic alerts on low dam levels and on truck events (trip started, arriving soon) [PROPOSED].
+- FR-N1: Residents subscribe to Email alerts by area (SMS scratched for zero-cost operation).
+- FR-N2: Admin can broadcast a manual Email alert.
+- FR-N3: System raises automatic alerts on low dam levels and on truck events (trip started, arriving soon).
 - FR-N4: Every send attempt is logged.
 
 ### 5.4 Authentication and authorization
-- FR-A1: Register / login / logout, JWT-based.
+- FR-A1: Register / login / logout, JWT-based with Email OTP verification (5-min expiration).
 - FR-A2: Role-based access control (Resident, Driver, Admin).
 - FR-A3: Role-based navigation on the frontend.
-- FR-A4: Password reset by email [PROPOSED].
+- FR-A4: Password recovery via Email OTP modal ("Forgot Password?").
 
 ---
 
@@ -230,7 +231,7 @@ If the folder is already a Git repository, Git detects the moves as renames and 
 - **Mobile-first, responsive.** Most residents and all drivers will use phones.
 - **Low data usage.** Small payloads, paginated lists, throttled GPS updates (every 5–10 s), lazy-loaded map tiles and charts, gzip/brotli compression.
 - **Resilience.** UI must handle dropped connections (SignalR automatic reconnect, clear "reconnecting" state, cached last-known values).
-- **Security.** HTTPS, JWT, role policies, input validation, no secrets in the repo, rate limiting on auth and SMS endpoints.
+- **Security.** HTTPS, JWT, role policies, input validation, no secrets in the repo, rate limiting on auth and email endpoints.
 - **Usability.** Follow Nielsen's heuristics: visibility of system status, error prevention, recognition over recall, consistency, and so on.
 - **Accessibility.** Colour is never the only status indicator (add icons and labels); adequate contrast on the dark theme.
 - **Maintainability.** Layered code, DTOs, dependency injection, consistent naming.
@@ -243,16 +244,16 @@ If the folder is already a Git repository, Git detects the moves as renames and 
 | Layer | Technology |
 |---|---|
 | Frontend | React.js + Tailwind CSS |
-| Maps | **Mapbox GL JS (Mapbox)** |
+| Maps | **MapLibre GL JS / Mapbox GL JS** |
 | Charts | Chart.js |
 | Backend | ASP.NET Core Web API (C#), controllers-based |
 | ORM | Entity Framework Core |
 | Database | SQL Server (local dev) / Azure SQL (production) |
-| Auth | ASP.NET Core Identity + JWT, role-based |
+| Auth | ASP.NET Core Identity + JWT + Email OTP Verification (5-min expiration) |
 | Real-time | SignalR |
 | API docs | OpenAPI + **Scalar** (Scalar.AspNetCore) |
-| SMS | Twilio **or** Clickatell / BulkSMS (final choice [OPEN]; put behind an interface) |
-| Email | SendGrid |
+| Notifications | **Email Notifications (SendGrid / SMTP)** *(SMS scratched for zero-cost operation & reliability)* |
+| Timezone | **CAT (Central Africa Time, UTC+2)** |
 | Frontend hosting | Vercel or Netlify |
 | Backend hosting | Azure App Service + Azure SQL (free student tier) |
 | IDE / OS | Visual Studio 2022 Community, Windows |
@@ -281,8 +282,8 @@ Notes:
 │                                                                   │
 │  Controllers ─► Services ─► EF Core DbContext ─► SQL Server/Azure │
 │       │              │                                            │
-│       │              ├─► INotificationService ─► Twilio/BulkSMS   │
-│       │              │                         └► SendGrid        │
+│       │              ├─► INotificationService ─► SendGrid / SMTP  │
+│       │              │                         └► Email Service   │
 │       │              └─► AlertEvaluator (BackgroundService)       │
 │       └─► Identity + JWT                                          │
 │  TruckHub (SignalR) ─► groups per truck / per area                │
@@ -292,7 +293,7 @@ Notes:
 **Request flow examples**
 - *Dashboard load:* SPA → `GET /api/v1/dams` → controller → service → EF Core → DTO list → JSON.
 - *Live truck:* Driver phone → `TruckHub.SendLocation(...)` → server saves latest position → broadcasts `LocationUpdated` to the truck's group → resident map marker moves.
-- *Low-dam alert:* new reading saved → `AlertEvaluator` compares with thresholds → creates `Alert` → `INotificationService` sends SMS/email to subscribed residents → log rows written.
+- *Low-dam alert:* new reading saved → `AlertEvaluator` compares with thresholds → creates `Alert` → `INotificationService` sends Email notifications to subscribed residents → log rows written.
 
 ---
 
@@ -324,7 +325,7 @@ backend/AquaBophelo/
 ├── Services/
 │   ├── Interfaces/
 │   ├── DamService.cs, TruckService.cs, AlertService.cs, ...
-│   └── Notifications/               (INotificationService, SmsSender, EmailSender)
+│   └── Notifications/               (INotificationService, SendGridEmailService, DryRunNotificationService)
 ├── Hubs/
 │   └── TruckHub.cs
 ├── BackgroundServices/
@@ -348,7 +349,7 @@ backend/AquaBophelo/
 - Controllers stay thin. Business logic in services.
 - Never return EF entities directly; use DTOs.
 - `async`/`await` everywhere with `CancellationToken` where sensible.
-- All timestamps in UTC (`DateTime.UtcNow`), converted to SAST (UTC+2) in the UI.
+- All timestamps in UTC (`DateTime.UtcNow`), converted to CAT (Central Africa Time, UTC+2) in the UI.
 - Consistent error shape (`ProblemDetails`), global exception middleware.
 - Validation with data annotations (or FluentValidation if the team wants it).
 - Pagination on list endpoints: `?page=1&pageSize=20`.
@@ -370,7 +371,7 @@ backend/AquaBophelo/
 | `TripStop` | Id, TripId, RouteStopId, ArrivedAt?, Completed | |
 | `TruckLocation` | Id, TruckId, TripId?, Latitude, Longitude, SpeedKmh?, Heading?, RecordedAt | Belongs to `Truck` |
 | `Alert` | Id, Type (DamLow / DamCritical / Truck / Announcement), Severity, Title, Message, DamId?, AreaId?, CreatedAt, CreatedByUserId? | |
-| `AlertSubscription` | Id, UserId, AreaId, Channel (Sms / Email), IsActive | |
+| `AlertSubscription` | Id, UserId, AreaId, Channel (Email), IsActive | |
 | `NotificationLog` | Id, AlertId, UserId, Channel, Status, Error?, SentAt | |
 
 Storage tip: keep the **latest** truck position in a fast lookup (e.g. a `LastLatitude/LastLongitude/LastSeenAt` on `Truck`) and write full `TruckLocation` history at a lower frequency, so the table doesn't explode.
@@ -438,16 +439,16 @@ Implementation idea: when a reading is saved, call `AlertService.EvaluateAsync(r
 ```csharp
 public interface INotificationService
 {
-    Task SendSmsAsync(string phoneNumber, string message, CancellationToken ct = default);
     Task SendEmailAsync(string toEmail, string subject, string htmlBody, CancellationToken ct = default);
+    Task SendOtpEmailAsync(string toEmail, string otpCode, int expiryMinutes = 5, CancellationToken ct = default);
 }
 ```
 
-- Register concrete SMS provider via DI so Twilio / Clickatell / BulkSMS can be swapped without touching business logic.
-- Use South African number format (+27…) and validate before sending.
-- Log every attempt to `NotificationLog`. Fail gracefully — a failed SMS must not break saving a reading.
-- Rate-limit manual broadcasts and cap messages per run to control cost.
-- For the demo: a "dry run" mode that logs instead of sending, so no credits are burned.
+- Register concrete `SendGridEmailService` or standard .NET `SmtpClient` via DI for real email delivery.
+- SMS was formally eliminated to save costs and eliminate third-party SMS gateway dependencies.
+- Enforce 5-minute expiration window (`300s` timer) for registration Email OTP verification codes.
+- Log every send attempt to `NotificationLog`. Fail gracefully — a failed email must not crash saving a dam reading.
+- For local testing without SMTP credentials: `DryRunNotificationService` logs email payloads safely to audit logs.
 
 ### 9.10 Configuration
 
@@ -457,8 +458,8 @@ public interface INotificationService
 ConnectionStrings:DefaultConnection
 Jwt:Issuer, Jwt:Audience, Jwt:Key (secret), Jwt:ExpiryMinutes
 Cors:AllowedOrigins
-Sms:Provider, Sms:ApiKey, Sms:Sender      (secret)
 SendGrid:ApiKey, SendGrid:FromEmail       (secret)
+Smtp:Host, Smtp:Port, Smtp:Username, Smtp:Password (secret)
 Alerts:DryRun
 ```
 
@@ -499,10 +500,10 @@ frontend/src/
 Role-based navigation: the sidebar renders only the links allowed for the logged-in role; routes are also guarded so URL-typing can't bypass it.
 
 ### 10.3 Key UI components
-- **Live map (Leaflet):** truck markers with heading/status, route polyline, stop markers, dam markers coloured by status. Update markers from SignalR without re-rendering the whole map.
+- **Live map (MapLibre GL JS):** truck markers with heading/status, route polyline, stop markers, dam markers coloured by status. Update markers from SignalR without re-rendering the whole map.
 - **Dam level panels:** gauge or bar, % value, status badge (icon + text + colour), sparkline.
 - **Trend charts (Chart.js):** line charts with 7 / 30 / 90-day toggle.
-- **Alert list:** severity chips, timestamps in SAST, area tags.
+- **Alert list:** severity chips, timestamps in CAT (Central Africa Time, UTC+2), area tags.
 - **Connection indicator:** small "Live / Reconnecting" pill for system-status visibility.
 
 ### 10.4 State and data
@@ -514,23 +515,23 @@ Role-based navigation: the sidebar renders only the links allowed for the logged
 
 ## 11. Design system, HCI principles and UI direction [CONFIRMED direction]
 
-**Direction:** Dark theme, **dashboard-first**, data-dense. The team reviewed landing-page mockups and confirmed a **dashboard-first layout**. The product presents real-time data immediately — interactive Mapbox map, sidebar navigation, dam level gauges, and status indicators. Principle: *show the product working, not a pitch for it.*
+**Direction:** Dark theme, **dashboard-first**, data-dense. The team reviewed landing-page mockups and confirmed a **dashboard-first layout**. The product presents real-time data immediately — interactive MapLibre map, sidebar navigation, dam level gauges, and status indicators. Principle: *show the product working, not a pitch for it.*
 
-**Map Engine:** Switched from Leaflet to **Mapbox GL JS (Mapbox)** for high-performance vector rendering, smooth truck animation, and high-contrast dark maps.
+**Map Engine:** Switched to **MapLibre GL JS** with CartoDB Dark Matter tiles for high-performance vector rendering, smooth truck animation, and high-contrast dark maps.
 
 ### 11.1 Human-Computer Interaction (HCI) & Usability Principles
 The frontend design strictly applies **HCI principles** and **Nielsen's 10 Usability Heuristics**:
 
-1. **Visibility of System Status:** Connection status pills (SignalR Connected, Reconnecting, Offline) and server timestamps are visible at all times. Live maps display moving truck markers with heading directional arrows.
-2. **Match Between System and the Real World:** Uses South African municipal terminology (Sol Plaatje, Galeshewe, Dam Levels in MegaLitres, Tanker registration numbers, SAST timestamps).
+1. **Visibility of System Status:** Connection status pills (SignalR Connected, Reconnecting, Offline) and server timestamps in CAT (Central Africa Time, UTC+2) are visible at all times. Live maps display moving truck markers with heading directional arrows.
+2. **Match Between System and the Real World:** Uses South African municipal terminology (Sol Plaatje, Galeshewe, Dam Levels in MegaLitres, Tanker registration numbers, CAT timestamps).
 3. **User Control and Freedom:** Drivers can easily cancel or pause active broadcasts; Residents can filter dam historical trends by 7, 30, or 90 days.
-4. **Consistency and Standards:** Uniform dark palette across Resident, Driver, and Admin screens with consistent icon iconography (Lucide React).
-5. **Error Prevention:** Driver screens feature confirmation prompts before ending a trip to prevent accidental termination while driving.
+4. **Consistency and Standards:** Uniform dark palette across Resident, Driver, and Admin screens with consistent Lucide SVG icons + explicit text labels.
+5. **Error Prevention:** Driver screens feature confirmation prompts before ending a trip to prevent accidental termination while driving; Registration includes a 5-minute OTP countdown timer (`05:00` $\rightarrow$ `00:00`).
 6. **Recognition Rather than Recall:** Color-coded status badges always include descriptive text labels and status icons (never color-only) to assist visually impaired or colorblind users (WCAG 2.1 AA compliant).
 7. **Flexibility and Efficiency of Use:** Role-scoped navigation sidebars display only relevant actions for the logged-in role (Resident / Driver / Admin).
-8. **Aesthetic and Minimalist Design:** Data-dense layout eliminating cluttered marketing graphics to prioritize operational metrics.
+8. **Aesthetic and Minimalist Design:** Data-dense layout derived from `AquaBophelo_logo.svg` (`#0284C7`, `#16A34A`), prioritizing operational metrics.
 9. **Help Users Recognize, Diagnose, and Recover from Errors:** User-friendly error banners (e.g. "Unable to connect to backend server. Retrying in 5 seconds...") instead of raw stack trace errors.
-10. **Mobile Touch Target Optimization ($\ge 48\text{px}$):** Driver interfaces feature oversized touch targets suitable for one-tap operation on mobile devices under outdoor/moving conditions.
+10. **Mobile Touch Target Optimization ($\ge 44\text{px}$):** Driver interfaces feature oversized touch targets suitable for one-tap operation on mobile devices under outdoor/moving conditions.
 
 **Palette:** deep navy background (`#0B1220`), with a status color system of cyan / amber / green / red:
 
@@ -646,5 +647,5 @@ The frontend design strictly applies **HCI principles** and **Nielsen's 10 Usabi
 | EF Core | Entity Framework Core — the ORM mapping C# classes to SQL tables |
 | DTO | Data Transfer Object — the shape of data sent over the API |
 | Scalar | Interactive API documentation UI (OpenAPI) |
-| SAST | South African Standard Time (UTC+2) |
+| CAT | Central Africa Time (UTC+2) |
 | POPIA | South Africa's Protection of Personal Information Act |

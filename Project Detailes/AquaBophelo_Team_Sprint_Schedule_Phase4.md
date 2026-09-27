@@ -92,7 +92,7 @@
 
 #### 👤 Nomcebo — Frontend Developer (Completed via PR #4 ✅)
 - [x] Create `src/pages/resident/ResidentDashboard.jsx`: dam level gauges, status badges, trend charts, active alert feed.
-- [x] Create `src/components/AlertSubscriptionsModal.jsx` (Resident SMS/Email area alert subscription modal).
+- [x] Create `src/components/AlertSubscriptionsModal.jsx` (Resident Email area alert subscription modal — SMS scratched).
 - [x] Create `src/pages/resident/DamsPage.jsx`, `src/pages/resident/LiveTrucksPage.jsx`, `src/pages/resident/AlertsPage.jsx`.
 
 #### 👤 Sisekelo (Cuba) — Backend Lead (Completed ✅)
@@ -101,7 +101,7 @@
 - [x] Create `Services/AlertEvaluator.cs`: evaluates dam level changes on new readings and auto-generates Amber/Red alert records when thresholds cross (<50%, <30%, <15%).
 
 #### 👤 Jabulile — Frontend Developer (Completed ✅)
-- [x] Create `src/pages/driver/DriverTripScreen.jsx`: Mobile UI with **oversized touch targets ($\ge 48\text{px}$)** for one-tap operation while driving ("Start Trip", "Mark Stop Complete", "End Trip").
+- [x] Create `src/pages/driver/DriverTripScreen.jsx`: Mobile UI with **oversized touch targets ($\ge 44\text{px}$)** for one-tap operation while driving ("Start Trip", "Mark Stop Complete", "End Trip").
 - [x] Create `src/hooks/useGeolocationBroadcast.js`: uses `navigator.geolocation.watchPosition` to stream driver GPS updates to Nosipho's `TruckHub`.
 - [x] Create `src/pages/driver/DriverStopsScreen.jsx`: route delivery stops checklist with touch completion buttons.
 
@@ -110,8 +110,8 @@
 ### 🟢 4. Friday, 25 September 2026 — Notifications, MapLibre GL Real-Time & Admin Command Center
 
 #### 👤 Sisekelo (Cuba) — Backend Lead (Completed ✅)
-- [x] Implement `INotificationService` with `DryRunNotificationService` (logs to `NotificationLog` table) and `SendGridEmailService`.
-- [x] Connect `AlertEvaluator.cs` to trigger automatic SMS/Email dispatch when dam levels change status bands.
+- [x] Implement `INotificationService` with `DryRunNotificationService` (logs to `NotificationLog` table) and `SendGridEmailService` (plus Email OTP verification).
+- [x] Connect `AlertEvaluator.cs` to trigger automatic Email dispatch when dam levels change status bands.
 
 #### 👤 Nosipho — Backend Developer (Completed ✅)
 - [x] Create `Controllers/ReportsController.cs` (`GET /api/v1/reports/summary`) and `FleetReportSummaryDto.cs` for admin analytics.
@@ -125,7 +125,7 @@
 #### 👤 Jabulile — Frontend Developer (Completed ✅)
 - [x] Upgrade `LiveMap.jsx` with custom SVG dynamic markers, MapLibre GL 3D vector engine, and CartoDB Dark Matter basemap.
 - [x] Create `src/pages/admin/AdminOverview.jsx`: Command Center showing all active trucks moving across Kimberley on map, dam status markers, and driver state badges.
-- [x] Create `src/components/BroadcastAlertModal.jsx` for Admin manual SMS/Email announcements.
+- [x] Create `src/components/BroadcastAlertModal.jsx` for Admin manual Email announcements.
 - [x] Create `src/pages/admin/BroadcastAlertPage.jsx` and `src/pages/admin/ManageUsers.jsx`.
 
 ---

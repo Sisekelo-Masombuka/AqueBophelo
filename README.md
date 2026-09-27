@@ -18,9 +18,9 @@ Phase 4 (Implementation & Presentation) due **1 October 2026**.
 
 | Role | What they do |
 |---|---|
-| **Resident** | View dam levels and trends, see live water trucks and schedules, subscribe to SMS / email alerts |
+| **Resident** | View dam levels and trends, see live water trucks and schedules, subscribe to area Email alerts, report water fault tickets |
 | **Driver** | See the assigned truck and route, start/end trips, broadcast GPS, mark stops complete |
-| **Admin** | Manage dams, readings, trucks, drivers, routes, users and alerts from one dashboard |
+| **Admin** | Manage dams, readings, trucks, drivers, routes, users, driver/staff accounts, and broadcast email alerts |
 
 ---
 
@@ -30,10 +30,10 @@ Phase 4 (Implementation & Presentation) due **1 October 2026**.
 |---|---|
 | Frontend | React (JavaScript) · Vite · Tailwind CSS · React Router · **MapLibre GL JS (maps)** · OpenStreetMap · TanStack React Query · Chart.js |
 | Backend | ASP.NET Core Web API (C#) · Entity Framework Core · SQL Server / Azure SQL |
-| Auth | ASP.NET Core Identity + JWT, role-based (Resident / Driver / Admin) |
+| Auth | ASP.NET Core Identity + JWT, role-based (Resident / Driver / Admin) + Email OTP verification |
 | Real-time | SignalR |
 | API docs | OpenAPI + Scalar |
-| Notifications | SMS · SendGrid email |
+| Notifications | **Email Notifications & Email OTP Verification** *(Pivoted 100% from SMS to Email for zero-cost operation and higher reliability)* · CAT (Central Africa Time, UTC+2) |
 | Hosting | Vercel / Netlify (frontend) · Azure App Service + Azure SQL (backend) |
 | **UX & HCI** | **Human-Computer Interaction (HCI) Principles · Nielsen's 10 Usability Heuristics · WCAG 2.1 AA Accessibility** |
 
@@ -163,7 +163,7 @@ Open http://localhost:5173. The **System Check** page should show **API: Online*
 | 3 | Dams and readings: CRUD, status colours, trend charts |
 | 4 | Trucks, drivers, routes and trips |
 | 5 | Live truck tracking with SignalR and the Leaflet map |
-| 6 | Alerts and SMS / email notifications |
+| 6 | Alerts and Email notifications & Email OTP verification (SMS scratched) |
 | 7 | Deployment (Azure + Vercel/Netlify), demo data, presentation |
 
 ---
