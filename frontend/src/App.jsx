@@ -19,6 +19,7 @@ import ManageTrucks from './pages/admin/ManageTrucks';
 import ManageRoutes from './pages/admin/ManageRoutes';
 import ManageUsers from './pages/admin/ManageUsers';
 import BroadcastAlertPage from './pages/admin/BroadcastAlertPage';
+import AdminReportsPage from './pages/admin/AdminReportsPage';
 
 function RootRedirect() {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -94,6 +95,7 @@ export function App() {
               <Route path="routes" element={<ManageRoutes />} />
               <Route path="users" element={<ManageUsers />} />
               <Route path="alerts" element={<BroadcastAlertPage />} />
+              <Route path="reports" element={<AdminReportsPage />} />
             </Route>
 
             {/* Fallback */}

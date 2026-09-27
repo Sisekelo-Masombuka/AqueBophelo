@@ -5,12 +5,14 @@ import StatusBadge from '../../components/StatusBadge';
 import DamPanel from '../../components/DamPanel';
 import LiveMap from '../../components/LiveMap';
 import AlertSubscriptionsModal from '../../components/AlertSubscriptionsModal';
-import { Droplet, Truck, AlertTriangle, MapPin, Bell, Radio, ExternalLink, ShieldCheck, Clock } from 'lucide-react';
+import ReportIssueModal from '../../components/ReportIssueModal';
+import { Droplet, Truck, AlertTriangle, MapPin, Bell, Radio, ExternalLink, AlertCircle, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function ResidentDashboard() {
   const { user } = useAuth();
   const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
+  const [isReportIssueModalOpen, setIsReportIssueModalOpen] = useState(false);
 
   // Dams data matching backend DbSeeder
   const dams = [
@@ -102,14 +104,14 @@ export function ResidentDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner & Quick Subscription Action */}
-      <div className="bg-gradient-to-r from-[#111B2E] to-[#1F2C45]/70 border border-[#1F2C45] rounded-2xl p-5 md:p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Welcome Banner & Actions */}
+      <div className="bg-gradient-to-r from-[#111B2E] via-[#16233B] to-[#111B2E] border border-[#1F2C45] rounded-2xl p-5 md:p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-xs font-semibold text-[#22D3EE] uppercase tracking-wider mb-1">
-            <Radio className="w-3.5 h-3.5 animate-pulse" />
+          <div className="flex items-center space-x-2 text-xs font-semibold text-[#0284C7] uppercase tracking-wider mb-1">
+            <Radio className="w-3.5 h-3.5 animate-pulse text-[#16A34A]" />
             <span>Sol Plaatje Live Water Portal</span>
           </div>
-          <h2 className="text-xl md:text-2xl font-bold text-[#E6EDF7]">
+          <h2 className="text-xl md:text-2xl font-extrabold text-[#E6EDF7]">
             Welcome, {user?.fullName || 'Resident'}
           </h2>
           <p className="text-xs md:text-sm text-[#8A9BB8] mt-1">
@@ -117,13 +119,23 @@ export function ResidentDashboard() {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsSubscribeModalOpen(true)}
-          className="min-h-[44px] px-4 py-2.5 bg-[#22D3EE]/15 hover:bg-[#22D3EE]/25 text-[#22D3EE] border border-[#22D3EE]/40 rounded-xl text-xs font-semibold flex items-center justify-center space-x-2 transition-all self-start md:self-auto shadow-xs active:scale-95"
-        >
-          <Bell className="w-4 h-4" />
-          <span>Manage Alert Subscriptions</span>
-        </button>
+        <div className="flex items-center space-x-2.5 self-start md:self-auto">
+          <button
+            onClick={() => setIsReportIssueModalOpen(true)}
+            className="min-h-[44px] px-4 py-2.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/40 rounded-xl text-xs font-semibold flex items-center justify-center space-x-2 transition-all shadow-xs active:scale-95 cursor-pointer"
+          >
+            <AlertCircle className="w-4 h-4" />
+            <span>Report Water Issue</span>
+          </button>
+
+          <button
+            onClick={() => setIsSubscribeModalOpen(true)}
+            className="min-h-[44px] px-4 py-2.5 bg-[#0284C7]/15 hover:bg-[#0284C7]/25 text-sky-400 border border-[#0284C7]/40 rounded-xl text-xs font-semibold flex items-center justify-center space-x-2 transition-all shadow-xs active:scale-95 cursor-pointer"
+          >
+            <Bell className="w-4 h-4" />
+            <span>Alert Preferences</span>
+          </button>
+        </div>
       </div>
 
       {/* Primary KPI Metrics */}
@@ -133,14 +145,14 @@ export function ResidentDashboard() {
           value="74.5%"
           subtitle="Newton (62.5%) & Riverton (82.0%)"
           icon={Droplet}
-          accentColor="#22D3EE"
+          accentColor="#0284C7"
         />
         <StatCard
           title="Water Tankers on Route"
           value="2 Delivering"
           subtitle="1 Standby in Roodepan"
           icon={Truck}
-          accentColor="#22C55E"
+          accentColor="#16A34A"
         />
         <StatCard
           title="Municipal Supply Alert"
@@ -154,7 +166,7 @@ export function ResidentDashboard() {
           value={user?.area || 'Galeshewe'}
           subtitle="Truck NC-542-KM en route"
           icon={MapPin}
-          accentColor="#22D3EE"
+          accentColor="#0284C7"
         />
       </div>
 
@@ -162,12 +174,12 @@ export function ResidentDashboard() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-base text-[#E6EDF7] flex items-center gap-2">
-            <Droplet className="w-4 h-4 text-[#22D3EE]" />
+            <Droplet className="w-4 h-4 text-[#0284C7]" />
             <span>Key Reservoir Levels</span>
           </h3>
           <Link
             to="/dams"
-            className="text-xs text-[#22D3EE] hover:underline font-medium flex items-center gap-1"
+            className="text-xs text-sky-400 hover:underline font-medium flex items-center gap-1"
           >
             <span>View 90-day Trends</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -186,7 +198,7 @@ export function ResidentDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h3 className="font-bold text-base text-[#E6EDF7] flex items-center gap-2">
-              <Truck className="w-4 h-4 text-[#22D3EE]" />
+              <Truck className="w-4 h-4 text-[#0284C7]" />
               <span>Live Fleet &amp; Reservoir Map</span>
             </h3>
             <p className="text-xs text-[#8A9BB8]">
@@ -195,11 +207,11 @@ export function ResidentDashboard() {
           </div>
           <div className="flex items-center gap-3 text-xs text-[#8A9BB8]">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#22D3EE]"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#0284C7]"></span>
               <span>Reservoirs</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#22C55E]"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]"></span>
               <span>Active Tankers</span>
             </span>
           </div>
@@ -213,7 +225,7 @@ export function ResidentDashboard() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="font-bold text-base text-[#E6EDF7] flex items-center gap-2">
-              <Bell className="w-4 h-4 text-[#22D3EE]" />
+              <Bell className="w-4 h-4 text-[#0284C7]" />
               <span>Recent Community Notices &amp; Alerts</span>
             </h3>
             <p className="text-xs text-[#8A9BB8]">
@@ -229,7 +241,7 @@ export function ResidentDashboard() {
           {alerts.map((alert) => (
             <div
               key={alert.id}
-              className="p-4 bg-[#0B1220] border border-[#1F2C45] rounded-xl hover:border-[#22D3EE]/30 transition-colors"
+              className="p-4 bg-[#0B1220] border border-[#1F2C45] rounded-xl hover:border-[#0284C7]/30 transition-colors"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                 <div className="flex items-center space-x-2">
@@ -256,6 +268,13 @@ export function ResidentDashboard() {
       <AlertSubscriptionsModal
         isOpen={isSubscribeModalOpen}
         onClose={() => setIsSubscribeModalOpen(false)}
+      />
+
+      {/* Report Water Issue Modal */}
+      <ReportIssueModal
+        isOpen={isReportIssueModalOpen}
+        onClose={() => setIsReportIssueModalOpen(false)}
+        userArea={user?.area}
       />
     </div>
   );
