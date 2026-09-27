@@ -20,30 +20,27 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
-// Open-Source Dark Matter Basemap Style (100% Tokenless OpenStreetMap / CartoDB)
+// Esri World Dark Gray Canvas - 100% Free, Public, Keyless Dark Map Engine (Zero Watermarks)
 const MAPLIBRE_DARK_STYLE = {
   version: 8,
   sources: {
-    'carto-dark': {
+    'esri-dark-canvas': {
       type: 'raster',
       tiles: [
-        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
       ],
       tileSize: 256,
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+        '&copy; <a href="https://www.esri.com" target="_blank" rel="noopener">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
     },
   },
   layers: [
     {
-      id: 'carto-dark-layer',
+      id: 'esri-dark-canvas-layer',
       type: 'raster',
-      source: 'carto-dark',
+      source: 'esri-dark-canvas',
       minzoom: 0,
-      maxzoom: 22,
+      maxzoom: 19,
     },
   ],
 };
@@ -569,7 +566,7 @@ export function LiveMap({
       <div className="absolute top-4 left-4 z-20 flex items-center space-x-2">
         <div className="px-3 py-1.5 rounded-xl bg-[#0B1220]/90 backdrop-blur-md border border-[#1F2C45] text-xs font-semibold text-[#E6EDF7] shadow-xl flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></span>
-          <span>MapLibre GL + OpenStreetMap</span>
+          <span>MapLibre GL + Esri Dark Engine</span>
           <span className="text-[#8A9BB8]">·</span>
           <span className="text-[#22D3EE] font-mono">{trucks.length} Active Tankers</span>
         </div>
