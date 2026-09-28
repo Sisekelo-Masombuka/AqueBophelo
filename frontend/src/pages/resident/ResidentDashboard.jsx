@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
-import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import DamPanel from '../../components/DamPanel';
 import LiveMap from '../../components/LiveMap';
 import AlertSubscriptionsModal from '../../components/AlertSubscriptionsModal';
 import ReportIssueModal from '../../components/ReportIssueModal';
 import { Button } from '../../components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Droplet, Truck, AlertTriangle, MapPin, Bell, Radio, ExternalLink, AlertCircle, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -105,91 +103,84 @@ export function ResidentDashboard() {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Banner & Actions */}
-      <Card className="bg-gradient-to-r from-surface-blue via-white to-white border-brand-accent/30 p-6 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center space-x-2 text-xs font-bold text-brand-blue uppercase tracking-wider mb-1">
-              <Radio className="w-3.5 h-3.5 animate-pulse text-brand-green" />
-              <span>Sol Plaatje Water Portal</span>
-            </div>
-            <h2 className="text-xl md:text-2xl font-black text-brand-navy">
-              Welcome, {user?.fullName || 'Resident'}
-            </h2>
-            <p className="text-xs md:text-sm text-muted mt-1">
-              Live storage metrics for Kimberley reservoirs and real-time delivery tracking for <strong className="text-brand-navy">{user?.area || 'Galeshewe'}</strong>.
-            </p>
+    <div className="space-y-8 pb-12">
+      {/* Open Civic Welcome Section (No heavy card container) */}
+      <div className="bg-surface-blue/70 border border-brand-accent/20 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2 text-xs font-bold text-brand-blue uppercase tracking-wider">
+            <Radio className="w-3.5 h-3.5 animate-pulse text-brand-green" />
+            <span>Sol Plaatje Water Portal</span>
           </div>
-
-          <div className="flex items-center space-x-3 self-start md:self-auto">
-            <Button
-              onClick={() => setIsReportIssueModalOpen(true)}
-              variant="outline"
-              size="sm"
-              className="font-bold border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
-            >
-              <AlertCircle className="w-4 h-4 text-amber-600" />
-              <span>Report Issue</span>
-            </Button>
-
-            <Button
-              onClick={() => setIsSubscribeModalOpen(true)}
-              variant="secondary"
-              size="sm"
-              className="font-bold"
-            >
-              <Bell className="w-4 h-4 text-brand-blue" />
-              <span>Alert Preferences</span>
-            </Button>
-          </div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-brand-navy-dark font-heading">
+            Welcome, {user?.fullName || 'Resident'}
+          </h1>
+          <p className="text-xs md:text-sm text-muted">
+            Live storage metrics for Kimberley reservoirs and delivery tracking for <strong className="text-brand-navy">{user?.area || 'Galeshewe'}</strong>.
+          </p>
         </div>
-      </Card>
 
-      {/* KPI Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Overall Dam Reserve"
-          value="74.5%"
-          subtitle="Newton (62.5%) & Riverton (82.0%)"
-          icon={Droplet}
-          accentColor="#0e4c8c"
-        />
-        <StatCard
-          title="Water Tankers Active"
-          value="2 Delivering"
-          subtitle="1 Standby in Roodepan"
-          icon={Truck}
-          accentColor="#2e9e4f"
-        />
-        <StatCard
-          title="Municipal Supply Alert"
-          value="Normal (Watch)"
-          subtitle="Nightly pressure management 21:00-04:00"
-          icon={AlertTriangle}
-          accentColor="#b45309"
-        />
-        <StatCard
-          title="Your Suburb Zone"
-          value={user?.area || 'Galeshewe'}
-          subtitle="Tanker NC-542-KM on route"
-          icon={MapPin}
-          accentColor="#0e4c8c"
-        />
+        <div className="flex items-center space-x-3 self-start md:self-auto">
+          <Button
+            onClick={() => setIsReportIssueModalOpen(true)}
+            variant="outline"
+            size="sm"
+            className="font-bold border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 h-10 px-4"
+          >
+            <AlertCircle className="w-4 h-4 text-amber-600" />
+            <span>Report Leak</span>
+          </Button>
+
+          <Button
+            onClick={() => setIsSubscribeModalOpen(true)}
+            variant="default"
+            size="sm"
+            className="font-bold h-10 px-4"
+          >
+            <Bell className="w-4 h-4 text-white" />
+            <span>Email Alerts</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Open Typographic KPI Metrics (No nested card borders) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-2 border-y border-border">
+        <div className="p-4 space-y-1">
+          <span className="text-xs font-bold text-muted uppercase tracking-wider block">Grid Storage</span>
+          <p className="text-2xl font-black text-brand-navy-dark font-heading">74.5% Avg</p>
+          <p className="text-xs text-muted">Newton (62.5%) &amp; Riverton (82.0%)</p>
+        </div>
+
+        <div className="p-4 space-y-1">
+          <span className="text-xs font-bold text-muted uppercase tracking-wider block">Active Fleet</span>
+          <p className="text-2xl font-black text-brand-green-dark font-heading">2 Delivering</p>
+          <p className="text-xs text-muted">1 Standby in Roodepan Depot</p>
+        </div>
+
+        <div className="p-4 space-y-1">
+          <span className="text-xs font-bold text-muted uppercase tracking-wider block">Municipal Supply</span>
+          <p className="text-2xl font-black text-amber-800 font-heading">Watch State</p>
+          <p className="text-xs text-muted">Night pressure limits 21:00-04:00</p>
+        </div>
+
+        <div className="p-4 space-y-1">
+          <span className="text-xs font-bold text-muted uppercase tracking-wider block">Your Suburb</span>
+          <p className="text-2xl font-black text-brand-navy-dark font-heading">{user?.area || 'Galeshewe'}</p>
+          <p className="text-xs text-muted">Tanker NC-542-KM on route</p>
+        </div>
       </div>
 
       {/* Reservoir Capacity Overview */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-base text-brand-navy flex items-center gap-2">
-            <Droplet className="w-4 h-4 text-brand-blue" />
+          <h2 className="font-extrabold text-xl text-brand-navy-dark font-heading flex items-center gap-2">
+            <Droplet className="w-5 h-5 text-brand-blue" />
             <span>Key Reservoir Levels</span>
-          </h3>
+          </h2>
           <Link
             to="/dams"
             className="text-xs font-bold text-brand-blue hover:underline flex items-center gap-1"
           >
-            <span>View Reservoir History</span>
+            <span>View 90-Day Trends</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -202,15 +193,15 @@ export function ResidentDashboard() {
       </div>
 
       {/* Live Tanker & Reservoir Tracking Map */}
-      <Card className="p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h3 className="font-bold text-base text-brand-navy flex items-center gap-2">
-              <Truck className="w-4 h-4 text-brand-blue" />
-              <span>Live Fleet &amp; Reservoir Map</span>
-            </h3>
+            <h2 className="font-extrabold text-xl text-brand-navy-dark font-heading flex items-center gap-2">
+              <Truck className="w-5 h-5 text-brand-blue" />
+              <span>Live Mobile Tanker Radar</span>
+            </h2>
             <p className="text-xs text-muted">
-              Centred on Sol Plaatje Municipality — Click pins for capacity and live status
+              Centred on Sol Plaatje Municipality — Click pins for active status and estimated arrivals
             </p>
           </div>
           <div className="flex items-center gap-3 text-xs text-muted font-medium">
@@ -225,39 +216,31 @@ export function ResidentDashboard() {
           </div>
         </div>
 
-        <LiveMap dams={dams} trucks={trucks} height="420px" />
-      </Card>
+        <LiveMap dams={dams} trucks={trucks} height="440px" />
+      </div>
 
-      {/* Active Municipal Alerts Feed */}
-      <Card className="p-5">
-        <div className="flex items-center justify-between mb-4">
+      {/* Community Notices List (Open Rows) */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-base text-brand-navy flex items-center gap-2">
-              <Bell className="w-4 h-4 text-brand-blue" />
-              <span>Recent Community Notices &amp; Alerts</span>
-            </h3>
-            <p className="text-xs text-muted">
-              Official broadcasts for Kimberley water users
-            </p>
+            <h2 className="font-extrabold text-xl text-brand-navy-dark font-heading flex items-center gap-2">
+              <Bell className="w-5 h-5 text-brand-blue" />
+              <span>Recent Community Notices</span>
+            </h2>
+            <p className="text-xs text-muted">Official broadcasts for Kimberley water users</p>
           </div>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-surface-blue border border-brand-accent/20 text-brand-navy font-semibold">
-            CAT / SAST
-          </span>
         </div>
 
-        <div className="space-y-3">
+        <div className="bg-white border border-border rounded-2xl divide-y divide-border overflow-hidden">
           {alerts.map((alert) => (
-            <div
-              key={alert.id}
-              className="p-4 bg-surface-blue/30 border border-border rounded-xl hover:border-brand-accent/40 transition-colors"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                <div className="flex items-center space-x-2">
+            <div key={alert.id} className="p-4 sm:p-5 hover:bg-surface-blue/30 transition-colors">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
+                <div className="flex items-center space-x-2.5">
                   <StatusBadge status={alert.severity} />
-                  <h4 className="font-semibold text-sm text-brand-navy">{alert.title}</h4>
+                  <h3 className="font-bold text-sm text-brand-navy font-heading">{alert.title}</h3>
                 </div>
                 <div className="flex items-center space-x-2 text-[11px] text-muted">
-                  <span className="px-2 py-0.5 rounded-md bg-white border border-border font-medium text-brand-navy">
+                  <span className="px-2 py-0.5 rounded-md bg-surface-blue font-medium text-brand-navy border border-brand-accent/20">
                     {alert.area}
                   </span>
                   <span className="flex items-center gap-1">
@@ -266,11 +249,11 @@ export function ResidentDashboard() {
                   </span>
                 </div>
               </div>
-              <p className="text-xs text-muted leading-relaxed">{alert.message}</p>
+              <p className="text-xs text-muted leading-relaxed pl-1">{alert.message}</p>
             </div>
           ))}
         </div>
-      </Card>
+      </div>
 
       {/* Alert Preferences Modal */}
       <AlertSubscriptionsModal

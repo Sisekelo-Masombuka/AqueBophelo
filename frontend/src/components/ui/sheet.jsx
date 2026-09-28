@@ -11,12 +11,12 @@ export const SheetPortal = DialogPrimitive.Portal;
 export function SheetContent({ className, children, side = 'right', ...props }) {
   const sideClass =
     side === 'left'
-      ? 'left-0 border-r'
+      ? 'left-0 border-r ab-sheet-left'
       : side === 'top'
         ? 'top-0 border-b'
         : side === 'bottom'
           ? 'bottom-0 border-t'
-          : 'right-0 border-l';
+          : 'right-0 border-l ab-sheet-right';
 
   const sizeClass = side === 'top' || side === 'bottom' ? 'inset-x-0' : 'inset-y-0 w-full max-w-sm';
 

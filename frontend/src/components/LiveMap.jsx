@@ -2,10 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
-  Star,
   Navigation,
-  Clock,
-  Gauge,
   X,
   Crosshair,
   MapPin,
@@ -130,19 +127,18 @@ function createTruckDOMElement(truck, isSelected = false, isLightMode = true) {
         "></span>`
       : '';
 
-  const selectionGlow = isSelected
+  const selectionRing = isSelected
     ? `<div style="
         position: absolute;
-        inset: -6px;
+        inset: -5px;
         border-radius: 50%;
-        border: 2px solid #0e4c8c;
-        box-shadow: 0 0 12px rgba(14, 76, 140, 0.6);
+        border: 3px solid #0A2A4F;
         pointer-events: none;
       "></div>`
     : '';
 
   el.innerHTML = `
-    ${selectionGlow}
+    ${selectionRing}
     ${pulseHtml}
     <div style="
       width: 38px;
@@ -605,142 +601,120 @@ export function LiveMap({
     });
   }, [dams, isLightMode]);
 
+  const isDelivering = activeTruck?.status === 'OnTrip' || activeTruck?.status === 'Active';
+
   return (
-    <div
-      className="w-full rounded-2xl overflow-hidden border border-border shadow-md relative select-none"
-      style={{ height }}
-    >
+    <div className="ab-map-shell w-full relative select-none" style={{ height }}>
       <div ref={mapContainerRef} className="w-full h-full bg-surface-blue" />
 
-      {/* Top Map Controls */}
-      <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2">
+      <div className="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-2">
         <button
+          type="button"
           onClick={() => setIsLightMode((prev) => !prev)}
-          className="px-3.5 py-1.5 rounded-xl bg-white/95 backdrop-blur-md border border-border text-xs font-bold text-brand-navy shadow-sm flex items-center space-x-2 hover:bg-surface-blue transition-all cursor-pointer"
+          className="px-3 py-1.5 bg-white border border-border text-xs font-semibold text-brand-navy flex items-center gap-2 hover:bg-background-soft transition-colors duration-200 cursor-pointer"
         >
           {isLightMode ? (
             <>
-              <Sun className="w-3.5 h-3.5 text-amber-600" />
-              <span>Light Map View</span>
+              <Sun className="w-3.5 h-3.5 text-amber-700" />
+              <span>Light map</span>
             </>
           ) : (
             <>
-              <Moon className="w-3.5 h-3.5 text-brand-blue" />
-              <span>Night Map View</span>
+              <Moon className="w-3.5 h-3.5 text-brand-navy" />
+              <span>Night map</span>
             </>
           )}
         </button>
 
-        <div className="px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-md border border-border text-xs font-semibold text-brand-navy shadow-sm flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
-          <span className="font-mono text-brand-blue font-bold">{animatedTrucks.length} Active Tankers</span>
-        </div>
+        <p className="px-3 py-1.5 bg-white border border-border text-xs font-medium text-brand-navy">
+          {animatedTrucks.length} tankers on map
+        </p>
       </div>
 
-      {/* Floating Active Vehicle Drawer */}
       {activeTruck && (
-        <div className="absolute bottom-4 left-4 right-4 md:left-5 md:right-auto md:w-96 z-30 bg-white border border-brand-accent/40 rounded-2xl p-4 md:p-5 shadow-lg text-brand-navy transition-all duration-300">
-          <div className="w-10 h-1 rounded-full bg-border mx-auto mb-3" />
-
-          <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
-            <div className="flex items-center space-x-2">
-              <span className="font-mono text-sm md:text-base font-black text-brand-blue bg-surface-blue px-2.5 py-1 rounded-lg border border-brand-accent/30 tracking-wider">
+        <div className="ab-map-drawer inset-x-0 bottom-0 md:inset-x-auto border-t-4 border-t-brand-navy p-4 md:p-5 text-brand-navy">
+          <div className="flex items-start justify-between gap-3 pb-3 border-b border-border">
+            <div>
+              <p className="font-mono text-base font-bold tracking-wide text-brand-navy-dark">
                 {activeTruck.registrationNumber}
-              </span>
-              <span
-                className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
-                  activeTruck.status === 'OnTrip' || activeTruck.status === 'Active'
-                    ? 'bg-surface-green text-brand-green-dark border border-brand-green/30'
-                    : 'bg-surface-blue text-brand-blue border border-brand-accent/30'
-                }`}
-              >
-                {activeTruck.status === 'OnTrip' || activeTruck.status === 'Active' ? 'Delivering Water' : activeTruck.status || 'Available'}
-              </span>
+              </p>
+              <p className="text-sm text-muted mt-1">
+                {isDelivering ? 'On a delivery trip' : activeTruck.status || 'Available'}
+                {activeTruck.capacityLitres != null
+                  ? ` · ${activeTruck.capacityLitres.toLocaleString()} L`
+                  : ''}
+              </p>
             </div>
-
             <button
+              type="button"
               onClick={() => {
                 setActiveTruck(null);
                 setIsFollowing(false);
               }}
-              className="text-muted hover:text-brand-navy p-1 rounded-lg hover:bg-surface-blue transition-colors cursor-pointer"
+              className="text-muted hover:text-brand-navy p-1 hover:bg-background-soft transition-colors duration-200 cursor-pointer"
               aria-label="Close truck details"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex items-center justify-between mb-3 bg-surface-blue p-3 rounded-xl border border-brand-accent/20">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-10 h-10 rounded-full bg-white border border-brand-accent/30 text-brand-blue font-bold text-sm flex items-center justify-center shadow-xs">
-                {activeTruck.driverName ? activeTruck.driverName[0] : 'S'}
-              </div>
-              <div>
-                <p className="text-xs md:text-sm font-bold text-brand-navy">
-                  {activeTruck.driverName || 'Sipho Dlamini (Driver)'}
-                </p>
-                <div className="flex items-center space-x-2 text-[11px] text-muted">
-                  <span className="flex items-center text-amber-700 font-bold">
-                    <Star className="w-3 h-3 fill-current mr-0.5 text-amber-500" />
-                    {activeTruck.driverRating || '4.8'}
-                  </span>
-                  <span>· {activeTruck.completedTripsCount || 127} deliveries</span>
+          {activeTruck.driverName ? (
+            <p className="mt-3 text-sm">
+              <span className="text-muted">Driver </span>
+              <span className="font-semibold text-brand-navy-dark">{activeTruck.driverName}</span>
+              {activeTruck.driverRating != null ? (
+                <span className="text-muted"> · {activeTruck.driverRating}</span>
+              ) : null}
+            </p>
+          ) : null}
+
+          <dl className="mt-3 space-y-2 text-sm">
+            {activeTruck.route ? (
+              <div className="flex gap-2">
+                <Navigation className="w-4 h-4 text-brand-navy mt-0.5 shrink-0" aria-hidden="true" />
+                <div>
+                  <dt className="sr-only">Route</dt>
+                  <dd>{activeTruck.route}</dd>
                 </div>
               </div>
-            </div>
-
-            <span className="text-[11px] font-extrabold text-brand-blue bg-white px-2 py-1 rounded-lg border border-brand-accent/30">
-              {(activeTruck.capacityLitres || 10000).toLocaleString()} L
-            </span>
-          </div>
-
-          <div className="space-y-1.5 mb-3.5 text-xs">
-            <div className="flex items-center space-x-2 text-muted">
-              <Navigation className="w-3.5 h-3.5 text-brand-blue shrink-0" />
-              <span className="font-semibold text-brand-navy truncate">
-                {activeTruck.route || 'Galeshewe Zone 3 Morning Route'}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2 text-brand-blue pl-5 text-[11px] font-medium">
-              <MapPin className="w-3 h-3 shrink-0" />
-              <span>Next Stop: {activeTruck.destination || 'Kagisho Clinic Water Point'}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-xs mb-4">
-            <div className="bg-surface-blue p-2.5 rounded-xl border border-brand-accent/20 flex items-center space-x-2">
-              <Gauge className="w-4 h-4 text-brand-blue" />
-              <div>
-                <p className="text-[10px] text-muted">Speed</p>
-                <p className="font-bold text-brand-navy">
-                  {activeTruck.speedKmh != null && activeTruck.speedKmh > 0
-                    ? `${Math.round(activeTruck.speedKmh)} km/h`
-                    : '34 km/h'}
-                </p>
+            ) : null}
+            {activeTruck.destination ? (
+              <div className="flex gap-2">
+                <MapPin className="w-4 h-4 text-brand-droplet mt-0.5 shrink-0" aria-hidden="true" />
+                <div>
+                  <dt className="sr-only">Next stop</dt>
+                  <dd>Next stop: {activeTruck.destination}</dd>
+                </div>
               </div>
-            </div>
+            ) : null}
+          </dl>
 
-            <div className="bg-surface-green p-2.5 rounded-xl border border-brand-green/30 flex items-center space-x-2">
-              <Clock className="w-4 h-4 text-brand-green-dark" />
-              <div>
-                <p className="text-[10px] text-muted">Est. Arrival</p>
-                <p className="font-bold text-brand-navy">
-                  {activeTruck.estimatedArrival || '12 mins'}
-                </p>
-              </div>
+          <div className="mt-4 flex gap-6 text-sm">
+            <div>
+              <p className="text-xs text-muted">Speed</p>
+              <p className="font-semibold tabular-nums">
+                {activeTruck.speedKmh != null && activeTruck.speedKmh > 0
+                  ? `${Math.round(activeTruck.speedKmh)} km/h`
+                  : 'Stationary'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Est. arrival</p>
+              <p className="font-semibold">{activeTruck.estimatedArrival || '—'}</p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={() => setIsFollowing((prev) => !prev)}
-            className={`w-full py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center justify-center space-x-2 transition-all shadow-xs active:scale-95 cursor-pointer ${
+            className={`mt-4 w-full py-2.5 font-semibold text-sm flex items-center justify-center gap-2 transition-colors duration-200 cursor-pointer ${
               isFollowing
-                ? 'bg-brand-blue text-white'
-                : 'bg-surface-blue hover:bg-brand-blue/10 text-brand-blue border border-brand-accent/30'
+                ? 'bg-brand-navy text-white'
+                : 'bg-white text-brand-navy border border-border hover:bg-background-soft'
             }`}
           >
-            <Crosshair className={`w-4 h-4 ${isFollowing ? 'animate-spin' : ''}`} />
-            <span>{isFollowing ? 'Tracking Live (Camera Locked)' : 'Focus Vehicle on Map'}</span>
+            <Crosshair className="w-4 h-4" />
+            <span>{isFollowing ? 'Following this tanker' : 'Follow on map'}</span>
           </button>
         </div>
       )}

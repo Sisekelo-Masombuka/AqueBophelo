@@ -122,3 +122,175 @@ h1, h2, h3, h4, h5, h6 {
 .ab-logo-lg {
   max-height: 5rem;
 }
+
+/* Landing: civic hero scene (not a dashboard card) */
+.ab-hero-scene {
+  position: relative;
+  min-height: 22rem;
+  overflow: hidden;
+  background: #f7f4ee;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ab-hero-scene__sky {
+  position: absolute;
+  inset: 0 0 42% 0;
+  background: #eaf6fc;
+}
+
+.ab-hero-scene__ground {
+  position: absolute;
+  inset: 48% 0 0 0;
+  background: #e8efe4;
+}
+
+.ab-hero-scene__road {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 54%;
+  height: 3.25rem;
+  background: #0a2a4f;
+}
+
+.ab-hero-scene__road-line {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    #eaf6fc 0 18px,
+    transparent 18px 32px
+  );
+  transform: translateY(-50%);
+}
+
+.ab-hero-scene__photo-slot {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  width: min(42%, 11.5rem);
+  aspect-ratio: 4 / 5;
+  border: 1px dashed #8aa3b8;
+  background: rgba(255, 255, 255, 0.55);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0.75rem;
+}
+
+.ab-hero-scene__tanker {
+  position: absolute;
+  right: 8%;
+  top: 28%;
+  width: min(46%, 13.5rem);
+  filter: drop-shadow(0 10px 18px rgba(10, 42, 79, 0.18));
+}
+
+.ab-hero-scene__path {
+  position: absolute;
+  left: 18%;
+  top: 22%;
+  width: 38%;
+  height: 36%;
+  border: 2px dashed #2991c8;
+  border-bottom: none;
+  border-left: none;
+  border-radius: 0 2.5rem 0 0;
+  opacity: 0.7;
+}
+
+.ab-hero-scene__marker {
+  position: absolute;
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.ab-reservoir {
+  position: relative;
+  height: 11rem;
+  background: #eaf6fc;
+  overflow: hidden;
+  border-left: 4px solid var(--color-brand-navy);
+}
+
+.ab-reservoir__water {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #2991c8;
+  opacity: 0.55;
+}
+
+.ab-map-shell {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-blue);
+}
+
+.ab-map-drawer {
+  position: absolute;
+  z-index: 30;
+  background: #fff;
+  color: var(--color-text);
+  box-shadow: 0 -6px 24px rgba(10, 42, 79, 0.1);
+  animation: ab-map-drawer-in 0.28s ease-out;
+}
+
+@media (min-width: 768px) {
+  .ab-map-drawer {
+    left: 0;
+    bottom: 0;
+    top: auto;
+    width: 22.5rem;
+    box-shadow: 8px 0 24px rgba(10, 42, 79, 0.08);
+  }
+}
+
+@keyframes ab-map-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ab-sheet-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes ab-sheet-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.ab-sheet-right[data-state='open'] {
+  animation: ab-sheet-in-right 0.28s ease-out;
+}
+
+.ab-sheet-left[data-state='open'] {
+  animation: ab-sheet-in-left 0.28s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ab-hero-scene__tanker,
+  .ab-reservoir__water {
+    transition: none !important;
+  }
+}
