@@ -139,9 +139,9 @@ export function AdminReportsPage() {
 
       {/* Area Distribution Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-5 shadow-md">
-          <h3 className="font-bold text-base text-[#E6EDF7] mb-4 flex items-center space-x-2">
-            <MapPin className="w-4 h-4 text-[#0284C7]" />
+        <div className="bg-white border border-border rounded-2xl p-5 shadow-soft">
+          <h3 className="font-bold text-base text-brand-navy-dark mb-4 flex items-center space-x-2">
+            <MapPin className="w-4 h-4 text-brand-blue" />
             <span>Water Distribution by Area</span>
           </h3>
 
@@ -173,9 +173,9 @@ export function AdminReportsPage() {
         </div>
 
         {/* Reservoir Status Audit Log */}
-        <div className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-5 shadow-md">
-          <h3 className="font-bold text-base text-[#E6EDF7] mb-4 flex items-center space-x-2">
-            <Droplet className="w-4 h-4 text-[#16A34A]" />
+        <div className="bg-white border border-border rounded-2xl p-5 shadow-soft">
+          <h3 className="font-bold text-base text-brand-navy-dark mb-4 flex items-center space-x-2">
+            <Droplet className="w-4 h-4 text-emerald-600" />
             <span>Reservoir Audit Summary</span>
           </h3>
 

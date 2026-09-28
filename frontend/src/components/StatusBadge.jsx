@@ -15,35 +15,35 @@ export function StatusBadge({ status, levelPercent, className }) {
     const s = currentStatus?.toLowerCase() || '';
     if (['healthy', 'online', 'available', 'completed', 'active'].includes(s)) {
       return {
-        classes: 'border-brand-green/30 bg-surface-green text-brand-green-dark',
+        classes: 'border-emerald-200 bg-emerald-50 text-emerald-700',
         icon: CheckCircle2,
         label: currentStatus || 'Healthy',
       };
     }
     if (['watch', 'warning', 'ontrip', 'in transit', 'en route'].includes(s)) {
       return {
-        classes: 'border-amber-300 bg-amber-50 text-amber-800',
+        classes: 'border-amber-200 bg-amber-50 text-amber-700',
         icon: AlertTriangle,
         label: currentStatus || 'Watch',
       };
     }
     if (['low', 'critical', 'offline', 'maintenance', 'disconnected', 'inactive'].includes(s)) {
       return {
-        classes: 'border-red-300 bg-red-50 text-red-700 font-semibold',
+        classes: 'border-rose-200 bg-rose-50 text-rose-700 font-semibold',
         icon: ShieldAlert,
         label: currentStatus || 'Critical',
       };
     }
     if (['connecting', 'reconnecting', 'syncing'].includes(s)) {
       return {
-        classes: 'border-blue-300 bg-blue-50 text-brand-blue',
+        classes: 'border-sky-200 bg-sky-50 text-brand-blue',
         icon: RefreshCw,
         animateIcon: true,
         label: currentStatus || 'Connecting',
       };
     }
     return {
-      classes: 'border-brand-accent/30 bg-surface-blue text-brand-blue',
+      classes: 'border-slate-200 bg-slate-100 text-slate-700',
       icon: Info,
       label: currentStatus || 'Information',
     };

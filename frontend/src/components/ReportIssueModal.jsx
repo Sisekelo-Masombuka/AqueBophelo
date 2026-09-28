@@ -30,24 +30,23 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe' }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
-      <div className="bg-[#111B2E] border border-[#1F2C45] rounded-3xl w-full max-w-lg p-6 shadow-2xl relative overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#1F2C45] pb-4 mb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_24px_60px_rgba(15,39,63,0.14)]">
+        <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-              <AlertCircle className="w-5 h-5" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700">
+              <AlertCircle className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-[#E6EDF7]">Report Water Issue</h3>
-              <p className="text-xs text-[#8A9BB8]">Sol Plaatje Municipal Fault Logging</p>
+              <h3 className="text-lg font-bold text-brand-navy-dark">Report Water Issue</h3>
+              <p className="text-xs text-slate-500">Sol Plaatje Municipal Fault Logging</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-[#8A9BB8] hover:text-[#E6EDF7] p-1.5 rounded-lg hover:bg-[#1F2C45] transition-colors"
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-brand-navy-dark"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 

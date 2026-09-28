@@ -9,9 +9,9 @@ export function ProtectedRoute({ allowedRoles, children }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0B1220] flex flex-col items-center justify-center text-[#E6EDF7]">
-        <Loader2 className="w-8 h-8 text-[#22D3EE] animate-spin mb-3" />
-        <p className="text-sm text-[#8A9BB8]">Verifying session...</p>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-brand-navy">
+        <Loader2 className="mb-3 h-8 w-8 animate-spin text-brand-droplet" />
+        <p className="text-sm text-slate-500">Verifying session...</p>
       </div>
     );
   }
@@ -24,14 +24,14 @@ export function ProtectedRoute({ allowedRoles, children }) {
   // Check role authorization
   if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     return (
-      <div className="max-w-md mx-auto mt-16 p-6 bg-[#111B2E] border border-[#EF4444]/30 rounded-xl text-center shadow-lg">
-        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[#EF4444]/10 text-[#EF4444] flex items-center justify-center">
-          <ShieldAlert className="w-6 h-6" />
+      <div className="mx-auto mt-16 max-w-md rounded-2xl border border-red-200 bg-white p-6 text-center shadow-[0_14px_36px_rgba(15,39,63,0.06)]">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+          <ShieldAlert className="h-6 w-6" />
         </div>
-        <h2 className="text-lg font-bold text-[#E6EDF7] mb-2">Access Restricted</h2>
-        <p className="text-xs text-[#8A9BB8] mb-6">
-          This portal requires <span className="font-semibold text-[#22D3EE]">{allowedRoles.join(' or ')}</span> privileges.
-          You are currently signed in as <span className="font-semibold text-[#E6EDF7]">{user.role}</span>.
+        <h2 className="mb-2 text-lg font-bold text-brand-navy-dark">Access Restricted</h2>
+        <p className="mb-6 text-xs text-slate-500">
+          This portal requires <span className="font-semibold text-brand-blue">{allowedRoles.join(' or ')}</span> privileges.
+          You are currently signed in as <span className="font-semibold text-brand-navy-dark">{user.role}</span>.
         </p>
         <Navigate to="/dashboard" replace />
       </div>

@@ -31,45 +31,43 @@ export function AdminLayout() {
   return (
     <div className="space-y-6">
       {/* Top Municipal Command Banner */}
-      <div className="bg-gradient-to-r from-[#111B2E] via-[#16233B] to-[#111B2E] border border-[#1F2C45] rounded-2xl p-4 md:p-6 shadow-xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_30px_rgba(10,42,79,0.05)] md:p-6">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center space-x-3.5">
-            <div className="p-3 bg-[#0284C7]/15 border border-[#0284C7]/30 rounded-xl text-[#0284C7] shadow-inner">
-              <Building2 className="w-6 h-6" />
+            <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-brand-blue shadow-sm">
+              <Building2 className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-bold tracking-wider uppercase text-sky-400 bg-[#0284C7]/10 px-2 py-0.5 rounded border border-[#0284C7]/20">
+                <span className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700">
                   Sol Plaatje Municipality
                 </span>
-                <span className="flex items-center space-x-1 text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                <span className="flex items-center space-x-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                   <span>Command Center Active</span>
                 </span>
               </div>
-              <h1 className="text-lg md:text-xl font-bold text-[#E6EDF7] mt-1">
+              <h1 className="mt-1 text-lg font-bold text-brand-navy-dark md:text-xl">
                 Water Utility &amp; Fleet Operations Hub
               </h1>
-              <p className="text-xs text-[#8A9BB8]">
+              <p className="text-xs text-slate-500">
                 Kimberley Central · Galeshewe · Roodepan Distribution Grid
               </p>
             </div>
           </div>
 
-          {/* Quick Action: Direct Emergency SMS/Email Broadcast */}
           <div className="flex items-center space-x-2.5">
             <button
               onClick={() => navigate('/admin/alerts')}
-              className="w-full md:w-auto inline-flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/40 font-semibold text-xs md:text-sm transition-all shadow-md active:scale-95 cursor-pointer"
+              className="inline-flex w-full items-center justify-center space-x-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-700 transition-all hover:bg-rose-100 md:w-auto"
             >
-              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <AlertTriangle className="h-4 w-4 shrink-0" />
               <span>Broadcast Emergency Alert</span>
             </button>
           </div>
         </div>
 
-        {/* Horizontal Navigation Sub-tabs */}
-        <div className="mt-5 pt-4 border-t border-[#1F2C45] flex items-center space-x-1 md:space-x-2 overflow-x-auto no-scrollbar">
+        <div className="mt-5 flex items-center space-x-1 overflow-x-auto border-t border-slate-200 pt-4 md:space-x-2 no-scrollbar">
           {adminNavItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -78,14 +76,14 @@ export function AdminLayout() {
                 to={item.path}
                 end={item.end}
                 className={({ isActive }) =>
-                  `flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold whitespace-nowrap transition-colors ${
+                  `flex items-center space-x-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors md:text-sm ${
                     isActive
-                      ? 'bg-[#0284C7] text-white font-bold shadow-md shadow-[#0284C7]/20'
-                      : 'text-[#8A9BB8] hover:text-[#E6EDF7] hover:bg-[#0B1220]/60'
+                      ? 'bg-brand-blue text-white shadow-[0_8px_22px_rgba(14,76,140,0.16)]'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-brand-navy-dark'
                   }`
                 }
               >
-                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <Icon className="h-3.5 w-3.5 shrink-0" />
                 <span>{item.label}</span>
               </NavLink>
             );

@@ -19,16 +19,16 @@
   --color-brand-droplet: #2991c8;
   --color-brand-blue: #0e4c8c;
   --color-brand-accent: #2991c8;
-  
-  --color-surface-blue: #eaf6fc;
-  --color-surface-green: #eaf6e3;
-  --color-background: #ffffff;
-  --color-background-soft: #f4f9fc;
-  
-  --color-border: #d4e4ef;
-  --color-text: #0a2a4f;
-  --color-muted: #4d6278;
-  
+
+  --color-surface-blue: #edf7fb;
+  --color-surface-green: #edf9f0;
+  --color-background: #f5f8fb;
+  --color-background-soft: #f8fafc;
+
+  --color-border: #dfeaf3;
+  --color-text: #17375d;
+  --color-muted: #536b80;
+
   --color-success: #2e9e4f;
   --color-warning: #b45309;
   --color-danger: #b91c1c;
@@ -40,10 +40,12 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  
-  --shadow-sm: 0 1px 2px rgba(10, 42, 79, 0.05);
-  --shadow-md: 0 8px 24px rgba(10, 42, 79, 0.08);
+
+  --shadow-sm: 0 2px 8px rgba(15, 39, 63, 0.05);
+  --shadow-md: 0 12px 30px rgba(15, 39, 63, 0.08);
+  --shadow-soft: 0 18px 40px rgba(15, 39, 63, 0.06);
 }
+
 
 @theme {
   --color-brand-navy: #0e4c8c;
@@ -78,12 +80,22 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--color-background);
+  background: linear-gradient(180deg, #f7fafc 0%, #ffffff 100%);
   color: var(--color-text);
   font-family: var(--font-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+* {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+}
+
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);

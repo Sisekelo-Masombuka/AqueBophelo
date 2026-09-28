@@ -184,21 +184,21 @@ export function ManageDams() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-xs font-semibold text-[#22D3EE] uppercase tracking-wider mb-1">
+          <div className="flex items-center space-x-2 text-xs font-semibold text-brand-blue uppercase tracking-wider mb-1">
             <Droplet className="w-3.5 h-3.5" />
             <span>Water Resource Administration</span>
           </div>
-          <h2 className="text-xl md:text-2xl font-bold text-[#E6EDF7]">
+          <h2 className="text-xl md:text-2xl font-bold text-brand-navy-dark">
             Dams &amp; Reservoir Readings
           </h2>
-          <p className="text-xs md:text-sm text-[#8A9BB8] mt-1">
+          <p className="text-xs md:text-sm text-muted mt-1">
             Record certified daily gauge levels and inspect municipal reservoir capacities.
           </p>
         </div>
 
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-[#22D3EE] hover:bg-[#22D3EE]/90 text-[#0B1220] font-bold text-xs md:text-sm transition-all shadow-md active:scale-95"
+          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-navy text-white font-bold text-xs md:text-sm transition-all shadow-md active:scale-95"
         >
           <Plus className="w-4 h-4 shrink-0" />
           <span>Add New Reservoir</span>
@@ -230,16 +230,16 @@ export function ManageDams() {
           return (
             <div
               key={dam.id}
-              className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-5 shadow-lg flex flex-col justify-between"
+              className="bg-white border border-border rounded-2xl p-5 shadow-soft flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#22D3EE] bg-[#22D3EE]/10 px-2 py-0.5 rounded border border-[#22D3EE]/20">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-brand-blue bg-brand-accent/10 px-2 py-0.5 rounded border border-brand-accent/20">
                       ID #{dam.id}
                     </span>
-                    <h3 className="text-lg font-bold text-[#E6EDF7] mt-1.5">{dam.name}</h3>
-                    <p className="text-xs text-[#8A9BB8]">{dam.areaName || 'Sol Plaatje Municipal Area'}</p>
+                    <h3 className="text-lg font-bold text-brand-navy-dark mt-1.5">{dam.name}</h3>
+                    <p className="text-xs text-muted">{dam.areaName || 'Sol Plaatje Municipal Area'}</p>
                   </div>
                   <StatusBadge status={dam.statusBand || 'Healthy'} />
                 </div>
@@ -247,13 +247,13 @@ export function ManageDams() {
                 {/* Progress Level Bar */}
                 <div className="space-y-1.5 mt-4">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-[#8A9BB8]">Current Gauge Capacity</span>
-                    <span className="font-bold text-[#E6EDF7]">{level.toFixed(1)}%</span>
+                    <span className="text-muted">Current Gauge Capacity</span>
+                    <span className="font-bold text-brand-navy-dark">{level.toFixed(1)}%</span>
                   </div>
-                  <div className="w-full h-3 bg-[#0B1220] rounded-full overflow-hidden border border-[#1F2C45]">
+                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-border">
                     <div
                       className={`h-full transition-all duration-500 rounded-full ${
-                        level < 30 ? 'bg-[#EF4444]' : level < 60 ? 'bg-[#F59E0B]' : 'bg-[#22C55E]'
+                        level < 30 ? 'bg-red-500' : level < 60 ? 'bg-amber-500' : 'bg-emerald-500'
                       }`}
                       style={{ width: `${Math.min(level, 100)}%` }}
                     />

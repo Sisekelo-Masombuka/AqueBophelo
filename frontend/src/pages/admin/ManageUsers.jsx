@@ -118,21 +118,21 @@ export function ManageUsers() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-xs font-semibold text-[#0284C7] uppercase tracking-wider mb-1">
-            <Users className="w-3.5 h-3.5 text-[#0284C7]" />
+          <div className="flex items-center space-x-2 text-xs font-semibold text-brand-blue uppercase tracking-wider mb-1">
+            <Users className="w-3.5 h-3.5 text-brand-blue" />
             <span>Personnel &amp; Access Control</span>
           </div>
-          <h2 className="text-xl md:text-2xl font-bold text-[#E6EDF7]">
+          <h2 className="text-xl md:text-2xl font-bold text-brand-navy-dark">
             User &amp; Role Administration
           </h2>
-          <p className="text-xs md:text-sm text-[#8A9BB8] mt-1">
+          <p className="text-xs md:text-sm text-muted mt-1">
             Create driver accounts, assign water tankers, manage municipal staff, and view resident profiles.
           </p>
         </div>
 
         <button
           onClick={() => setIsInviteModalOpen(true)}
-          className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 cursor-pointer"
+          className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-navy text-white font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 cursor-pointer"
         >
           <UserPlus className="w-4 h-4 shrink-0" />
           <span>+ Create Driver / Staff Account</span>
@@ -148,15 +148,15 @@ export function ManageUsers() {
       )}
 
       {/* Filter and Search Bar */}
-      <div className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+      <div className="bg-white border border-border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-[#8A9BB8] absolute left-3.5 top-3" />
+          <Search className="w-4 h-4 text-muted absolute left-3.5 top-3" />
           <input
             type="text"
             placeholder="Search personnel by name, email, or area..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl pl-10 pr-4 py-2 text-xs text-[#E6EDF7] focus:outline-none focus:border-[#0284C7]"
+            className="w-full bg-slate-50 border border-border rounded-xl pl-10 pr-4 py-2 text-xs text-brand-navy-dark focus:outline-none focus:border-brand-accent"
           />
         </div>
 
@@ -167,8 +167,8 @@ export function ManageUsers() {
               onClick={() => setRoleFilter(role)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${
                 roleFilter === role
-                  ? 'bg-[#0284C7] text-white'
-                  : 'bg-[#0B1220] text-[#8A9BB8] hover:text-[#E6EDF7] border border-[#1F2C45]'
+                  ? 'bg-brand-blue text-white'
+                  : 'bg-slate-50 text-muted hover:text-brand-navy-dark border border-border'
               }`}
             >
               {role}
@@ -178,10 +178,10 @@ export function ManageUsers() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl overflow-hidden shadow-lg">
+      <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-soft">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs md:text-sm text-[#E6EDF7]">
-            <thead className="bg-[#0B1220] text-[#8A9BB8] uppercase text-[11px] font-bold tracking-wider border-b border-[#1F2C45]">
+          <table className="w-full text-left text-xs md:text-sm text-brand-navy-dark">
+            <thead className="bg-slate-50 text-muted uppercase text-[11px] font-bold tracking-wider border-b border-border">
               <tr>
                 <th className="py-3.5 px-4">Personnel Details</th>
                 <th className="py-3.5 px-4">Role</th>
@@ -191,17 +191,17 @@ export function ManageUsers() {
                 <th className="py-3.5 px-4">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1F2C45]">
+            <tbody className="divide-y divide-border">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-[#16233B]/50 transition-colors">
+                <tr key={user.id} className="hover:bg-surface-blue/70 transition-colors">
                   <td className="py-3.5 px-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-9 h-9 rounded-xl bg-[#0284C7]/20 text-[#0284C7] font-extrabold text-sm flex items-center justify-center border border-[#0284C7]/30">
+                      <div className="w-9 h-9 rounded-xl bg-brand-accent/10 text-brand-blue font-extrabold text-sm flex items-center justify-center border border-brand-accent/30">
                         {user.fullName[0]}
                       </div>
                       <div>
-                        <p className="font-bold text-[#E6EDF7]">{user.fullName}</p>
-                        <p className="text-xs text-[#8A9BB8]">{user.email}</p>
+                        <p className="font-bold text-brand-navy-dark">{user.fullName}</p>
+                        <p className="text-xs text-muted">{user.email}</p>
                       </div>
                     </div>
                   </td>
@@ -209,18 +209,18 @@ export function ManageUsers() {
                     <span
                       className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
                         user.role === 'Admin'
-                          ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                          ? 'bg-rose-500/15 text-rose-600 border border-rose-500/20'
                           : user.role === 'Driver'
-                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+                          ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/20'
+                          : 'bg-sky-500/15 text-sky-700 border border-sky-500/20'
                       }`}
                     >
                       {user.role}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 text-[#8A9BB8] font-mono text-xs">{user.phone}</td>
-                  <td className="py-3.5 px-4 text-xs font-bold text-sky-400">{user.assignedTruck}</td>
-                  <td className="py-3.5 px-4 text-[#8A9BB8]">{user.areaName}</td>
+                  <td className="py-3.5 px-4 text-muted font-mono text-xs">{user.phone}</td>
+                  <td className="py-3.5 px-4 text-xs font-bold text-brand-blue">{user.assignedTruck}</td>
+                  <td className="py-3.5 px-4 text-muted">{user.areaName}</td>
                   <td className="py-3.5 px-4">
                     <StatusBadge status={user.status} />
                   </td>

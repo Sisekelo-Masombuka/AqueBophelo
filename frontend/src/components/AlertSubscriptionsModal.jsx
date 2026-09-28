@@ -49,25 +49,25 @@ export function AlertSubscriptionsModal({ isOpen, onClose }) {
       role="dialog"
     >
       <div
-        className="w-full max-w-lg bg-[#111B2E] border border-[#1F2C45] rounded-3xl p-6 shadow-2xl relative text-[#E6EDF7] max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg bg-white border border-border rounded-3xl p-6 shadow-soft relative text-brand-navy-dark max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-[#1F2C45] mb-5">
+        <div className="flex items-start justify-between pb-4 border-b border-border mb-5">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-[#0284C7]/15 text-sky-400">
+            <div className="p-2.5 rounded-xl bg-brand-accent/10 text-brand-blue">
               <Bell className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-[#E6EDF7]">Municipal Email Alert Preferences</h2>
-              <p className="text-xs text-[#8A9BB8]">
+              <h2 className="text-lg font-bold text-brand-navy-dark">Municipal Email Alert Preferences</h2>
+              <p className="text-xs text-muted">
                 Get real-time email notices &amp; delivery updates for your neighborhood
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-[#8A9BB8] hover:text-[#E6EDF7] hover:bg-[#1F2C45] transition-colors"
+            className="p-1 rounded-lg text-muted hover:text-brand-navy-dark hover:bg-surface-blue transition-colors"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -92,15 +92,15 @@ export function AlertSubscriptionsModal({ isOpen, onClose }) {
         <form onSubmit={handleSave} className="space-y-5">
           {/* Municipal Area Selection */}
           <div>
-            <label className="block text-xs font-semibold text-[#8A9BB8] uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-2">
               Select Subscribed Suburb / Area
             </label>
             <div className="relative">
-              <MapPin className="w-4 h-4 text-[#8A9BB8] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <MapPin className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
               <select
                 value={area}
                 onChange={(e) => setArea(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-[#0B1220] border border-[#1F2C45] rounded-xl text-sm text-[#E6EDF7] focus:outline-none focus:border-[#0284C7]"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-border rounded-xl text-sm text-brand-navy-dark focus:outline-none focus:border-brand-accent"
               >
                 <option value="Galeshewe">Galeshewe (Zones 1-4)</option>
                 <option value="Kimberley Central">Kimberley Central</option>
@@ -129,42 +129,42 @@ export function AlertSubscriptionsModal({ isOpen, onClose }) {
               Email Alert Topics
             </label>
             <div className="space-y-2">
-              <label className="flex items-center space-x-3 p-3 rounded-xl bg-[#0B1220] border border-[#1F2C45] cursor-pointer text-xs text-[#E6EDF7]">
+              <label className="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 border border-border cursor-pointer text-xs text-brand-navy-dark">
                 <input
                   type="checkbox"
                   checked={lowDamAlerts}
                   onChange={(e) => setLowDamAlerts(e.target.checked)}
-                  className="w-4 h-4 rounded-md accent-[#0284C7]"
+                  className="w-4 h-4 rounded-md accent-brand-blue"
                 />
                 <div>
                   <span className="font-bold">Dam Storage Warnings</span>
-                  <p className="text-[11px] text-[#8A9BB8]">Notify when Newton or Riverton storage drops below 50%</p>
+                  <p className="text-[11px] text-muted">Notify when Newton or Riverton storage drops below 50%</p>
                 </div>
               </label>
 
-              <label className="flex items-center space-x-3 p-3 rounded-xl bg-[#0B1220] border border-[#1F2C45] cursor-pointer text-xs text-[#E6EDF7]">
+              <label className="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 border border-border cursor-pointer text-xs text-brand-navy-dark">
                 <input
                   type="checkbox"
                   checked={truckArrivalAlerts}
                   onChange={(e) => setTruckArrivalAlerts(e.target.checked)}
-                  className="w-4 h-4 rounded-md accent-[#0284C7]"
+                  className="w-4 h-4 rounded-md accent-brand-blue"
                 />
                 <div>
                   <span className="font-bold">Water Tanker Dispatched to {area}</span>
-                  <p className="text-[11px] text-[#8A9BB8]">Get notified when a truck departs for your zone</p>
+                  <p className="text-[11px] text-muted">Get notified when a truck departs for your zone</p>
                 </div>
               </label>
 
-              <label className="flex items-center space-x-3 p-3 rounded-xl bg-[#0B1220] border border-[#1F2C45] cursor-pointer text-xs text-[#E6EDF7]">
+              <label className="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 border border-border cursor-pointer text-xs text-brand-navy-dark">
                 <input
                   type="checkbox"
                   checked={emergencyAlerts}
                   onChange={(e) => setEmergencyAlerts(e.target.checked)}
-                  className="w-4 h-4 rounded-md accent-[#0284C7]"
+                  className="w-4 h-4 rounded-md accent-brand-blue"
                 />
                 <div>
                   <span className="font-bold">Emergency Municipal Announcements</span>
-                  <p className="text-[11px] text-[#8A9BB8]">Urgent pipe repairs, maintenance, or boil notices</p>
+                  <p className="text-[11px] text-muted">Urgent pipe repairs, maintenance, or boil notices</p>
                 </div>
               </label>
             </div>

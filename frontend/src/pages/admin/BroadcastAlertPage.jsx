@@ -138,12 +138,12 @@ export function BroadcastAlertPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Broadcast Form */}
-        <div className="lg:col-span-6 bg-[#111B2E] border border-[#1F2C45] rounded-3xl p-5 md:p-6 shadow-lg">
-          <h3 className="text-base font-bold text-[#E6EDF7] mb-1 flex items-center space-x-2">
-            <Radio className="w-4 h-4 text-sky-400" />
+        <div className="lg:col-span-6 bg-white border border-border rounded-3xl p-5 md:p-6 shadow-soft">
+          <h3 className="text-base font-bold text-brand-navy-dark mb-1 flex items-center space-x-2">
+            <Radio className="w-4 h-4 text-brand-blue" />
             <span>Compose Email Emergency Dispatch</span>
           </h3>
-          <p className="text-xs text-[#8A9BB8] mb-4">
+          <p className="text-xs text-muted mb-4">
             Dispatches immediately through Sol Plaatje SMTP email gateway.
           </p>
 
@@ -225,24 +225,24 @@ export function BroadcastAlertPage() {
         </div>
 
         {/* Right: Broadcast Transmission History */}
-        <div className="lg:col-span-6 bg-[#111B2E] border border-[#1F2C45] rounded-3xl p-5 md:p-6 shadow-lg flex flex-col justify-between">
+        <div className="lg:col-span-6 bg-white border border-border rounded-3xl p-5 md:p-6 shadow-soft flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-[#E6EDF7] flex items-center space-x-2">
-                <History className="w-4 h-4 text-sky-400" />
+              <h3 className="text-base font-bold text-brand-navy-dark flex items-center space-x-2">
+                <History className="w-4 h-4 text-brand-blue" />
                 <span>Email Transmission History</span>
               </h3>
-              <span className="text-xs text-[#8A9BB8]">{alerts.length} dispatches</span>
+              <span className="text-xs text-muted">{alerts.length} dispatches</span>
             </div>
 
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
               {alerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className="bg-[#0B1220] border border-[#1F2C45] rounded-xl p-4 shadow-sm"
+                  className="bg-slate-50 border border-border rounded-xl p-4 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <h4 className="font-bold text-xs md:text-sm text-[#E6EDF7]">{alert.title}</h4>
+                    <h4 className="font-bold text-xs md:text-sm text-brand-navy-dark">{alert.title}</h4>
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${
                         alert.severity === 'Critical'

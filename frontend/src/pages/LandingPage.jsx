@@ -105,28 +105,27 @@ export function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-brand-navy font-sans selection:bg-brand-accent selection:text-white">
       {/* ==================== 1. TOP CIVIC UTILITY BANNER ==================== */}
-      <div className="bg-brand-navy-dark text-white text-xs py-2 px-4 sm:px-8 border-b border-brand-navy/30">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-brand-accent uppercase tracking-wider text-[11px] flex items-center gap-1">
+      <div className="bg-brand-navy-dark text-white text-xs py-2 px-4 sm:px-8 border-b border-white/10">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-bold text-brand-accent uppercase tracking-[0.18em] text-[10px] flex items-center gap-1.5 whitespace-nowrap">
               <Building2 className="w-3.5 h-3.5" />
               Sol Plaatje Municipality
             </span>
-            <span className="hidden sm:inline text-brand-accent/40">|</span>
-            <span className="hidden sm:inline text-blue-100">Kimberley Water Operations Desk</span>
+            <span className="hidden sm:inline text-white/35">|</span>
+            <span className="hidden sm:inline text-slate-200 truncate">Kimberley Water Operations Desk</span>
           </div>
 
-          <div className="flex items-center space-x-4 text-[11px]">
-            {/* PLACEHOLDER: Municipal Emergency Hotline */}
+          <div className="flex items-center gap-3 text-[11px]">
             <a
               href="tel:0538306100"
-              className="flex items-center space-x-1 font-semibold text-amber-300 hover:text-amber-200 transition-colors"
+              className="flex items-center gap-1.5 font-semibold text-amber-300 hover:text-amber-200 transition-colors"
             >
               <PhoneCall className="w-3 h-3 text-amber-300" />
               <span>Emergency Hotline: 053 830 6100</span>
             </a>
-            <span className="text-brand-accent/40 hidden md:inline">|</span>
-            <Link to="/contact" className="hidden md:inline hover:underline text-blue-100 font-medium">
+            <span className="text-white/35 hidden md:inline">|</span>
+            <Link to="/contact" className="hidden md:inline hover:underline text-slate-200 font-medium">
               Submit Municipal Inquiry
             </Link>
           </div>
@@ -134,17 +133,17 @@ export function LandingPage() {
       </div>
 
       {/* ==================== 2. MAIN NAVIGATION NAVBAR ==================== */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border shadow-xs">
+      <header className="sticky top-0 z-50 bg-[#f7f9fb]/90 backdrop-blur-md border-b border-slate-200 shadow-[0_8px_24px_rgba(10,42,79,0.04)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           {/* Logo & Brand Wordmark */}
-          <Link to="/" className="flex items-center space-x-3.5 group">
+          <Link to="/" className="flex items-center gap-3.5 group">
             <img
               src="/AquaBophelo_logo.svg"
               alt="AquaBophelo Logo"
-              className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
+              className="h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
             />
             <div>
-              <span className="font-extrabold text-2xl tracking-tight text-brand-navy block leading-none font-heading">
+              <span className="font-extrabold text-[1.9rem] tracking-tight text-brand-navy block leading-none font-heading">
                 AquaBophelo
               </span>
               <span className="text-[11px] text-brand-green font-semibold italic block mt-0.5">
@@ -154,26 +153,26 @@ export function LandingPage() {
           </Link>
 
           {/* Nav Links */}
-          <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold text-brand-navy">
-            <Link to="/" className="text-brand-navy border-b-2 border-brand-navy pb-0.5 font-bold">
+          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-brand-navy">
+            <Link to="/" className="text-brand-navy border-b-2 border-brand-blue pb-1.5 font-bold">
               Home
             </Link>
-            <a href="#water-status" className="hover:text-brand-blue transition-colors">
+            <a href="#water-status" className="text-slate-700 hover:text-brand-blue transition-colors">
               Water Status
             </a>
-            <a href="#tankers" className="hover:text-brand-blue transition-colors">
+            <a href="#tankers" className="text-slate-700 hover:text-brand-blue transition-colors">
               Live Map
             </a>
-            <Link to="/about" className="hover:text-brand-blue transition-colors">
+            <Link to="/about" className="text-slate-700 hover:text-brand-blue transition-colors">
               About Us
             </Link>
-            <Link to="/contact" className="hover:text-brand-blue transition-colors">
+            <Link to="/contact" className="text-slate-700 hover:text-brand-blue transition-colors">
               Contact Us
             </Link>
           </nav>
 
           {/* Action CTAs */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center gap-3">
             {user ? (
               <Button onClick={handlePortalAction} variant="default" className="font-bold">
                 <span>Go to Portal ({user.role})</span>
@@ -234,36 +233,34 @@ export function LandingPage() {
       </header>
 
       {/* ==================== 3. EDITORIAL ASYMMETRICAL HERO ==================== */}
-      <section className="bg-gradient-to-b from-surface-blue/80 via-white to-white py-14 md:py-24 border-b border-border">
+      <section className="bg-[radial-gradient(circle_at_top_left,_rgba(41,145,200,0.12),_transparent_32%),linear-gradient(135deg,#f4f9fd_0%,#ffffff_55%,#edf7fb_100%)] py-14 md:py-20 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             {/* Left Headline & Action Column */}
-            <div className="lg:col-span-7 space-y-6 text-left">
-              {/* Featured Tagline Banner */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-green border border-brand-green/30 text-brand-green-dark text-xs font-bold font-heading">
-                <Droplet className="w-3.5 h-3.5 fill-current text-brand-green" />
+            <div className="lg:col-span-6 space-y-6 text-left">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold font-heading shadow-sm">
+                <Droplet className="w-3.5 h-3.5 fill-current text-emerald-600" />
                 <span>&ldquo;Elke druppel tel • Metsi ke bophelo&rdquo;</span>
               </div>
 
-              <h1 className="text-3xl sm:text-5xl font-black text-brand-navy-dark tracking-tight leading-tight font-heading">
+              <h1 className="max-w-xl text-4xl md:text-5xl xl:text-[5rem] font-black text-brand-navy-dark tracking-[-0.06em] leading-[0.94] font-heading">
                 Kimberley Water Supply &amp; Tanker Operations
               </h1>
 
-              <p className="text-base sm:text-lg text-muted leading-relaxed max-w-2xl font-normal">
+              <p className="max-w-xl text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
                 Check daily dam storage levels, view scheduled water service interruptions, and track mobile delivery tankers across Sol Plaatje Municipality in real time.
               </p>
 
-              {/* Action Buttons: 1 Filled Navy Primary + 1 Outline Secondary */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
                 <a href="#water-status">
-                  <Button size="lg" variant="default" className="w-full sm:w-auto font-bold h-12 px-7">
+                  <Button size="lg" variant="default" className="w-full sm:w-auto font-bold h-12 px-7 rounded-xl shadow-[0_14px_30px_rgba(14,76,140,0.18)]">
                     <span>Check Water Status</span>
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </a>
 
                 <a href="#tankers">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto font-bold h-12 px-7">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto font-bold h-12 px-7 rounded-xl">
                     <Truck className="w-4 h-4 text-brand-navy" />
                     <span>Track Active Tankers</span>
                   </Button>
@@ -272,16 +269,16 @@ export function LandingPage() {
             </div>
 
             {/* Right Hero Visual Scene featuring real Kimberley photograph & telemetry overlay */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative rounded-3xl overflow-hidden border-2 border-brand-accent/30 shadow-md bg-white">
+            <div className="lg:col-span-6 relative">
+              <div className="relative rounded-[2rem] overflow-hidden border border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,39,63,0.12)] transition-transform duration-300 ease-out hover:-translate-y-1">
                 <img
                   src="/images/kimberley_reservoir.jpg"
                   alt="Kimberley City and Water Landscape"
-                  className="w-full h-72 sm:h-80 object-cover"
+                  className="w-full h-[22rem] sm:h-[25rem] object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-dark/90 via-brand-navy-dark/30 to-transparent p-5 flex flex-col justify-end text-white space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <img src="/truck_map_icon.svg" alt="Tanker Icon" className="w-8 h-8 object-contain" />
+                <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-dark/90 via-brand-navy-dark/30 to-transparent p-5 flex flex-col justify-end text-white">
+                  <div className="mb-4 flex items-center gap-3">
+                    <img src="/truck_map_icon.svg" alt="Tanker Icon" className="w-9 h-9 object-contain" />
                     <div>
                       <h3 className="font-bold text-sm text-white font-heading leading-tight">
                         Sol Plaatje Water Telemetry
@@ -292,8 +289,8 @@ export function LandingPage() {
                     </div>
                   </div>
 
-                  <div className="bg-white/95 backdrop-blur-md p-2.5 rounded-xl border border-white/20 flex items-center justify-between text-xs text-brand-navy">
-                    <div className="flex items-center space-x-2 font-semibold">
+                  <div className="bg-white/95 backdrop-blur-md p-2.5 rounded-xl border border-white/20 flex items-center justify-between text-xs text-brand-navy shadow-md">
+                    <div className="flex items-center gap-2 font-semibold">
                       <Truck className="w-4 h-4 text-brand-green" />
                       <span>3 Active Water Tankers En Route</span>
                     </div>
