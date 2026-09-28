@@ -19,6 +19,8 @@ import LiveMap from '../../components/LiveMap';
 import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import BroadcastAlertModal from '../../components/BroadcastAlertModal';
+import { Button } from '../../components/ui/Button';
+import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7154';
 
@@ -88,7 +90,6 @@ export function AdminOverview() {
   const [activeAlertsCount, setActiveAlertsCount] = useState(2);
   const [signalrConnected, setSignalrConnected] = useState(false);
 
-  // Load initial backend data
   useEffect(() => {
     async function loadData() {
       try {
@@ -116,7 +117,6 @@ export function AdminOverview() {
     loadData();
   }, []);
 
-  // Listen for real-time truck GPS coordinates over SignalR
   useEffect(() => {
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(`${API_BASE_URL}/hubs/trucks`, {
@@ -174,174 +174,168 @@ export function AdminOverview() {
           value={`${avgDamLevel}% Avg`}
           subtitle="Newton (62.5%) & Riverton (82%)"
           icon={Droplet}
-          accentColor={avgDamLevel < 30 ? '#EF4444' : avgDamLevel < 60 ? '#F59E0B' : '#22C55E'}
+          accentColor="#0e4c8c"
         />
         <StatCard
-          title="Active Tankers on Road"
-          value={`${onTripCount} Deployed`}
+          title="Active Tankers Deployed"
+          value={`${onTripCount} Tankers`}
           subtitle="Delivering to Galeshewe & Central"
           icon={Truck}
-          accentColor="#22C55E"
+          accentColor="#2e9e4f"
         />
         <StatCard
-          title="Fleet at Municipal Depot"
+          title="Fleet at Depot Standby"
           value={`${availableCount} Available`}
           subtitle="Roodepan Support Center"
           icon={ShieldCheck}
-          accentColor="#22D3EE"
+          accentColor="#2991c8"
         />
         <StatCard
-          title="Live GPS Fleet Stream"
+          title="Live GPS SignalR Stream"
           value={signalrConnected ? 'Connected' : 'Live Sync'}
           subtitle="SignalR /hubs/trucks active"
           icon={Radio}
-          accentColor="#F59E0B"
+          accentColor="#b45309"
         />
       </div>
 
       {/* Main Interactive Radar Map */}
-      <div className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-5 shadow-xl">
+      <Card className="p-5 border-brand-accent/30 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center space-x-2.5">
-            <div className="p-2 bg-[#22D3EE]/15 rounded-lg text-[#22D3EE]">
+            <div className="p-2 bg-surface-blue rounded-lg text-brand-blue border border-brand-accent/30">
               <MapPin className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-base text-[#E6EDF7]">
+              <h3 className="font-bold text-base text-brand-navy">
                 Sol Plaatje Live Operational Map
               </h3>
-              <p className="text-xs text-[#8A9BB8]">
+              <p className="text-xs text-muted">
                 Real-time tracking of water tankers moving across Kimberley and reservoir capacities.
               </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2 self-start sm:self-auto">
-            <button
+            <Button
               onClick={() => setIsAlertModalOpen(true)}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#EF4444]/15 hover:bg-[#EF4444]/25 text-[#EF4444] border border-[#EF4444]/40 text-xs font-bold transition-all"
+              variant="danger"
+              size="sm"
+              className="font-bold"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Broadcast Alert</span>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => navigate('/admin/trucks')}
-              className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-[#22D3EE]/10 hover:bg-[#22D3EE]/20 text-[#22D3EE] border border-[#22D3EE]/30 text-xs font-semibold transition-all"
+              variant="outline"
+              size="sm"
+              className="font-bold text-brand-blue"
             >
               <span>Manage Fleet</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
 
         <LiveMap dams={dams} trucks={trucks} height="480px" />
-      </div>
+      </Card>
 
-      {/* Two Column Grid: Reservoir Levels & Moving Fleet Status */}
+      {/* Two Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Dam Levels Card */}
-        <div className="lg:col-span-6 bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-5 shadow-lg flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-[#1F2C45] mb-4">
-              <h3 className="font-bold text-sm text-[#E6EDF7] flex items-center space-x-2">
-                <Droplet className="w-4 h-4 text-[#22D3EE]" />
-                <span>Municipal Reservoir Health</span>
-              </h3>
-              <button
-                onClick={() => navigate('/admin/dams')}
-                className="text-xs text-[#22D3EE] hover:underline inline-flex items-center space-x-1"
-              >
-                <span>Log Reading</span>
-                <ArrowUpRight className="w-3 h-3" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {dams.map((dam) => {
-                const level = dam.latestLevel || 50;
-                return (
-                  <div key={dam.id} className="bg-[#0B1220] border border-[#1F2C45] rounded-xl p-3.5">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-bold text-xs md:text-sm text-[#E6EDF7]">{dam.name}</h4>
-                        <p className="text-[11px] text-[#8A9BB8]">Capacity: {dam.capacityMegaLitres} ML</p>
-                      </div>
-                      <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded ${
-                          level < 30
-                            ? 'bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/30'
-                            : level < 60
-                            ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30'
-                            : 'bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30'
-                        }`}
-                      >
-                        {level}%
-                      </span>
-                    </div>
-
-                    <div className="w-full h-2.5 bg-[#111B2E] rounded-full overflow-hidden border border-[#1F2C45]">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          level < 30 ? 'bg-[#EF4444]' : level < 60 ? 'bg-[#F59E0B]' : 'bg-[#22C55E]'
-                        }`}
-                        style={{ width: `${Math.min(level, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+        {/* Dam Health Card */}
+        <Card className="lg:col-span-6 p-5">
+          <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+            <h3 className="font-bold text-sm text-brand-navy flex items-center space-x-2">
+              <Droplet className="w-4 h-4 text-brand-blue" />
+              <span>Municipal Reservoir Health</span>
+            </h3>
+            <Button
+              onClick={() => navigate('/admin/dams')}
+              variant="ghost"
+              size="sm"
+              className="text-xs font-bold text-brand-blue p-0 h-auto"
+            >
+              <span>Log Reading</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Button>
           </div>
-        </div>
 
-        {/* Moving Tankers Card */}
-        <div className="lg:col-span-6 bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-5 shadow-lg flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-[#1F2C45] mb-4">
-              <h3 className="font-bold text-sm text-[#E6EDF7] flex items-center space-x-2">
-                <Truck className="w-4 h-4 text-[#22C55E]" />
-                <span>Active Water Delivery Tankers</span>
-              </h3>
-              <button
-                onClick={() => navigate('/admin/trucks')}
-                className="text-xs text-[#22D3EE] hover:underline inline-flex items-center space-x-1"
-              >
-                <span>View All Fleet</span>
-                <ArrowUpRight className="w-3 h-3" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {trucks.map((truck) => (
-                <div
-                  key={truck.id}
-                  className="bg-[#0B1220] border border-[#1F2C45] rounded-xl p-3 flex items-center justify-between"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="font-mono text-xs font-bold text-[#22D3EE] bg-[#22D3EE]/10 px-2 py-0.5 rounded border border-[#22D3EE]/20">
-                      {truck.registrationNumber}
-                    </span>
+          <div className="space-y-4">
+            {dams.map((dam) => {
+              const level = dam.latestLevel || 50;
+              return (
+                <div key={dam.id} className="bg-surface-blue/30 border border-border rounded-xl p-3.5 space-y-2">
+                  <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-xs font-bold text-[#E6EDF7]">{truck.route || 'Kimberley Route'}</p>
-                      <p className="text-[11px] text-[#8A9BB8]">
-                        Driver: {truck.driverName || 'Unassigned'} · {truck.capacityLitres?.toLocaleString() || 10000} L
-                      </p>
+                      <h4 className="font-bold text-xs md:text-sm text-brand-navy">{dam.name}</h4>
+                      <p className="text-[11px] text-muted">Capacity: {dam.capacityMegaLitres} ML</p>
                     </div>
+                    <StatusBadge levelPercent={level} />
                   </div>
 
-                  <div className="text-right">
-                    <StatusBadge status={truck.status} />
-                    {truck.speedKmh != null && truck.speedKmh > 0 && (
-                      <p className="text-[10px] text-[#22C55E] mt-1 font-mono">
-                        {Math.round(truck.speedKmh)} km/h
-                      </p>
-                    )}
+                  <div className="w-full h-2.5 bg-white rounded-full overflow-hidden border border-border">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        level < 30 ? 'bg-red-600' : level < 60 ? 'bg-amber-500' : 'bg-brand-green'
+                      }`}
+                      style={{ width: `${Math.min(level, 100)}%` }}
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        </div>
+        </Card>
+
+        {/* Active Tankers Card */}
+        <Card className="lg:col-span-6 p-5">
+          <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+            <h3 className="font-bold text-sm text-brand-navy flex items-center space-x-2">
+              <Truck className="w-4 h-4 text-brand-green" />
+              <span>Active Water Delivery Tankers</span>
+            </h3>
+            <Button
+              onClick={() => navigate('/admin/trucks')}
+              variant="ghost"
+              size="sm"
+              className="text-xs font-bold text-brand-blue p-0 h-auto"
+            >
+              <span>View All Fleet</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+
+          <div className="space-y-3">
+            {trucks.map((truck) => (
+              <div
+                key={truck.id}
+                className="bg-surface-blue/30 border border-border rounded-xl p-3 flex items-center justify-between"
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="font-mono text-xs font-bold text-brand-blue bg-surface-blue px-2 py-0.5 rounded border border-brand-accent/30">
+                    {truck.registrationNumber}
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-brand-navy">{truck.route || 'Kimberley Route'}</p>
+                    <p className="text-[11px] text-muted">
+                      Driver: {truck.driverName || 'Unassigned'} · {truck.capacityLitres?.toLocaleString() || 10000} L
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <StatusBadge status={truck.status} />
+                  {truck.speedKmh != null && truck.speedKmh > 0 && (
+                    <p className="text-[10px] text-brand-green-dark mt-1 font-mono font-semibold">
+                      {Math.round(truck.speedKmh)} km/h
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       </div>
 
       {/* Broadcast Alert Modal */}

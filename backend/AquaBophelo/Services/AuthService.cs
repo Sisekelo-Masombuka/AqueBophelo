@@ -17,17 +17,20 @@ public class AuthService : IAuthService
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
         IConfiguration configuration,
-        AppDbContext context)
+        AppDbContext context,
+        INotificationService notificationService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -150,5 +153,40 @@ public class AuthService : IAuthService
             ExpiresAt = expiresAt,
             Message = "Authentication successful"
         };
+    }
+
+    public async Task<bool> ForgotPasswordAsync(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            // Generic success return to prevent email enumeration
+            return true;
+        }
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var subject = "AquaBophelo — Password Reset Request";
+        var body = $"Sol Plaatje Municipal Water System\n\nDear {user.FullName},\n\nWe received a password reset request for your AquaBophelo account.\nYour Password Reset Token is:\n\n{token}\n\nPlease enter this token on the Reset Password page to create your new password.\nIf you did not request this, please ignore this email.\n\nElke druppel tel • Metsi ke bophelo";
+
+        await _notificationService.SendEmailAsync(email, subject, body);
+        return true;
+    }
+
+    public async Task<bool> ResetPasswordAsync(string email, string token, string newPassword)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            throw new BadHttpRequestException("Invalid email or reset token.");
+        }
+
+        var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+            throw new BadHttpRequestException($"Password reset failed: {errors}");
+        }
+
+        return true;
     }
 }

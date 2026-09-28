@@ -13,10 +13,8 @@ import {
   Moon,
 } from 'lucide-react';
 
-// Kimberley Central Coordinates [lng, lat]
 const KIMBERLEY_CENTER = [24.7719, -28.7419];
 
-// 1. Bolt Light Streets Style (High-Detail OpenStreetMap with real Kimberley street names: Chapel St, York St, Sol Plaatje University)
 const LIGHT_STREETS_STYLE = {
   version: 8,
   sources: {
@@ -43,7 +41,6 @@ const LIGHT_STREETS_STYLE = {
   ],
 };
 
-// 2. Night Command Canvas Style (Esri World Dark Gray)
 const DARK_CANVAS_STYLE = {
   version: 8,
   sources: {
@@ -68,12 +65,9 @@ const DARK_CANVAS_STYLE = {
   ],
 };
 
-/**
- * Calculates human-readable location freshness
- */
 function getLocationFreshness(lastSeen) {
   if (!lastSeen) {
-    return { text: 'No telemetry yet', level: 'offline', color: '#EF4444', dotColor: 'bg-[#EF4444]' };
+    return { text: 'No telemetry yet', level: 'offline', color: '#b91c1c', dotColor: 'bg-red-600' };
   }
   const date = typeof lastSeen === 'string' ? new Date(lastSeen) : lastSeen;
   const now = Date.now();
@@ -83,16 +77,16 @@ function getLocationFreshness(lastSeen) {
     return {
       text: `Live (${diffSec}s ago)`,
       level: 'fresh',
-      color: '#22C55E',
-      dotColor: 'bg-[#22C55E]',
+      color: '#2e9e4f',
+      dotColor: 'bg-brand-green',
     };
   } else if (diffSec < 600) {
     const min = Math.floor(diffSec / 60);
     return {
       text: `Updated ${min}m ago`,
       level: 'moderate',
-      color: '#F59E0B',
-      dotColor: 'bg-[#F59E0B]',
+      color: '#b45309',
+      dotColor: 'bg-amber-600',
     };
   } else {
     const hours = Math.floor(diffSec / 3600);
@@ -100,33 +94,29 @@ function getLocationFreshness(lastSeen) {
     return {
       text: `Last seen ${hours > 0 ? `${hours}h ` : ''}${min}m ago`,
       level: 'stale',
-      color: '#EF4444',
-      dotColor: 'bg-[#EF4444]',
+      color: '#b91c1c',
+      dotColor: 'bg-red-600',
     };
   }
 }
 
-/**
- * Generates compact, proportional Bolt/Uber-style 3D vehicle marker
- */
-function createTruckDOMElement(truck, isSelected = false, isLightMode = false) {
+function createTruckDOMElement(truck, isSelected = false, isLightMode = true) {
   const freshness = getLocationFreshness(truck.lastSeenAt || truck.lastUpdated);
   const isStale = freshness.level === 'stale';
 
-  let statusColor = '#22C55E'; // Green: OnTrip / Active
-  if (truck.status === 'Maintenance') statusColor = '#F59E0B';
-  else if (truck.status === 'Available') statusColor = '#0284C7';
-  if (isStale) statusColor = '#EF4444';
+  let statusColor = '#2e9e4f'; // Brand green
+  if (truck.status === 'Maintenance') statusColor = '#b45309';
+  else if (truck.status === 'Available') statusColor = '#0e4c8c';
+  if (isStale) statusColor = '#b91c1c';
 
   const el = document.createElement('div');
-  el.className = 'bolt-truck-marker';
-  el.style.width = '32px';
-  el.style.height = '32px';
+  el.className = 'ab-truck-marker';
+  el.style.width = '38px';
+  el.style.height = '38px';
   el.style.position = 'relative';
   el.style.cursor = 'pointer';
-  el.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+  el.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
 
-  // Pulse animation for moving active vehicle
   const pulseHtml =
     !isStale && (truck.status === 'OnTrip' || truck.status === 'Active')
       ? `<span style="
@@ -140,62 +130,48 @@ function createTruckDOMElement(truck, isSelected = false, isLightMode = false) {
         "></span>`
       : '';
 
-  // Selection Glow Halo
   const selectionGlow = isSelected
     ? `<div style="
         position: absolute;
         inset: -6px;
         border-radius: 50%;
-        border: 2px solid #0284C7;
-        box-shadow: 0 0 14px rgba(2, 132, 199, 0.8);
-        animation: pulse 1.8s infinite;
+        border: 2px solid #0e4c8c;
+        box-shadow: 0 0 12px rgba(14, 76, 140, 0.6);
         pointer-events: none;
       "></div>`
     : '';
-
-  const bgColor = isLightMode ? '#FFFFFF' : '#0B1220';
-  const strokeColor = statusColor;
 
   el.innerHTML = `
     ${selectionGlow}
     ${pulseHtml}
     <div style="
-      width: 32px;
-      height: 32px;
-      background: ${bgColor};
-      border: 2px solid ${strokeColor};
-      border-radius: 50%;
+      width: 38px;
+      height: 38px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      filter: drop-shadow(0 3px 6px rgba(14, 76, 140, 0.3));
       position: relative;
     ">
-      <!-- Bolt-Style Compact Vehicle Icon -->
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" fill="${bgColor}"/>
-        <path d="M15 18h2a1 1 0 0 0 1-1v-4l-3-4h-3v9" fill="${bgColor}"/>
-        <circle cx="7" cy="18" r="2" fill="${strokeColor}"/>
-        <circle cx="17" cy="18" r="2" fill="${strokeColor}"/>
-      </svg>
+      <img src="/truck_pin_badge.svg" alt="Water Tanker ${truck.registrationNumber}" style="width: 38px; height: 38px; object-fit: contain;" />
     </div>
 
-    <!-- License Plate Tag -->
+    <!-- Registration Plate -->
     <div style="
       position: absolute;
-      bottom: -14px;
+      bottom: -16px;
       left: 50%;
       transform: translateX(-50%);
-      background: ${isLightMode ? '#FFFFFF' : '#111B2E'};
-      border: 1px solid ${isSelected ? '#0284C7' : isLightMode ? '#CBD5E1' : '#1F2C45'};
-      color: ${isSelected ? '#0284C7' : isLightMode ? '#0F172A' : '#E6EDF7'};
+      background: #FFFFFF;
+      border: 1px solid ${isSelected ? '#0e4c8c' : '#d4e4ef'};
+      color: ${isSelected ? '#0e4c8c' : '#0a2a4f'};
       font-family: ui-monospace, monospace;
       font-weight: 800;
-      font-size: 9px;
-      padding: 0px 4px;
+      font-size: 9.5px;
+      padding: 1px 5px;
       border-radius: 4px;
       white-space: nowrap;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 4px rgba(10,42,79,0.15);
       pointer-events: none;
     ">
       ${truck.registrationNumber}
@@ -205,88 +181,92 @@ function createTruckDOMElement(truck, isSelected = false, isLightMode = false) {
   return el;
 }
 
-/**
- * Creates custom DOM element for Dam/Reservoir markers
- */
-function createDamDOMElement(dam, isLightMode = false) {
+function createDamDOMElement(dam, isLightMode = true) {
   const level = dam.latestLevel ?? 50;
-  const badgeColor = level < 30 ? '#EF4444' : level < 60 ? '#F59E0B' : '#22C55E';
-  const bgColor = isLightMode ? '#FFFFFF' : '#111B2E';
+
+  let damMarkerSvg = '/dam_marker_healthy.svg';
+  let badgeBg = '#2e9e4f';
+
+  if (level < 15) {
+    damMarkerSvg = '/dam_marker_critical.svg';
+    badgeBg = '#b91c1c';
+  } else if (level < 30) {
+    damMarkerSvg = '/dam_marker_low.svg';
+    badgeBg = '#b91c1c';
+  } else if (level < 60) {
+    damMarkerSvg = '/dam_marker_watch.svg';
+    badgeBg = '#b45309';
+  } else {
+    damMarkerSvg = '/dam_marker_healthy.svg';
+    badgeBg = '#2e9e4f';
+  }
 
   const el = document.createElement('div');
-  el.className = 'bolt-dam-marker';
-  el.style.width = '32px';
-  el.style.height = '32px';
+  el.className = 'ab-dam-marker';
+  el.style.width = '38px';
+  el.style.height = '38px';
   el.style.position = 'relative';
   el.style.cursor = 'pointer';
 
   el.innerHTML = `
     <div style="
-      width: 32px;
-      height: 32px;
-      background: ${bgColor};
-      border: 2px solid #0284C7;
-      border-radius: 50%;
+      width: 38px;
+      height: 38px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 10px rgba(2, 132, 199, 0.35);
+      filter: drop-shadow(0 3px 6px rgba(10, 42, 79, 0.25));
+      position: relative;
     ">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>
-      </svg>
+      <img src="${damMarkerSvg}" alt="${dam.name}" style="width: 38px; height: 38px; object-fit: contain;" />
       <span style="
         position: absolute;
-        top: -5px;
+        top: -4px;
         right: -6px;
-        background: ${badgeColor};
+        background: ${badgeBg};
         color: #FFFFFF;
         font-weight: 800;
-        font-size: 8.5px;
-        padding: 0px 4px;
+        font-size: 9px;
+        padding: 1px 5px;
         border-radius: 9999px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
       ">${Math.round(level)}%</span>
     </div>
   `;
   return el;
 }
 
-// Kimberley Real Road Waypoints (Continuous Street Corridors)
 const ROAD_ROUTES = {
   1: [
-    [24.7685, -28.7485], // Bultfontein Rd / Memorial
-    [24.7700, -28.7420], // Du Toitspan Rd (Sol Plaatje University)
-    [24.7675, -28.7395], // Lennox St Junction
-    [24.7645, -28.7360], // Chapel St (City Hall)
-    [24.7580, -28.7315], // Phakamile Mabija Rd
-    [24.7510, -28.7270], // Pniel Rd
-    [24.7430, -28.7210], // Barkly Rd (Galeshewe Entrance)
-    [24.7350, -28.7145], // Galeshewe Main Road
-    [24.7260, -28.7065], // Nobengula Ave / Kagisho Rd
-    [24.7180, -28.6975], // Roodepan Community Water Point
+    [24.7685, -28.7485],
+    [24.7700, -28.7420],
+    [24.7675, -28.7395],
+    [24.7645, -28.7360],
+    [24.7580, -28.7315],
+    [24.7510, -28.7270],
+    [24.7430, -28.7210],
+    [24.7350, -28.7145],
+    [24.7260, -28.7065],
+    [24.7180, -28.6975],
   ],
   2: [
-    [24.7725, -28.7425], // Kimberley Central Depot
-    [24.7660, -28.7405], // Market Square
-    [24.7585, -28.7355], // Hull Street
-    [24.7505, -28.7305], // Circular Road Junction
-    [24.7435, -28.7255], // Galeshewe Zone 1
-    [24.7365, -28.7210], // Tshwaragano Way
-    [24.7295, -28.7160], // Galeshewe Zone 2 Reservoir
+    [24.7725, -28.7425],
+    [24.7660, -28.7405],
+    [24.7585, -28.7355],
+    [24.7505, -28.7305],
+    [24.7435, -28.7255],
+    [24.7365, -28.7210],
+    [24.7295, -28.7160],
   ],
   3: [
-    [24.7612, -28.7511], // Newton Reservoir
-    [24.7655, -28.7535], // Reservoir Road
-    [24.7695, -28.7475], // Memorial Road (N12)
-    [24.7680, -28.7410], // Jan Smuts Boulevard
-    [24.7645, -28.7365], // Chapel St Junction
+    [24.7612, -28.7511],
+    [24.7655, -28.7535],
+    [24.7695, -28.7475],
+    [24.7680, -28.7410],
+    [24.7645, -28.7365],
   ],
 };
 
-/**
- * Computes exact compass bearing (heading in degrees) from coordinate A to coordinate B
- */
 function calculateHeading(fromLng, fromLat, toLng, toLat) {
   const dLng = toLng - fromLng;
   const dLat = toLat - fromLat;
@@ -299,7 +279,7 @@ export function LiveMap({
   dams = [],
   trucks = [],
   zoom = 13.8,
-  height = '580px',
+  height = '560px',
   selectedTruckId = null,
   onTruckSelect = null,
 }) {
@@ -309,18 +289,15 @@ export function LiveMap({
 
   const [activeTruck, setActiveTruck] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [isLightMode, setIsLightMode] = useState(true); // Default to crisp Bolt Light Street view
+  const [isLightMode, setIsLightMode] = useState(true);
   const [animatedTrucks, setAnimatedTrucks] = useState(trucks);
 
-  // Maintain continuous movement progress for each truck along its street route
   const movementStateRef = useRef({});
 
-  // Sync prop trucks with animated local state
   useEffect(() => {
     setAnimatedTrucks(trucks);
   }, [trucks]);
 
-  // Sync external selectedTruckId with local state ONLY when explicitly provided
   useEffect(() => {
     if (selectedTruckId) {
       const found = animatedTrucks.find((t) => t.id === selectedTruckId);
@@ -328,7 +305,6 @@ export function LiveMap({
     }
   }, [selectedTruckId]);
 
-  // Realistic vehicle movement animation following actual Kimberley road corridors
   useEffect(() => {
     const interval = setInterval(() => {
       setAnimatedTrucks((prevTrucks) =>
@@ -347,7 +323,7 @@ export function LiveMap({
           }
 
           const state = movementStateRef.current[truck.id];
-          state.progress += 0.04; // Smooth sub-segment step
+          state.progress += 0.04;
 
           if (state.progress >= 1.0) {
             state.progress = 0.0;
@@ -355,10 +331,10 @@ export function LiveMap({
 
             if (state.segmentIndex >= numSegments) {
               state.segmentIndex = numSegments - 1;
-              state.direction = -1; // Reverse turn on road
+              state.direction = -1;
             } else if (state.segmentIndex < 0) {
               state.segmentIndex = 0;
-              state.direction = 1; // Forward turn on road
+              state.direction = 1;
             }
           }
 
@@ -386,7 +362,6 @@ export function LiveMap({
     return () => clearInterval(interval);
   }, []);
 
-  // Initialize MapLibre GL JS map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -407,7 +382,6 @@ export function LiveMap({
         setIsFollowing(false);
       });
 
-      // Dismiss driver details drawer card when clicking empty map canvas
       map.on('click', (e) => {
         if (!e.defaultPrevented) {
           setActiveTruck(null);
@@ -427,7 +401,6 @@ export function LiveMap({
             },
           });
 
-          // Route Glow Layer (Bolt Cyan)
           map.addLayer({
             id: 'truck-route-glow',
             type: 'line',
@@ -437,14 +410,13 @@ export function LiveMap({
               'line-cap': 'round',
             },
             paint: {
-              'line-color': '#0284C7',
+              'line-color': '#0e4c8c',
               'line-width': 7,
-              'line-opacity': 0.4,
+              'line-opacity': 0.35,
               'line-blur': 4,
             },
           });
 
-          // Main Route Line
           map.addLayer({
             id: 'truck-route-main',
             type: 'line',
@@ -454,7 +426,7 @@ export function LiveMap({
               'line-cap': 'round',
             },
             paint: {
-              'line-color': '#0284C7',
+              'line-color': '#0e4c8c',
               'line-width': 4,
               'line-dasharray': [2, 1],
             },
@@ -475,7 +447,6 @@ export function LiveMap({
     }
   }, [isLightMode, zoom]);
 
-  // Handle Truck Selection and Smooth Camera Focus (Bolt Style Zoom)
   const handleSelectTruck = useCallback(
     (truck) => {
       setActiveTruck(truck);
@@ -487,7 +458,7 @@ export function LiveMap({
         try {
           map.flyTo({
             center: [truck.lastLongitude, truck.lastLatitude],
-            zoom: 15.4, // Street-level focus
+            zoom: 15.4,
             pitch: 35,
             speed: 1.2,
             curve: 1.3,
@@ -501,7 +472,6 @@ export function LiveMap({
     [onTruckSelect]
   );
 
-  // Update Route Polyline whenever activeTruck changes or moves
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
@@ -515,7 +485,6 @@ export function LiveMap({
         return;
       }
 
-      // Route coordinates following exact road waypoints
       const roadWaypoints = ROAD_ROUTES[activeTruck.id] || ROAD_ROUTES[1];
       const coordinates = [[activeTruck.lastLongitude, activeTruck.lastLatitude], ...roadWaypoints];
 
@@ -536,7 +505,6 @@ export function LiveMap({
     }
   }, [activeTruck]);
 
-  // Camera Follow Lock
   useEffect(() => {
     if (isFollowing && activeTruck && mapRef.current) {
       if (activeTruck.lastLongitude && activeTruck.lastLatitude) {
@@ -551,7 +519,6 @@ export function LiveMap({
     }
   }, [isFollowing, activeTruck]);
 
-  // Update Truck Markers
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -610,7 +577,6 @@ export function LiveMap({
     });
   }, [animatedTrucks, activeTruck, isLightMode, handleSelectTruck]);
 
-  // Render Dam Markers
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -622,10 +588,10 @@ export function LiveMap({
         const el = createDamDOMElement(dam, isLightMode);
 
         const popup = new maplibregl.Popup({ offset: 22, closeButton: false }).setHTML(`
-          <div style="background: ${isLightMode ? '#FFFFFF' : '#111B2E'}; color: ${isLightMode ? '#0F172A' : '#E6EDF7'}; padding: 10px; border-radius: 12px; min-width: 180px; font-family: sans-serif; border: 1px solid ${isLightMode ? '#E2E8F0' : '#1F2C45'}; box-shadow: 0 8px 20px rgba(0,0,0,0.15);">
-            <div style="font-weight: 800; font-size: 13px; color: #0284C7; margin-bottom: 4px;">${dam.name}</div>
-            <div style="font-size: 11px; color: ${isLightMode ? '#64748B' : '#8A9BB8'};">Capacity: <strong style="color: ${isLightMode ? '#0F172A' : '#E6EDF7'};">${dam.capacityMegaLitres} ML</strong></div>
-            <div style="font-size: 11px; color: ${isLightMode ? '#64748B' : '#8A9BB8'}; margin-top: 4px;">Fill Level: <strong style="color: #22C55E;">${dam.latestLevel ?? 50}%</strong></div>
+          <div style="background: #FFFFFF; color: #0A2A4F; padding: 12px; border-radius: 12px; min-width: 190px; font-family: sans-serif; border: 1px solid #D4E4EF; box-shadow: 0 8px 24px rgba(10,42,79,0.12);">
+            <div style="font-weight: 800; font-size: 13px; color: #0E4C8C; margin-bottom: 4px;">${dam.name}</div>
+            <div style="font-size: 11px; color: #4D6278;">Capacity: <strong style="color: #0A2A4F;">${dam.capacityMegaLitres} ML</strong></div>
+            <div style="font-size: 11px; color: #4D6278; margin-top: 4px;">Fill Level: <strong style="color: #2E9E4F;">${dam.latestLevel ?? 50}%</strong></div>
           </div>
         `);
 
@@ -639,64 +605,53 @@ export function LiveMap({
     });
   }, [dams, isLightMode]);
 
-  const activeFreshness = activeTruck
-    ? getLocationFreshness(activeTruck.lastSeenAt || activeTruck.lastUpdated)
-    : null;
-
   return (
     <div
-      className="w-full rounded-2xl overflow-hidden border border-[#CBD5E1] dark:border-[#1F2C45] shadow-2xl relative select-none"
+      className="w-full rounded-2xl overflow-hidden border border-border shadow-md relative select-none"
       style={{ height }}
     >
-      {/* MapLibre Canvas Container */}
-      <div ref={mapContainerRef} className="w-full h-full" style={{ backgroundColor: isLightMode ? '#F8FAFC' : '#0B1220' }} />
+      <div ref={mapContainerRef} className="w-full h-full bg-surface-blue" />
 
-      {/* TOP CONTROLS: STYLE TOGGLE & STATUS BADGE */}
+      {/* Top Map Controls */}
       <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2">
-        {/* Bolt-Style Mode Switcher Button */}
         <button
           onClick={() => setIsLightMode((prev) => !prev)}
-          className="px-3.5 py-1.5 rounded-xl bg-white/90 dark:bg-[#0B1220]/90 backdrop-blur-md border border-slate-200 dark:border-[#1F2C45] text-xs font-bold text-slate-800 dark:text-[#E6EDF7] shadow-lg flex items-center space-x-2 hover:bg-slate-50 transition-all cursor-pointer"
+          className="px-3.5 py-1.5 rounded-xl bg-white/95 backdrop-blur-md border border-border text-xs font-bold text-brand-navy shadow-sm flex items-center space-x-2 hover:bg-surface-blue transition-all cursor-pointer"
         >
           {isLightMode ? (
             <>
-              <Sun className="w-3.5 h-3.5 text-amber-500" />
-              <span>Bolt Light Streets</span>
+              <Sun className="w-3.5 h-3.5 text-amber-600" />
+              <span>Light Map View</span>
             </>
           ) : (
             <>
-              <Moon className="w-3.5 h-3.5 text-sky-400" />
-              <span>Night Command Canvas</span>
+              <Moon className="w-3.5 h-3.5 text-brand-blue" />
+              <span>Night Map View</span>
             </>
           )}
         </button>
 
-        {/* Live Active Tanker Indicator */}
-        <div className="px-3 py-1.5 rounded-xl bg-white/90 dark:bg-[#0B1220]/90 backdrop-blur-md border border-slate-200 dark:border-[#1F2C45] text-xs font-semibold text-slate-700 dark:text-[#E6EDF7] shadow-lg flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></span>
-          <span className="font-mono text-sky-600 dark:text-sky-400 font-bold">{animatedTrucks.length} Active Tankers</span>
+        <div className="px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-md border border-border text-xs font-semibold text-brand-navy shadow-sm flex items-center space-x-2">
+          <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
+          <span className="font-mono text-brand-blue font-bold">{animatedTrucks.length} Active Tankers</span>
         </div>
       </div>
 
-      {/* FLOATING BOLT-STYLE VEHICLE TRACKING DRAWER (MATCHING USER ATTACHED SCREENSHOT) */}
+      {/* Floating Active Vehicle Drawer */}
       {activeTruck && (
-        <div className="absolute bottom-4 left-4 right-4 md:left-5 md:right-auto md:w-96 z-30 bg-white dark:bg-[#111B2E] border border-slate-200 dark:border-[#22D3EE]/40 rounded-2xl p-4 md:p-5 shadow-2xl text-slate-900 dark:text-[#E6EDF7] transition-all duration-300 animate-in fade-in slide-in-from-bottom-4">
-          {/* Drawer Handle Pill (Bolt UI Heuristic) */}
-          <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-[#1F2C45] mx-auto mb-3" />
+        <div className="absolute bottom-4 left-4 right-4 md:left-5 md:right-auto md:w-96 z-30 bg-white border border-brand-accent/40 rounded-2xl p-4 md:p-5 shadow-lg text-brand-navy transition-all duration-300">
+          <div className="w-10 h-1 rounded-full bg-border mx-auto mb-3" />
 
-          {/* Card Header: Plate, Status, and Close */}
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#1F2C45] pb-3 mb-3">
+          <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
             <div className="flex items-center space-x-2">
-              <span className="font-mono text-sm md:text-base font-black text-sky-600 dark:text-[#22D3EE] bg-sky-50 dark:bg-[#22D3EE]/10 px-2.5 py-1 rounded-lg border border-sky-200 dark:border-[#22D3EE]/30 tracking-wider">
+              <span className="font-mono text-sm md:text-base font-black text-brand-blue bg-surface-blue px-2.5 py-1 rounded-lg border border-brand-accent/30 tracking-wider">
                 {activeTruck.registrationNumber}
               </span>
               <span
                 className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
                   activeTruck.status === 'OnTrip' || activeTruck.status === 'Active'
-                    ? 'bg-emerald-50 dark:bg-[#22C55E]/15 text-emerald-600 dark:text-[#22C55E] border border-emerald-200 dark:border-[#22C55E]/30'
-                    : activeTruck.status === 'Maintenance'
-                    ? 'bg-amber-50 dark:bg-[#F59E0B]/15 text-amber-600 dark:text-[#F59E0B] border border-amber-200 dark:border-[#F59E0B]/30'
-                    : 'bg-sky-50 dark:bg-[#22D3EE]/15 text-sky-600 dark:text-[#22D3EE] border border-sky-200 dark:border-[#22D3EE]/30'
+                    ? 'bg-surface-green text-brand-green-dark border border-brand-green/30'
+                    : 'bg-surface-blue text-brand-blue border border-brand-accent/30'
                 }`}
               >
                 {activeTruck.status === 'OnTrip' || activeTruck.status === 'Active' ? 'Delivering Water' : activeTruck.status || 'Available'}
@@ -708,59 +663,56 @@ export function LiveMap({
                 setActiveTruck(null);
                 setIsFollowing(false);
               }}
-              className="text-slate-400 hover:text-slate-700 dark:hover:text-[#E6EDF7] p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1F2C45] transition-colors"
+              className="text-muted hover:text-brand-navy p-1 rounded-lg hover:bg-surface-blue transition-colors cursor-pointer"
               aria-label="Close truck details"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Driver Information Section */}
-          <div className="flex items-center justify-between mb-3 bg-slate-50 dark:bg-[#0B1220]/80 p-3 rounded-xl border border-slate-100 dark:border-[#1F2C45]">
+          <div className="flex items-center justify-between mb-3 bg-surface-blue p-3 rounded-xl border border-brand-accent/20">
             <div className="flex items-center space-x-2.5">
-              <div className="w-10 h-10 rounded-full bg-sky-100 dark:bg-[#22D3EE]/20 border border-sky-300 dark:border-[#22D3EE]/40 text-sky-600 dark:text-[#22D3EE] font-bold text-sm flex items-center justify-center shadow-xs">
+              <div className="w-10 h-10 rounded-full bg-white border border-brand-accent/30 text-brand-blue font-bold text-sm flex items-center justify-center shadow-xs">
                 {activeTruck.driverName ? activeTruck.driverName[0] : 'S'}
               </div>
               <div>
-                <p className="text-xs md:text-sm font-bold text-slate-800 dark:text-[#E6EDF7]">
+                <p className="text-xs md:text-sm font-bold text-brand-navy">
                   {activeTruck.driverName || 'Sipho Dlamini (Driver)'}
                 </p>
-                <div className="flex items-center space-x-2 text-[11px] text-slate-500 dark:text-[#8A9BB8]">
-                  <span className="flex items-center text-amber-500 font-bold">
-                    <Star className="w-3 h-3 fill-current mr-0.5" />
+                <div className="flex items-center space-x-2 text-[11px] text-muted">
+                  <span className="flex items-center text-amber-700 font-bold">
+                    <Star className="w-3 h-3 fill-current mr-0.5 text-amber-500" />
                     {activeTruck.driverRating || '4.8'}
                   </span>
-                  <span>· {activeTruck.completedTripsCount || 127} deliveries completed</span>
+                  <span>· {activeTruck.completedTripsCount || 127} deliveries</span>
                 </div>
               </div>
             </div>
 
-            <span className="text-[11px] font-extrabold text-sky-600 dark:text-[#22D3EE] bg-sky-50 dark:bg-[#22D3EE]/10 px-2 py-1 rounded-lg border border-sky-200 dark:border-[#22D3EE]/20">
+            <span className="text-[11px] font-extrabold text-brand-blue bg-white px-2 py-1 rounded-lg border border-brand-accent/30">
               {(activeTruck.capacityLitres || 10000).toLocaleString()} L
             </span>
           </div>
 
-          {/* Route & Destination Details */}
           <div className="space-y-1.5 mb-3.5 text-xs">
-            <div className="flex items-center space-x-2 text-slate-600 dark:text-[#8A9BB8]">
-              <Navigation className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-              <span className="font-semibold text-slate-800 dark:text-[#E6EDF7] truncate">
-                {activeTruck.route || 'Galeshewe Zone 3 → Kimberley Central Corridor'}
+            <div className="flex items-center space-x-2 text-muted">
+              <Navigation className="w-3.5 h-3.5 text-brand-blue shrink-0" />
+              <span className="font-semibold text-brand-navy truncate">
+                {activeTruck.route || 'Galeshewe Zone 3 Morning Route'}
               </span>
             </div>
-            <div className="flex items-center space-x-2 text-slate-500 dark:text-[#22D3EE] pl-5 text-[11px] font-medium">
+            <div className="flex items-center space-x-2 text-brand-blue pl-5 text-[11px] font-medium">
               <MapPin className="w-3 h-3 shrink-0" />
               <span>Next Stop: {activeTruck.destination || 'Kagisho Clinic Water Point'}</span>
             </div>
           </div>
 
-          {/* Telemetry Row: Speed & ETA */}
           <div className="grid grid-cols-2 gap-2 text-xs mb-4">
-            <div className="bg-slate-50 dark:bg-[#0B1220] p-2.5 rounded-xl border border-slate-100 dark:border-[#1F2C45]/70 flex items-center space-x-2">
-              <Gauge className="w-4 h-4 text-sky-500" />
+            <div className="bg-surface-blue p-2.5 rounded-xl border border-brand-accent/20 flex items-center space-x-2">
+              <Gauge className="w-4 h-4 text-brand-blue" />
               <div>
-                <p className="text-[10px] text-slate-400 dark:text-[#8A9BB8]">Speed</p>
-                <p className="font-bold text-slate-800 dark:text-[#E6EDF7]">
+                <p className="text-[10px] text-muted">Speed</p>
+                <p className="font-bold text-brand-navy">
                   {activeTruck.speedKmh != null && activeTruck.speedKmh > 0
                     ? `${Math.round(activeTruck.speedKmh)} km/h`
                     : '34 km/h'}
@@ -768,24 +720,23 @@ export function LiveMap({
               </div>
             </div>
 
-            <div className="bg-slate-50 dark:bg-[#0B1220] p-2.5 rounded-xl border border-slate-100 dark:border-[#1F2C45]/70 flex items-center space-x-2">
-              <Clock className="w-4 h-4 text-emerald-500" />
+            <div className="bg-surface-green p-2.5 rounded-xl border border-brand-green/30 flex items-center space-x-2">
+              <Clock className="w-4 h-4 text-brand-green-dark" />
               <div>
-                <p className="text-[10px] text-slate-400 dark:text-[#8A9BB8]">Estimated Arrival</p>
-                <p className="font-bold text-slate-800 dark:text-[#E6EDF7]">
+                <p className="text-[10px] text-muted">Est. Arrival</p>
+                <p className="font-bold text-brand-navy">
                   {activeTruck.estimatedArrival || '12 mins'}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* "LOCK CAMERA ON TRUCK" ACTION BUTTON */}
           <button
             onClick={() => setIsFollowing((prev) => !prev)}
-            className={`w-full py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 cursor-pointer ${
+            className={`w-full py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center justify-center space-x-2 transition-all shadow-xs active:scale-95 cursor-pointer ${
               isFollowing
-                ? 'bg-sky-600 text-white shadow-sky-500/30'
-                : 'bg-slate-900 dark:bg-[#1F2C45] hover:bg-slate-800 text-white border border-slate-700 dark:border-[#22D3EE]/30'
+                ? 'bg-brand-blue text-white'
+                : 'bg-surface-blue hover:bg-brand-blue/10 text-brand-blue border border-brand-accent/30'
             }`}
           >
             <Crosshair className={`w-4 h-4 ${isFollowing ? 'animate-spin' : ''}`} />

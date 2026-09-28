@@ -65,6 +65,40 @@ public class AuthController : ControllerBase
         }
     }
 
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains("@"))
+        {
+            return BadRequest(new { message = "Invalid email address." });
+        }
+
+        await _authService.ForgotPasswordAsync(request.Email);
+        // Generic success message to prevent user enumeration
+        return Ok(new { message = "If an account exists with that email, a password reset token has been sent to your inbox." });
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return BadRequest(new { message = "Email, reset token, and new password are required." });
+        }
+
+        try
+        {
+            await _authService.ResetPasswordAsync(request.Email, request.Token, request.NewPassword);
+            return Ok(new { message = "Password reset successful. You may now log in with your new password." });
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpGet("me")]
     [Authorize]
     public async Task<ActionResult<UserProfileDto>> GetCurrentUser()
@@ -86,3 +120,5 @@ public class AuthController : ControllerBase
 }
 
 public record SendOtpRequest(string Email, string Code);
+public record ForgotPasswordRequest(string Email);
+public record ResetPasswordRequest(string Email, string Token, string NewPassword);

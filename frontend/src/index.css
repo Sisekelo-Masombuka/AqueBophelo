@@ -1,21 +1,124 @@
 @import "tailwindcss";
 
+/*
+  AquaBophelo Brand Token Architecture
+  Mapped directly from AquaBophelo Logo & Municipal Identity:
+  - Primary Navy: #0E4C8C (Structure, Header, Primary Buttons)
+  - Deep Navy: #0A2A4F (Surfaces, Headers, Footer)
+  - Primary Green: #2E9E4F (Success, Operational, Good/Go)
+  - Dark Green: #215E22 (Active Accents)
+  - Droplet Blue: #2991C8 (Brand Accent & Water Identifiers)
+  - Surface Tints: #EAF6FC (Blue Tint), #EAF6E3 (Green Tint)
+*/
+
+:root {
+  --color-brand-navy: #0e4c8c;
+  --color-brand-navy-dark: #0a2a4f;
+  --color-brand-green: #2e9e4f;
+  --color-brand-green-dark: #215e22;
+  --color-brand-droplet: #2991c8;
+  --color-brand-blue: #0e4c8c;
+  --color-brand-accent: #2991c8;
+  
+  --color-surface-blue: #eaf6fc;
+  --color-surface-green: #eaf6e3;
+  --color-background: #ffffff;
+  --color-background-soft: #f4f9fc;
+  
+  --color-border: #d4e4ef;
+  --color-text: #0a2a4f;
+  --color-muted: #4d6278;
+  
+  --color-success: #2e9e4f;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
+  --color-info: #0e4c8c;
+
+  --font-heading: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  
+  --shadow-sm: 0 1px 2px rgba(10, 42, 79, 0.05);
+  --shadow-md: 0 8px 24px rgba(10, 42, 79, 0.08);
+}
+
 @theme {
-  --color-bg: #0B1220;
-  --color-surface: #111B2E;
-  --color-border: #1F2C45;
-  --color-text: #E6EDF7;
-  --color-muted: #8A9BB8;
-  --color-cyan: #22D3EE;
-  --color-green: #22C55E;
-  --color-amber: #F59E0B;
-  --color-red: #EF4444;
+  --color-brand-navy: #0e4c8c;
+  --color-brand-navy-dark: #0a2a4f;
+  --color-brand-green: #2e9e4f;
+  --color-brand-green-dark: #215e22;
+  --color-brand-droplet: #2991c8;
+  --color-brand-blue: #0e4c8c;
+  --color-brand-accent: #2991c8;
+  
+  --color-surface-blue: #eaf6fc;
+  --color-surface-green: #eaf6e3;
+  --color-background: #ffffff;
+  --color-background-soft: #f4f9fc;
+  
+  --color-border: #d4e4ef;
+  --color-foreground: #0a2a4f;
+  --color-muted: #4d6278;
+  
+  --color-success: #2e9e4f;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
+
+  --font-heading: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background-color: #0B1220;
-  color: #E6EDF7;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   margin: 0;
   min-height: 100vh;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--color-brand-navy-dark);
+  letter-spacing: -0.015em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand-droplet);
+  outline-offset: 2px;
+}
+
+/* Brand Utility Components */
+.ab-logo {
+  display: block;
+  height: auto;
+  width: auto;
+  max-height: 3rem;
+  object-fit: contain;
+}
+
+.ab-logo-lg {
+  max-height: 5rem;
 }

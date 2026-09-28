@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck, KeyRound } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck, KeyRound, Building2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
@@ -18,10 +18,9 @@ export function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
-  // HCI Error Prevention: inline validation
   const validateForm = () => {
     if (!email || !email.includes('@')) {
-      setError('Please enter a valid municipal email address.');
+      setError('Please enter a valid email address.');
       return false;
     }
     if (!password || password.length < 6) {
@@ -52,7 +51,7 @@ export function Login() {
 
         navigate(targetPath, { replace: true });
       } else {
-        setError(res?.error || 'Invalid email or password. Please verify your details.');
+        setError(res?.error || 'Invalid email address or password.');
       }
     } catch (err) {
       setError(err?.message || 'Unable to connect to AquaBophelo service. Please try again.');
@@ -62,27 +61,24 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1220] flex items-center justify-center p-4 selection:bg-[#0284C7] selection:text-white">
-      <div className="w-full max-w-md bg-[#111B2E] border border-[#1F2C45] rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        {/* Subtle Decorative Gradient */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#0284C7]/10 blur-3xl rounded-full pointer-events-none" />
-
+    <div className="min-h-screen bg-gradient-to-b from-surface-blue via-white to-white flex items-center justify-center p-4 selection:bg-brand-accent selection:text-white">
+      <div className="w-full max-w-md bg-white border border-border rounded-2xl p-6 sm:p-8 shadow-md relative">
         {/* Branding Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-block group mb-3">
-            <div className="w-16 h-16 bg-[#0284C7]/10 border border-[#0284C7]/30 rounded-2xl flex items-center justify-center mx-auto p-2 shadow-lg transition-transform group-hover:scale-105">
+        <div className="text-center mb-6 space-y-2">
+          <Link to="/" className="inline-block group">
+            <div className="w-16 h-16 bg-surface-blue border border-brand-accent/30 rounded-2xl flex items-center justify-center mx-auto p-2 shadow-xs transition-transform group-hover:scale-105">
               <img src="/AquaBophelo_logo.svg" alt="AquaBophelo Logo" className="w-12 h-12 object-contain" />
             </div>
           </Link>
-          <h1 className="text-2xl font-extrabold text-[#E6EDF7] tracking-tight">AquaBophelo</h1>
-          <p className="text-xs text-[#16A34A] font-semibold italic mt-0.5">Elke druppel tel • Metsi ke bophelo</p>
-          <p className="text-xs text-[#8A9BB8] mt-1.5">Sol Plaatje Municipality — Kimberley, Northern Cape</p>
+          <h1 className="text-2xl font-black text-brand-navy tracking-tight">AquaBophelo</h1>
+          <p className="text-xs text-brand-green font-semibold italic">Elke druppel tel • Metsi ke bophelo</p>
+          <p className="text-xs text-muted">Sol Plaatje Municipality — Kimberley Water Portal</p>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-6 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start space-x-2.5 text-xs text-rose-400">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="mb-6 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start space-x-2.5 text-xs text-red-700 font-medium">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
             <span className="leading-relaxed">{error}</span>
           </div>
         )}
@@ -92,30 +88,30 @@ export function Login() {
           <Input
             label="Email Address"
             type="email"
-            icon={Mail}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="e.g. resident@solplaatje.gov.za"
             required
+            autoComplete="email"
           />
 
           <div>
             <Input
               label="Password"
               type="password"
-              icon={Lock}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              autoComplete="current-password"
             />
             <div className="flex justify-end mt-1.5">
               <button
                 type="button"
                 onClick={() => setIsForgotModalOpen(true)}
-                className="text-xs text-sky-400 hover:underline font-medium inline-flex items-center space-x-1"
+                className="text-xs font-semibold text-brand-blue hover:underline inline-flex items-center gap-1 cursor-pointer"
               >
-                <KeyRound className="w-3 h-3" />
+                <KeyRound className="w-3 h-3 text-brand-blue" />
                 <span>Forgot Password?</span>
               </button>
             </div>
@@ -123,27 +119,27 @@ export function Login() {
 
           <Button
             type="submit"
-            variant="primary"
+            variant="default"
             size="lg"
             isLoading={isSubmitting}
-            className="w-full mt-2"
+            className="w-full font-bold mt-2"
           >
             <span>Sign In to Water Portal</span>
-            <ArrowRight className="w-4 h-4 ml-1" />
+            <ArrowRight className="w-4 h-4" />
           </Button>
         </form>
 
-        {/* Registration Link & Civic Trust Footer */}
-        <div className="mt-8 pt-5 border-t border-[#1F2C45] text-center space-y-3">
-          <p className="text-xs text-[#8A9BB8]">
-            Don&apos;t have a resident account yet?{' '}
-            <Link to="/register" className="text-sky-400 hover:underline font-bold">
-              Sign Up
+        {/* Registration Link & Civic Footer */}
+        <div className="mt-8 pt-5 border-t border-border text-center space-y-3">
+          <p className="text-xs text-muted">
+            Don&apos;t have an account yet?{' '}
+            <Link to="/register" className="text-brand-blue hover:underline font-bold">
+              Create Account
             </Link>
           </p>
 
-          <div className="inline-flex items-center space-x-1.5 text-[11px] text-[#8A9BB8] bg-[#0B1220] px-3 py-1 rounded-full border border-[#1F2C45]">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A]" />
+          <div className="inline-flex items-center space-x-1.5 text-[11px] text-muted bg-surface-blue px-3 py-1 rounded-full border border-brand-accent/20 font-medium">
+            <ShieldCheck className="w-3.5 h-3.5 text-brand-green" />
             <span>Official Sol Plaatje Municipal Authentication</span>
           </div>
         </div>

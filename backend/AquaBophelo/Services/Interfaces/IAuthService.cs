@@ -7,4 +7,6 @@ public interface IAuthService
     Task<AuthResponseDto> RegisterAsync(RegisterDto dto);
     Task<AuthResponseDto> LoginAsync(LoginDto dto);
     Task<UserProfileDto?> GetProfileAsync(string userId);
+    Task<bool> ForgotPasswordAsync(string email);
+    Task<bool> ResetPasswordAsync(string email, string token, string newPassword);
 }

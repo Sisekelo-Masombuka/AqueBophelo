@@ -7,6 +7,9 @@ import AdminLayout from './layouts/AdminLayout';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import AboutUsPage from './pages/AboutUsPage';
+import ContactUsPage from './pages/ContactUsPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import ResidentDashboard from './pages/resident/ResidentDashboard';
 import DamsPage from './pages/resident/DamsPage';
 import LiveTrucksPage from './pages/resident/LiveTrucksPage';
@@ -43,8 +46,15 @@ export function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/landing" element={<LandingPage />} />
+          <Route path="/about" element={<AboutUsPage />} />
+          <Route path="/contact" element={<ContactUsPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+
+          {/* Alias Navigation Links */}
+          <Route path="/water-services" element={<AboutUsPage />} />
+          <Route path="/notices" element={<ContactUsPage />} />
 
           {/* Root Smart Redirect */}
           <Route path="/" element={<RootRedirect />} />

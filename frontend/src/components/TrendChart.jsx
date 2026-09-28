@@ -12,6 +12,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { TrendingDown, Calendar, Info } from 'lucide-react';
+import { Card } from './ui/card';
 
 ChartJS.register(
   CategoryScale,
@@ -27,7 +28,6 @@ ChartJS.register(
 export function TrendChart({ damName = 'Newton Reservoir', currentLevel = 62.5 }) {
   const [timeframe, setTimeframe] = useState('7d');
 
-  // Generate realistic data series based on timeframe for Kimberley reservoirs
   const getChartData = () => {
     let labels = [];
     let dataPoints = [];
@@ -49,11 +49,11 @@ export function TrendChart({ damName = 'Newton Reservoir', currentLevel = 62.5 }
         {
           label: `${damName} Level (%)`,
           data: dataPoints,
-          borderColor: '#22D3EE',
-          backgroundColor: 'rgba(34, 211, 238, 0.12)',
+          borderColor: '#0E4C8C',
+          backgroundColor: 'rgba(14, 76, 140, 0.12)',
           borderWidth: 2.5,
-          pointBackgroundColor: '#22D3EE',
-          pointBorderColor: '#0B1220',
+          pointBackgroundColor: '#2991C8',
+          pointBorderColor: '#FFFFFF',
           pointHoverRadius: 6,
           pointRadius: 4,
           tension: 0.35,
@@ -71,10 +71,10 @@ export function TrendChart({ damName = 'Newton Reservoir', currentLevel = 62.5 }
         display: false,
       },
       tooltip: {
-        backgroundColor: '#111B2E',
-        titleColor: '#E6EDF7',
-        bodyColor: '#22D3EE',
-        borderColor: '#1F2C45',
+        backgroundColor: '#FFFFFF',
+        titleColor: '#0A2A4F',
+        bodyColor: '#0E4C8C',
+        borderColor: '#D4E4EF',
         borderWidth: 1,
         padding: 10,
         displayColors: false,
@@ -86,22 +86,22 @@ export function TrendChart({ damName = 'Newton Reservoir', currentLevel = 62.5 }
     scales: {
       x: {
         grid: {
-          color: 'rgba(31, 44, 69, 0.4)',
+          color: '#EAF6FC',
         },
         ticks: {
-          color: '#8A9BB8',
-          font: { size: 11 },
+          color: '#4D6278',
+          font: { size: 11, family: 'Inter' },
         },
       },
       y: {
         min: 0,
         max: 100,
         grid: {
-          color: 'rgba(31, 44, 69, 0.4)',
+          color: '#EAF6FC',
         },
         ticks: {
-          color: '#8A9BB8',
-          font: { size: 11 },
+          color: '#4D6278',
+          font: { size: 11, family: 'Inter' },
           callback: (value) => `${value}%`,
         },
       },
@@ -109,21 +109,21 @@ export function TrendChart({ damName = 'Newton Reservoir', currentLevel = 62.5 }
   };
 
   return (
-    <div className="bg-[#111B2E] border border-[#1F2C45] rounded-xl p-5 shadow-md">
-      {/* Header and Timeframe Filter Pills (HCI Heuristic #3: User Control & Freedom) */}
+    <Card className="p-5">
+      {/* Header and Timeframe Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h3 className="font-bold text-base text-[#E6EDF7] flex items-center gap-2">
+          <h3 className="font-bold text-base text-brand-navy flex items-center gap-2">
             <span>Historical Storage Trend</span>
-            <span className="text-xs font-normal text-[#8A9BB8]">({damName})</span>
+            <span className="text-xs font-normal text-muted">({damName})</span>
           </h3>
-          <p className="text-xs text-[#8A9BB8] mt-0.5">
+          <p className="text-xs text-muted mt-0.5">
             Reservoir replenishment and outflow tracking in Kimberley
           </p>
         </div>
 
         {/* Timeframe Toggles */}
-        <div className="flex items-center bg-[#0B1220] p-1 rounded-lg border border-[#1F2C45] self-start sm:self-auto">
+        <div className="flex items-center bg-surface-blue p-1 rounded-lg border border-brand-accent/20 self-start sm:self-auto">
           {[
             { id: '7d', label: '7 Days' },
             { id: '30d', label: '30 Days' },
@@ -132,10 +132,10 @@ export function TrendChart({ damName = 'Newton Reservoir', currentLevel = 62.5 }
             <button
               key={item.id}
               onClick={() => setTimeframe(item.id)}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 timeframe === item.id
-                  ? 'bg-[#22D3EE] text-[#0B1220] shadow-xs'
-                  : 'text-[#8A9BB8] hover:text-[#E6EDF7]'
+                  ? 'bg-brand-blue text-white shadow-xs'
+                  : 'text-muted hover:text-brand-navy'
               }`}
             >
               {item.label}
@@ -150,14 +150,14 @@ export function TrendChart({ damName = 'Newton Reservoir', currentLevel = 62.5 }
       </div>
 
       {/* Footer Insight */}
-      <div className="mt-4 pt-3 border-t border-[#1F2C45] flex items-center justify-between text-xs text-[#8A9BB8]">
-        <div className="flex items-center gap-1.5 text-[#F59E0B]">
-          <TrendingDown className="w-4 h-4" />
+      <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted">
+        <div className="flex items-center gap-1.5 text-amber-700 font-semibold">
+          <TrendingDown className="w-4 h-4 text-amber-600" />
           <span>Storage down ~5.7% over 7 days</span>
         </div>
-        <span className="text-[11px] text-[#8A9BB8]">Source: Sol Plaatje Municipal Water Division</span>
+        <span className="text-[11px] text-muted">Source: Sol Plaatje Municipal Water Division</span>
       </div>
-    </div>
+    </Card>
   );
 }
 

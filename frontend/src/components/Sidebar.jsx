@@ -41,24 +41,24 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
   const links = currentRole === 'Admin' ? adminLinks : currentRole === 'Driver' ? driverLinks : residentLinks;
 
   return (
-    <aside className="w-64 bg-[#111B2E] border-r border-[#1F2C45] min-h-screen flex flex-col justify-between p-4 text-[#E6EDF7] select-none">
+    <aside className="w-64 bg-brand-navy border-r border-brand-navy min-h-screen flex flex-col justify-between p-4 text-white select-none">
       <div>
         {/* Logo and Mobile Close */}
-        <div className="flex items-center justify-between px-2 py-3 border-b border-[#1F2C45] mb-5">
-          <Link to="/landing" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 p-1 bg-[#0284C7]/10 rounded-xl border border-[#0284C7]/30 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
+        <div className="flex items-center justify-between px-2 py-3 border-b border-white/10 mb-5">
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className="w-10 h-10 p-1 bg-white rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-xs">
               <img src="/AquaBophelo_logo.svg" alt="AquaBophelo Logo" className="w-8 h-8 object-contain" />
             </div>
             <div>
-              <h1 className="font-extrabold text-base leading-none text-[#E6EDF7] tracking-tight">AquaBophelo</h1>
-              <p className="text-[10px] text-[#16A34A] font-semibold italic mt-0.5">Elke druppel tel</p>
+              <h1 className="font-extrabold text-base leading-none text-white tracking-tight">AquaBophelo</h1>
+              <p className="text-[10px] text-brand-green font-semibold italic mt-0.5">Elke druppel tel</p>
             </div>
           </Link>
 
           {onClose && (
             <button
               onClick={onClose}
-              className="md:hidden p-1.5 rounded-lg text-[#8A9BB8] hover:text-[#E6EDF7] hover:bg-[#1F2C45] transition-colors"
+              className="md:hidden p-1.5 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition-colors"
               aria-label="Close Navigation Drawer"
             >
               <X className="w-5 h-5" />
@@ -78,12 +78,12 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
                 className={({ isActive }) =>
                   `w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     isActive
-                      ? 'bg-[#0284C7]/15 text-sky-400 border border-[#0284C7]/30 shadow-xs'
-                      : 'text-[#8A9BB8] hover:bg-[#0B1220] hover:text-[#E6EDF7]'
+                      ? 'bg-brand-blue text-white shadow-xs font-bold border border-brand-accent/40'
+                      : 'text-blue-100 hover:bg-white/10 hover:text-white'
                   }`
                 }
               >
-                <Icon className="w-4 h-4 shrink-0" />
+                <Icon className="w-4 h-4 shrink-0 text-brand-accent" />
                 <span>{link.label}</span>
               </NavLink>
             );
@@ -92,25 +92,25 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
       </div>
 
       {/* Footer Role Info & Public Landing Link */}
-      <div className="pt-4 border-t border-[#1F2C45] space-y-2">
+      <div className="pt-4 border-t border-white/10 space-y-2">
         <Link
-          to="/landing"
-          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-[#8A9BB8] hover:text-[#E6EDF7] hover:bg-[#0B1220] transition-colors border border-transparent hover:border-[#1F2C45]"
+          to="/"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-blue-100 hover:text-white hover:bg-white/10 transition-colors"
         >
           <span className="flex items-center space-x-2">
-            <Globe className="w-3.5 h-3.5 text-sky-400" />
-            <span>Public Landing Page</span>
+            <Globe className="w-3.5 h-3.5 text-brand-accent" />
+            <span>Public Website</span>
           </span>
-          <span className="text-[10px] bg-[#0284C7]/20 text-sky-400 px-1.5 py-0.5 rounded-md">View</span>
+          <span className="text-[10px] bg-brand-accent/30 text-white px-1.5 py-0.5 rounded-md font-bold">View</span>
         </Link>
 
-        <div className="bg-[#0B1220] p-3 rounded-xl border border-[#1F2C45] flex items-center justify-between">
+        <div className="bg-white/10 p-3 rounded-xl border border-white/10 flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-[#E6EDF7] flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A]" />
+            <p className="text-xs font-bold text-white flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-brand-green" />
               <span>Role: {currentRole}</span>
             </p>
-            <p className="text-[10px] text-[#8A9BB8] mt-0.5">Sol Plaatje Municipality (CAT)</p>
+            <p className="text-[10px] text-blue-200 mt-0.5">Sol Plaatje Municipality (CAT)</p>
           </div>
         </div>
       </div>

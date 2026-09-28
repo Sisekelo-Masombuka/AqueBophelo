@@ -1,57 +1,47 @@
-import React from 'react';
+import * as React from 'react';
+import { cn } from '../../lib/utils';
 
-export function Input({
-  label,
-  error,
-  helpText,
-  icon: Icon,
-  type = 'text',
-  className = '',
-  id,
-  required = false,
-  ...props
-}) {
-  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+const Input = React.forwardRef(({ className, type, error, helperText, label, id, ...props }, ref) => {
+  const generatedId = React.useId();
+  const inputId = id || generatedId;
+  const errorId = error ? `${inputId}-error` : undefined;
+  const helperId = helperText ? `${inputId}-helper` : undefined;
 
   return (
-    <div className="space-y-1.5 w-full">
+    <div className="w-full space-y-1.5">
       {label && (
-        <label htmlFor={inputId} className="block text-xs font-semibold text-slate-700 dark:text-[#8A9BB8]">
-          {label} {required && <span className="text-rose-500">*</span>}
+        <label htmlFor={inputId} className="block text-sm font-semibold text-brand-navy">
+          {label}
         </label>
       )}
-
-      <div className="relative">
-        {Icon && (
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-[#8A9BB8]">
-            <Icon className="w-4 h-4 shrink-0" />
-          </div>
+      <input
+        type={type}
+        id={inputId}
+        aria-invalid={error ? 'true' : 'false'}
+        aria-describedby={[errorId, helperId].filter(Boolean).join(' ') || undefined}
+        className={cn(
+          'flex h-10 w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-brand-navy placeholder:text-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:border-brand-accent disabled:cursor-not-allowed disabled:opacity-50',
+          error && 'border-danger focus-visible:ring-danger',
+          className
         )}
-
-        <input
-          id={inputId}
-          type={type}
-          required={required}
-          className={`w-full min-h-[44px] ${
-            Icon ? 'pl-10' : 'pl-4'
-          } pr-4 py-2.5 bg-white dark:bg-[#0B1220] border ${
-            error
-              ? 'border-rose-500 focus:ring-rose-500'
-              : 'border-slate-300 dark:border-[#1F2C45] focus:border-[#0284C7] dark:focus:border-[#22D3EE]'
-          } rounded-xl text-sm text-slate-900 dark:text-[#E6EDF7] placeholder-slate-400 dark:placeholder-[#8A9BB8]/50 focus:outline-none focus:ring-2 focus:ring-[#0284C7]/20 transition-all ${className}`}
-          {...props}
-        />
-      </div>
-
-      {error ? (
-        <p className="text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1">
-          <span>{error}</span>
+        ref={ref}
+        {...props}
+      />
+      {error && (
+        <p id={errorId} className="text-xs font-medium text-danger">
+          {error}
         </p>
-      ) : helpText ? (
-        <p className="text-[11px] text-slate-500 dark:text-[#8A9BB8]">{helpText}</p>
-      ) : null}
+      )}
+      {!error && helperText && (
+        <p id={helperId} className="text-xs text-muted">
+          {helperText}
+        </p>
+      )}
     </div>
   );
-}
+});
 
+Input.displayName = 'Input';
+
+export { Input };
 export default Input;

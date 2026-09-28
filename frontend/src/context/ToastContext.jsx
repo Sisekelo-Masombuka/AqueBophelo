@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
 
 const ToastContext = createContext(null);
@@ -24,26 +25,26 @@ export function ToastProvider({ children }) {
   const getToastIcon = (type) => {
     switch (type) {
       case 'success':
-        return <CheckCircle2 className="w-4 h-4 text-[#22C55E] shrink-0" />;
+        return <CheckCircle2 className="w-4 h-4 text-brand-green shrink-0" />;
       case 'error':
-        return <AlertCircle className="w-4 h-4 text-[#EF4444] shrink-0" />;
+        return <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />;
       case 'warning':
-        return <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0" />;
+        return <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />;
       default:
-        return <Info className="w-4 h-4 text-[#22D3EE] shrink-0" />;
+        return <Info className="w-4 h-4 text-brand-blue shrink-0" />;
     }
   };
 
   const getToastBorder = (type) => {
     switch (type) {
       case 'success':
-        return 'border-[#22C55E]/40 bg-[#111B2E] text-[#E6EDF7]';
+        return 'border-brand-green/30 bg-white text-brand-navy shadow-md';
       case 'error':
-        return 'border-[#EF4444]/40 bg-[#111B2E] text-[#E6EDF7]';
+        return 'border-red-200 bg-red-50 text-red-700 shadow-md';
       case 'warning':
-        return 'border-[#F59E0B]/40 bg-[#111B2E] text-[#E6EDF7]';
+        return 'border-amber-300 bg-amber-50 text-amber-900 shadow-md';
       default:
-        return 'border-[#22D3EE]/40 bg-[#111B2E] text-[#E6EDF7]';
+        return 'border-brand-accent/30 bg-surface-blue text-brand-navy shadow-md';
     }
   };
 
@@ -51,29 +52,34 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={{ addToast, removeToast }}>
       {children}
 
-      {/* Floating Toast Notification Container (HCI Heuristic #9: Clear Error & Status Feedback) */}
       <div className="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 max-w-sm w-full px-4 sm:px-0 pointer-events-none">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`pointer-events-auto p-3.5 rounded-xl border shadow-xl flex items-center justify-between gap-3 text-xs animate-slide-up transition-all ${getToastBorder(
-              toast.type
-            )}`}
-            role="alert"
-          >
-            <div className="flex items-center space-x-2.5">
-              {getToastIcon(toast.type)}
-              <span className="font-medium leading-relaxed">{toast.message}</span>
-            </div>
-            <button
-              onClick={() => removeToast(toast.id)}
-              className="text-[#8A9BB8] hover:text-[#E6EDF7] p-1 rounded-md transition-colors"
-              aria-label="Dismiss notification"
+        <AnimatePresence>
+          {toasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 15, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className={`pointer-events-auto p-3.5 rounded-xl border flex items-center justify-between gap-3 text-xs font-semibold ${getToastBorder(
+                toast.type
+              )}`}
+              role="alert"
             >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
+              <div className="flex items-center space-x-2.5">
+                {getToastIcon(toast.type)}
+                <span className="leading-relaxed">{toast.message}</span>
+              </div>
+              <button
+                onClick={() => removeToast(toast.id)}
+                className="text-muted hover:text-brand-navy p-1 rounded-md transition-colors cursor-pointer"
+                aria-label="Dismiss notification"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   );
