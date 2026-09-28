@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import * as maplibregl from 'maplibre-gl';
+import { Map as MapLibreMap, Marker, Popup, NavigationControl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   Navigation,
@@ -362,7 +362,7 @@ export function LiveMap({
     if (!mapContainerRef.current) return;
 
     try {
-      const map = new maplibregl.Map({
+      const map = new MapLibreMap({
         container: mapContainerRef.current,
         style: isLightMode ? LIGHT_STREETS_STYLE : DARK_CANVAS_STYLE,
         center: KIMBERLEY_CENTER,
@@ -372,7 +372,7 @@ export function LiveMap({
         attributionControl: true,
       });
 
-      map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+      map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
 
       map.on('dragstart', () => {
         setIsFollowing(false);
@@ -502,106 +502,114 @@ export function LiveMap({
   }, [activeTruck]);
 
   useEffect(() => {
-    if (isFollowing && activeTruck && mapRef.current) {
-      if (activeTruck.lastLongitude && activeTruck.lastLatitude) {
+    if (isFollowing && currentActiveTruck && mapRef.current) {
+      if (currentActiveTruck.lastLongitude && currentActiveTruck.lastLatitude) {
         try {
           mapRef.current.easeTo({
-            center: [activeTruck.lastLongitude, activeTruck.lastLatitude],
+            center: [currentActiveTruck.lastLongitude, currentActiveTruck.lastLatitude],
             duration: 800,
             essential: true,
           });
         } catch (easeErr) {}
       }
     }
-  }, [isFollowing, activeTruck]);
+  }, [isFollowing, currentActiveTruck]);
+
+  const currentActiveTruck = activeTruck
+    ? animatedTrucks.find((t) => t.id === activeTruck.id) || activeTruck
+    : null;
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    animatedTrucks.forEach((truck) => {
-      if (!truck.lastLatitude || !truck.lastLongitude) return;
+    try {
+      animatedTrucks.forEach((truck) => {
+        if (!truck.lastLatitude || !truck.lastLongitude) return;
 
-      const isSelected = activeTruck?.id === truck.id;
-      const lngLat = [truck.lastLongitude, truck.lastLatitude];
+        const isSelected = activeTruck?.id === truck.id;
+        const lngLat = [truck.lastLongitude, truck.lastLatitude];
 
-      if (markersRef.current.trucks[truck.id]) {
-        const existingMarker = markersRef.current.trucks[truck.id];
-        existingMarker.setLngLat(lngLat);
+        if (markersRef.current.trucks[truck.id]) {
+          const existingMarker = markersRef.current.trucks[truck.id];
+          existingMarker.setLngLat(lngLat);
 
-        if (truck.heading != null) {
-          existingMarker.setRotation(truck.heading);
+          if (truck.heading != null) {
+            existingMarker.setRotation(truck.heading);
+          }
+
+          const el = existingMarker.getElement();
+          if (el) {
+            const freshEl = createTruckDOMElement(truck, isSelected, isLightMode);
+            el.innerHTML = freshEl.innerHTML;
+          }
+        } else {
+          const el = createTruckDOMElement(truck, isSelected, isLightMode);
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleSelectTruck(truck);
+          });
+
+          const marker = new Marker({
+            element: el,
+            rotationAlignment: 'map',
+          })
+            .setLngLat(lngLat)
+            .addTo(map);
+
+          if (truck.heading != null) {
+            marker.setRotation(truck.heading);
+          }
+
+          markersRef.current.trucks[truck.id] = marker;
         }
+      });
 
-        const el = existingMarker.getElement();
-        if (el) {
-          const freshEl = createTruckDOMElement(truck, isSelected, isLightMode);
-          el.innerHTML = freshEl.innerHTML;
+      const currentIds = new Set(animatedTrucks.map((t) => t.id));
+      Object.keys(markersRef.current.trucks).forEach((id) => {
+        if (!currentIds.has(Number(id))) {
+          markersRef.current.trucks[id].remove();
+          delete markersRef.current.trucks[id];
         }
-
-        if (isSelected) {
-          setActiveTruck((prev) => ({ ...prev, ...truck }));
-        }
-      } else {
-        const el = createTruckDOMElement(truck, isSelected, isLightMode);
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          handleSelectTruck(truck);
-        });
-
-        const marker = new maplibregl.Marker({
-          element: el,
-          rotationAlignment: 'map',
-        })
-          .setLngLat(lngLat)
-          .addTo(map);
-
-        if (truck.heading != null) {
-          marker.setRotation(truck.heading);
-        }
-
-        markersRef.current.trucks[truck.id] = marker;
-      }
-    });
-
-    const currentIds = new Set(animatedTrucks.map((t) => t.id));
-    Object.keys(markersRef.current.trucks).forEach((id) => {
-      if (!currentIds.has(Number(id))) {
-        markersRef.current.trucks[id].remove();
-        delete markersRef.current.trucks[id];
-      }
-    });
+      });
+    } catch (markerErr) {
+      console.warn('Truck marker update error:', markerErr);
+    }
   }, [animatedTrucks, activeTruck, isLightMode, handleSelectTruck]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    dams.forEach((dam) => {
-      if (!dam.latitude || !dam.longitude) return;
+    try {
+      dams.forEach((dam) => {
+        if (!dam.latitude || !dam.longitude) return;
 
-      if (!markersRef.current.dams[dam.id]) {
-        const el = createDamDOMElement(dam, isLightMode);
+        if (!markersRef.current.dams[dam.id]) {
+          const el = createDamDOMElement(dam, isLightMode);
 
-        const popup = new maplibregl.Popup({ offset: 22, closeButton: false }).setHTML(`
-          <div style="background: #FFFFFF; color: #0A2A4F; padding: 12px; border-radius: 12px; min-width: 190px; font-family: sans-serif; border: 1px solid #D4E4EF; box-shadow: 0 8px 24px rgba(10,42,79,0.12);">
-            <div style="font-weight: 800; font-size: 13px; color: #0E4C8C; margin-bottom: 4px;">${dam.name}</div>
-            <div style="font-size: 11px; color: #4D6278;">Capacity: <strong style="color: #0A2A4F;">${dam.capacityMegaLitres} ML</strong></div>
-            <div style="font-size: 11px; color: #4D6278; margin-top: 4px;">Fill Level: <strong style="color: #2E9E4F;">${dam.latestLevel ?? 50}%</strong></div>
-          </div>
-        `);
+          const popup = new Popup({ offset: 22, closeButton: false }).setHTML(`
+            <div style="background: #FFFFFF; color: #0A2A4F; padding: 12px; border-radius: 12px; min-width: 190px; font-family: sans-serif; border: 1px solid #D4E4EF; box-shadow: 0 8px 24px rgba(10,42,79,0.12);">
+              <div style="font-weight: 800; font-size: 13px; color: #0E4C8C; margin-bottom: 4px;">${dam.name}</div>
+              <div style="font-size: 11px; color: #4D6278;">Capacity: <strong style="color: #0A2A4F;">${dam.capacityMegaLitres} ML</strong></div>
+              <div style="font-size: 11px; color: #4D6278; margin-top: 4px;">Fill Level: <strong style="color: #2E9E4F;">${dam.latestLevel ?? 50}%</strong></div>
+            </div>
+          `);
 
-        const marker = new maplibregl.Marker({ element: el })
-          .setLngLat([dam.longitude, dam.latitude])
-          .setPopup(popup)
-          .addTo(map);
+          const marker = new Marker({ element: el })
+            .setLngLat([dam.longitude, dam.latitude])
+            .setPopup(popup)
+            .addTo(map);
 
-        markersRef.current.dams[dam.id] = marker;
-      }
-    });
+          markersRef.current.dams[dam.id] = marker;
+        }
+      });
+    } catch (damErr) {
+      console.warn('Dam marker update error:', damErr);
+    }
   }, [dams, isLightMode]);
 
-  const isDelivering = activeTruck?.status === 'OnTrip' || activeTruck?.status === 'Active';
+  const isDelivering = currentActiveTruck?.status === 'OnTrip' || currentActiveTruck?.status === 'Active';
 
   return (
     <div className="ab-map-shell w-full relative select-none" style={{ height }}>
@@ -631,17 +639,17 @@ export function LiveMap({
         </p>
       </div>
 
-      {activeTruck && (
+      {currentActiveTruck && (
         <div className="ab-map-drawer inset-x-0 bottom-0 md:inset-x-auto border-t-4 border-t-brand-navy p-4 md:p-5 text-brand-navy">
           <div className="flex items-start justify-between gap-3 pb-3 border-b border-border">
             <div>
               <p className="font-mono text-base font-bold tracking-wide text-brand-navy-dark">
-                {activeTruck.registrationNumber}
+                {currentActiveTruck.registrationNumber}
               </p>
               <p className="text-sm text-muted mt-1">
-                {isDelivering ? 'On a delivery trip' : activeTruck.status || 'Available'}
-                {activeTruck.capacityLitres != null
-                  ? ` · ${activeTruck.capacityLitres.toLocaleString()} L`
+                {isDelivering ? 'On a delivery trip' : currentActiveTruck.status || 'Available'}
+                {currentActiveTruck.capacityLitres != null
+                  ? ` · ${currentActiveTruck.capacityLitres.toLocaleString()} L`
                   : ''}
               </p>
             </div>
@@ -658,32 +666,32 @@ export function LiveMap({
             </button>
           </div>
 
-          {activeTruck.driverName ? (
+          {currentActiveTruck.driverName ? (
             <p className="mt-3 text-sm">
               <span className="text-muted">Driver </span>
-              <span className="font-semibold text-brand-navy-dark">{activeTruck.driverName}</span>
-              {activeTruck.driverRating != null ? (
-                <span className="text-muted"> · {activeTruck.driverRating}</span>
+              <span className="font-semibold text-brand-navy-dark">{currentActiveTruck.driverName}</span>
+              {currentActiveTruck.driverRating != null ? (
+                <span className="text-muted"> · {currentActiveTruck.driverRating}</span>
               ) : null}
             </p>
           ) : null}
 
           <dl className="mt-3 space-y-2 text-sm">
-            {activeTruck.route ? (
+            {currentActiveTruck.route ? (
               <div className="flex gap-2">
                 <Navigation className="w-4 h-4 text-brand-navy mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <dt className="sr-only">Route</dt>
-                  <dd>{activeTruck.route}</dd>
+                  <dd>{currentActiveTruck.route}</dd>
                 </div>
               </div>
             ) : null}
-            {activeTruck.destination ? (
+            {currentActiveTruck.destination ? (
               <div className="flex gap-2">
                 <MapPin className="w-4 h-4 text-brand-droplet mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <dt className="sr-only">Next stop</dt>
-                  <dd>Next stop: {activeTruck.destination}</dd>
+                  <dd>Next stop: {currentActiveTruck.destination}</dd>
                 </div>
               </div>
             ) : null}
@@ -693,14 +701,14 @@ export function LiveMap({
             <div>
               <p className="text-xs text-muted">Speed</p>
               <p className="font-semibold tabular-nums">
-                {activeTruck.speedKmh != null && activeTruck.speedKmh > 0
-                  ? `${Math.round(activeTruck.speedKmh)} km/h`
+                {currentActiveTruck.speedKmh != null && currentActiveTruck.speedKmh > 0
+                  ? `${Math.round(currentActiveTruck.speedKmh)} km/h`
                   : 'Stationary'}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted">Est. arrival</p>
-              <p className="font-semibold">{activeTruck.estimatedArrival || '—'}</p>
+              <p className="font-semibold">{currentActiveTruck.estimatedArrival || '—'}</p>
             </div>
           </div>
 

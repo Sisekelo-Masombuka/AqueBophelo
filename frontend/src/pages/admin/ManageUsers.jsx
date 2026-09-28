@@ -197,7 +197,7 @@ export function ManageUsers() {
                   <td className="py-3.5 px-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-9 h-9 rounded-xl bg-brand-accent/10 text-brand-blue font-extrabold text-sm flex items-center justify-center border border-brand-accent/30">
-                        {user.fullName[0]}
+                        {user.fullName ? user.fullName[0].toUpperCase() : 'U'}
                       </div>
                       <div>
                         <p className="font-bold text-brand-navy-dark">{user.fullName}</p>
