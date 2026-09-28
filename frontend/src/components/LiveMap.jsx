@@ -501,6 +501,10 @@ export function LiveMap({
     }
   }, [activeTruck]);
 
+  const currentActiveTruck = activeTruck
+    ? animatedTrucks.find((t) => t.id === activeTruck.id) || activeTruck
+    : null;
+
   useEffect(() => {
     if (isFollowing && currentActiveTruck && mapRef.current) {
       if (currentActiveTruck.lastLongitude && currentActiveTruck.lastLatitude) {
@@ -514,10 +518,6 @@ export function LiveMap({
       }
     }
   }, [isFollowing, currentActiveTruck]);
-
-  const currentActiveTruck = activeTruck
-    ? animatedTrucks.find((t) => t.id === activeTruck.id) || activeTruck
-    : null;
 
   useEffect(() => {
     const map = mapRef.current;

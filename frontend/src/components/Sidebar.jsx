@@ -81,8 +81,12 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
                   }`
                 }
               >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-brand-blue'}`} />
-                <span>{link.label}</span>
+                {({ isActive }) => (
+                  <>
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-brand-blue'}`} />
+                    <span>{link.label}</span>
+                  </>
+                )}
               </NavLink>
             );
           })}
