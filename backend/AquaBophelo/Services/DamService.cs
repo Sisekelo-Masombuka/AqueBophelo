@@ -157,7 +157,7 @@ public class DamService : IDamService
             LatestVolumeMegaLitres = volume,
             StatusBand = band,
             StatusColor = color,
-            LastUpdatedSast = latestReading != null ? FormatSast(latestReading.RecordedAt) : null
+            LastUpdatedCAT = latestReading != null ? FormatCAT(latestReading.RecordedAt) : null
         };
     }
 
@@ -171,14 +171,14 @@ public class DamService : IDamService
             LevelPercent = reading.LevelPercent,
             VolumeMegaLitres = reading.VolumeMegaLitres,
             RecordedAtUtc = reading.RecordedAt,
-            RecordedAtSast = FormatSast(reading.RecordedAt),
+            RecordedAtCAT = FormatCAT(reading.RecordedAt),
             Source = reading.Source
         };
     }
 
-    private static string FormatSast(DateTime utcTime)
+    private static string FormatCAT(DateTime utcTime)
     {
-        var sastTime = utcTime.AddHours(2);
-        return sastTime.ToString("yyyy-MM-dd HH:mm SAST");
+        var CATTime = utcTime.AddHours(2);
+        return CATTime.ToString("yyyy-MM-dd HH:mm CAT");
     }
 }

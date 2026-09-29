@@ -12,64 +12,65 @@
 */
 
 :root {
-  --color-brand-navy: #0e4c8c;
-  --color-brand-navy-dark: #0a2a4f;
-  --color-brand-green: #2e9e4f;
-  --color-brand-green-dark: #215e22;
-  --color-brand-droplet: #2991c8;
-  --color-brand-blue: #0e4c8c;
-  --color-brand-accent: #2991c8;
+  --color-brand-navy: #152e52;
+  --color-brand-navy-dark: #0e223d;
+  --color-brand-green: #2e7d32;
+  --color-brand-green-dark: #1b6326;
+  --color-brand-droplet: #1d70b8;
+  --color-brand-blue: #152e52;
+  --color-brand-accent: #1d70b8;
 
-  --color-surface-blue: #edf7fb;
-  --color-surface-green: #edf9f0;
-  --color-background: #f5f8fb;
+  --color-surface-blue: #f4f8fb;
+  --color-surface-green: #f2f9f3;
+  --color-background: #ffffff;
   --color-background-soft: #f8fafc;
 
-  --color-border: #dfeaf3;
-  --color-text: #17375d;
-  --color-muted: #536b80;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+  --color-muted: #64748b;
 
-  --color-success: #2e9e4f;
+  --color-success: #2e7d32;
   --color-warning: #b45309;
   --color-danger: #b91c1c;
-  --color-info: #0e4c8c;
+  --color-info: #152e52;
 
-  --font-heading: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Lora', Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-heading: 'Lora', Georgia, serif;
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
 
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 
-  --shadow-sm: 0 2px 8px rgba(15, 39, 63, 0.05);
-  --shadow-md: 0 12px 30px rgba(15, 39, 63, 0.08);
-  --shadow-soft: 0 18px 40px rgba(15, 39, 63, 0.06);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
-
 @theme {
-  --color-brand-navy: #0e4c8c;
-  --color-brand-navy-dark: #0a2a4f;
-  --color-brand-green: #2e9e4f;
-  --color-brand-green-dark: #215e22;
-  --color-brand-droplet: #2991c8;
-  --color-brand-blue: #0e4c8c;
-  --color-brand-accent: #2991c8;
+  --color-brand-navy: #152e52;
+  --color-brand-navy-dark: #0e223d;
+  --color-brand-green: #2e7d32;
+  --color-brand-green-dark: #1b6326;
+  --color-brand-droplet: #1d70b8;
+  --color-brand-blue: #152e52;
+  --color-brand-accent: #1d70b8;
   
-  --color-surface-blue: #eaf6fc;
-  --color-surface-green: #eaf6e3;
+  --color-surface-blue: #f4f8fb;
+  --color-surface-green: #f2f9f3;
   --color-background: #ffffff;
-  --color-background-soft: #f4f9fc;
+  --color-background-soft: #f8fafc;
   
-  --color-border: #d4e4ef;
-  --color-foreground: #0a2a4f;
-  --color-muted: #4d6278;
+  --color-border: #e2e8f0;
+  --color-foreground: #152e52;
+  --color-muted: #64748b;
   
-  --color-success: #2e9e4f;
+  --color-success: #2e7d32;
   --color-warning: #b45309;
   --color-danger: #b91c1c;
 
-  --font-heading: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
+  --font-heading: 'Lora', Georgia, serif;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
@@ -80,8 +81,8 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(180deg, #f7fafc 0%, #ffffff 100%);
-  color: var(--color-text);
+  background-color: #ffffff;
+  color: #1e293b;
   font-family: var(--font-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -96,10 +97,13 @@ img {
   max-width: 100%;
 }
 
+.font-serif {
+  font-family: var(--font-serif);
+}
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
-  color: var(--color-brand-navy-dark);
+  font-family: var(--font-serif);
+  color: #152e52;
   letter-spacing: -0.015em;
 }
 

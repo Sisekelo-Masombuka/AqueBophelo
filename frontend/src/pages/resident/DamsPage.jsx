@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import DamPanel from '../../components/DamPanel';
 import TrendChart from '../../components/TrendChart';
 import StatCard from '../../components/StatCard';
-import { Droplet, HardDrive, ShieldAlert, Info } from 'lucide-react';
+import { Droplet, HardDrive, ShieldAlert } from 'lucide-react';
 
 export function DamsPage() {
   // Initial seeded dams matching backend DbSeeder.cs
@@ -14,7 +14,7 @@ export function DamsPage() {
       capacityMegaLitres: 92.5,
       volumeMegaLitres: 57.8,
       latestLevel: 62.5,
-      lastUpdated: 'Today at 08:30 (SAST)',
+      lastUpdated: 'Today at 08:30 (CAT)',
     },
     {
       id: 2,
@@ -23,7 +23,7 @@ export function DamsPage() {
       capacityMegaLitres: 150.0,
       volumeMegaLitres: 123.0,
       latestLevel: 82.0,
-      lastUpdated: 'Today at 07:15 (SAST)',
+      lastUpdated: 'Today at 07:15 (CAT)',
     },
   ]);
 
@@ -38,10 +38,10 @@ export function DamsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl md:text-2xl font-bold text-[#E6EDF7]">
+        <h2 className="font-serif text-2xl md:text-3xl font-bold text-[#152e52]">
           Municipal Dam Level Monitoring
         </h2>
-        <p className="text-xs md:text-sm text-[#8A9BB8] mt-1">
+        <p className="text-xs md:text-sm text-slate-500 mt-1 font-normal">
           Official reservoir volume readings and historical consumption trends for Kimberley.
         </p>
       </div>
@@ -53,21 +53,21 @@ export function DamsPage() {
           value={`${overallPercentage}%`}
           subtitle={`${totalVolume.toFixed(1)} ML of ${totalCapacity.toFixed(1)} ML`}
           icon={Droplet}
-          accentColor="#22D3EE"
+          accentColor="#1d70b8"
         />
         <StatCard
           title="Monitored Reservoirs"
           value="2 Active"
           subtitle="Newton & Riverton Systems"
           icon={HardDrive}
-          accentColor="#22C55E"
+          accentColor="#2e7d32"
         />
         <StatCard
           title="Municipal Supply Alert"
           value="Healthy"
           subtitle="Above 50% safety buffer"
           icon={ShieldAlert}
-          accentColor="#22C55E"
+          accentColor="#2e7d32"
         />
       </div>
 
@@ -77,9 +77,9 @@ export function DamsPage() {
           <div
             key={dam.id}
             onClick={() => setSelectedDam(dam)}
-            className={`cursor-pointer rounded-xl transition-all ${
+            className={`cursor-pointer rounded-lg transition-all ${
               selectedDam.id === dam.id
-                ? 'ring-2 ring-[#22D3EE] shadow-lg shadow-[#22D3EE]/10'
+                ? 'ring-2 ring-[#1d70b8] shadow-sm'
                 : 'opacity-90 hover:opacity-100'
             }`}
           >
@@ -88,7 +88,7 @@ export function DamsPage() {
         ))}
       </div>
 
-      {/* Historical Trend Chart (Chart.js with 7d / 30d / 90d filters) */}
+      {/* Historical Trend Chart */}
       <TrendChart
         damName={selectedDam.name}
         currentLevel={selectedDam.latestLevel}

@@ -580,34 +580,18 @@ The frontend design strictly applies **HCI principles** and **Nielsen's 10 Usabi
 
 ### Done
 - Documentation phase (including ER diagram and requirements).
-- Backend project created, Scalar wired, first GET returns 200 OK.
-- UI direction agreed (dark, dashboard-first).
-
-### In progress / next
-0. **Step 0 – Bootstrap** (done by Antigravity; brief in `docs/Antigravity_Step0_Bootstrap.md`): restructure the repo (§3.3), install all tooling and packages, connect frontend ↔ backend with a health check, add `.gitignore` and `README.md`, push to GitHub so the whole team can start.
-1. Models folder + `Dam.cs`, then remaining entities from the ER diagram.
-2. `AppDbContext`, connection string, first EF Core migration, seed data.
-3. Identity + JWT + roles.
-4. Core CRUD: dams, readings, trucks, routes.
-5. SignalR truck hub + driver location flow.
-6. Alerts + notification service (dry-run first).
-7. Frontend: role-based navigation, dashboards, live map (frontend team, in parallel).
-8. Integration, deployment, demo data, presentation prep.
-
-### Suggested build order for the agent (vertical slices)
-
-| # | Slice | Done when |
-|---|---|---|
-| 1 | `Dam` model, DbContext, migration, `GET/POST /dams` | Dam created and listed in Scalar |
-| 2 | `DamReading` + latest-level status in `GET /dams` | Status colour computed from level |
-| 3 | Identity, roles seeding, register/login, JWT | Protected endpoint rejects anonymous, accepts Admin |
-| 4 | Trucks, drivers, routes, stops CRUD | Admin can build a route end to end |
-| 5 | Trips lifecycle (start / stop complete / end) | Driver can run a full trip via API |
-| 6 | `TruckHub` + live location broadcast | Two browser tabs see a marker move |
-| 7 | Alerts + subscriptions + dry-run notifications | Low reading creates alert + log rows |
-| 8 | Real SMS / email provider | Test message delivered |
-| 9 | Deploy to Azure + connect deployed frontend | End-to-end demo on public URLs |
-| 10 | Demo polish: simulator, seed data, error handling | Presentation script runs cleanly |
+- Backend ASP.NET Core Web API project created, EF Core DbContext, models, controllers, SignalR hubs, and Scalar OpenAPI.
+- Frontend React + Tailwind SPA fully built with authentic `BrandLogo.jsx` and Sol Plaatje municipal design system.
+- CAT (Central Africa Time, UTC+2) timezone standardized across entire application.
+- Password hide/show (eye) toggles on all password input fields.
+- Email-only notifications and 5-minute countdown OTP verification modal.
+- South African vehicle registration plates formatted with `NC` suffix (e.g. `542-KM NC`).
+- Multi-language support (English, Afrikaans, Setswana) via `LanguageContext.jsx` and `LanguageSwitcher.jsx`.
+- Resident portal: issue reporting with optional photo attachment preview (`ReportIssueModal.jsx`), ticket status tracking, scheduled water outage calendar (`ScheduledOutagesComponent.jsx`), and account deletion with email OTP.
+- Driver portal: active trip map, stop sequence manifest (`Arrived` ➔ `Start Delivery` ➔ `Delivery Completed`), delivery record logging, vehicle inspection checklist, and truck fault reporting.
+- Admin portal: operational command center (`AdminOverview.jsx`), reservoir readings (`ManageDams.jsx`), fleet management (`ManageTrucks.jsx`), route manifest (`ManageRoutes.jsx`), user roles (`ManageUsers.jsx`), emergency alert broadcast (`BroadcastAlertPage.jsx`), and PDF/CSV analytics reports (`AdminReportsPage.jsx`).
+- POPIA privacy policy page (`PrivacyPage.jsx` at `/privacy`).
+- All elements flagged in `Screenshot of things that are wrong` replaced with `rounded-md` rectangular solid tags, Lucide SVG icons, and clean municipal typography.
 
 ---
 

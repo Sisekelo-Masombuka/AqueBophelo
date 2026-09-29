@@ -43,7 +43,7 @@ export function ConnectionStatusBadge({ status = 'Connected', lastTime }) {
   return (
     <div
       className={`flex items-center space-x-2 px-3 py-1 rounded-full border text-xs font-medium transition-all ${bg}`}
-      title={lastTime ? `Last stream update: ${lastTime} SAST` : 'Real-time telemetry stream'}
+      title={lastTime ? `Last stream update: ${lastTime} CAT` : 'Real-time telemetry stream'}
     >
       <span className={`w-2 h-2 rounded-full ${dot}`} />
       <Icon className={`w-3.5 h-3.5 ${spin ? 'animate-spin' : ''}`} />

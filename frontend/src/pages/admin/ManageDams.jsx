@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Droplet, Plus, Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Droplet, Plus, Clock, CheckCircle, AlertCircle, X } from 'lucide-react';
 import apiClient from '../../api/client';
 import StatusBadge from '../../components/StatusBadge';
 
@@ -16,7 +16,7 @@ export function ManageDams() {
       latestLevelPercent: 62.5,
       statusBand: 'Healthy',
       statusColor: 'Green',
-      lastUpdatedSast: 'Today at 08:30 (SAST)',
+      lastUpdatedCAT: 'Today at 08:30 (CAT)',
     },
     {
       id: 2,
@@ -29,7 +29,7 @@ export function ManageDams() {
       latestLevelPercent: 82.0,
       statusBand: 'Healthy',
       statusColor: 'Green',
-      lastUpdatedSast: 'Today at 07:15 (SAST)',
+      lastUpdatedCAT: 'Today at 07:15 (CAT)',
     },
   ]);
 
@@ -93,7 +93,6 @@ export function ManageDams() {
 
       await apiClient.post(`/api/v1/dams/${selectedDam.id}/readings`, payload);
 
-      // Update state locally
       setDams((prev) =>
         prev.map((d) =>
           d.id === selectedDam.id
@@ -103,7 +102,7 @@ export function ManageDams() {
                 volumeMegaLitres: (percent / 100) * d.capacityMegaLitres,
                 statusBand: percent < 30 ? 'Critical' : percent < 60 ? 'Watch' : 'Healthy',
                 statusColor: percent < 30 ? 'Red' : percent < 60 ? 'Amber' : 'Green',
-                lastUpdatedSast: 'Just now (SAST)',
+                lastUpdatedCAT: 'Just now (CAT)',
               }
             : d
         )
@@ -122,7 +121,7 @@ export function ManageDams() {
                 volumeMegaLitres: (percent / 100) * d.capacityMegaLitres,
                 statusBand: percent < 30 ? 'Critical' : percent < 60 ? 'Watch' : 'Healthy',
                 statusColor: percent < 30 ? 'Red' : percent < 60 ? 'Amber' : 'Green',
-                lastUpdatedSast: 'Just now (SAST)',
+                lastUpdatedCAT: 'Just now (CAT)',
               }
             : d
         )
@@ -155,7 +154,7 @@ export function ManageDams() {
         volumeMegaLitres: payload.capacityMegaLitres * 0.5,
         statusBand: 'Watch',
         statusColor: 'Amber',
-        lastUpdatedSast: 'Just now (SAST)',
+        lastUpdatedCAT: 'Just now (CAT)',
       };
       setDams((prev) => [...prev, created]);
       setFeedback({ type: 'success', message: `Reservoir "${newDamName}" registered successfully.` });
@@ -171,7 +170,7 @@ export function ManageDams() {
         volumeMegaLitres: payload.capacityMegaLitres * 0.5,
         statusBand: 'Watch',
         statusColor: 'Amber',
-        lastUpdatedSast: 'Just now (SAST)',
+        lastUpdatedCAT: 'Just now (CAT)',
       };
       setDams((prev) => [...prev, mockDam]);
       setFeedback({ type: 'success', message: `Reservoir "${newDamName}" added (Preview Mode).` });
@@ -184,21 +183,21 @@ export function ManageDams() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-xs font-semibold text-brand-blue uppercase tracking-wider mb-1">
-            <Droplet className="w-3.5 h-3.5" />
+          <div className="flex items-center space-x-2 text-xs font-semibold text-[#1d70b8] mb-1">
+            <Droplet className="w-3.5 h-3.5 fill-current" />
             <span>Water Resource Administration</span>
           </div>
-          <h2 className="text-xl md:text-2xl font-bold text-brand-navy-dark">
+          <h2 className="font-serif text-2xl md:text-3xl font-bold text-[#152e52]">
             Dams &amp; Reservoir Readings
           </h2>
-          <p className="text-xs md:text-sm text-muted mt-1">
+          <p className="text-xs md:text-sm text-slate-500 mt-1 font-normal">
             Record certified daily gauge levels and inspect municipal reservoir capacities.
           </p>
         </div>
 
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-navy text-white font-bold text-xs md:text-sm transition-all shadow-md active:scale-95"
+          className="inline-flex items-center space-x-2 px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs md:text-sm transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4 shrink-0" />
           <span>Add New Reservoir</span>
@@ -208,10 +207,10 @@ export function ManageDams() {
       {/* Feedback Banner */}
       {feedback && (
         <div
-          className={`p-3.5 rounded-xl border flex items-center space-x-3 text-xs md:text-sm ${
+          className={`p-3.5 rounded-md border flex items-center space-x-3 text-xs md:text-sm ${
             feedback.type === 'success'
-              ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]'
-              : 'bg-[#EF4444]/10 border-[#EF4444]/30 text-[#EF4444]'
+              ? 'bg-[#f2f9f3] border-[#b8e3bd] text-[#2e7d32]'
+              : 'bg-red-50 border-red-200 text-red-700'
           }`}
         >
           {feedback.type === 'success' ? (
@@ -230,16 +229,16 @@ export function ManageDams() {
           return (
             <div
               key={dam.id}
-              className="bg-white border border-border rounded-2xl p-5 shadow-soft flex flex-col justify-between"
+              className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-brand-blue bg-brand-accent/10 px-2 py-0.5 rounded border border-brand-accent/20">
+                    <span className="text-[10px] font-mono font-bold uppercase text-[#152e52] bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                       ID #{dam.id}
                     </span>
-                    <h3 className="text-lg font-bold text-brand-navy-dark mt-1.5">{dam.name}</h3>
-                    <p className="text-xs text-muted">{dam.areaName || 'Sol Plaatje Municipal Area'}</p>
+                    <h3 className="font-serif text-lg font-bold text-[#152e52] mt-1.5">{dam.name}</h3>
+                    <p className="text-xs text-slate-500 font-normal">{dam.areaName || 'Sol Plaatje Municipal Area'}</p>
                   </div>
                   <StatusBadge status={dam.statusBand || 'Healthy'} />
                 </div>
@@ -247,13 +246,13 @@ export function ManageDams() {
                 {/* Progress Level Bar */}
                 <div className="space-y-1.5 mt-4">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted">Current Gauge Capacity</span>
-                    <span className="font-bold text-brand-navy-dark">{level.toFixed(1)}%</span>
+                    <span className="text-slate-500">Current Gauge Capacity</span>
+                    <span className="font-serif font-bold text-[#152e52]">{level.toFixed(1)}%</span>
                   </div>
-                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-border">
+                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                     <div
                       className={`h-full transition-all duration-500 rounded-full ${
-                        level < 30 ? 'bg-red-500' : level < 60 ? 'bg-amber-500' : 'bg-emerald-500'
+                        level < 30 ? 'bg-red-600' : level < 60 ? 'bg-amber-500' : 'bg-[#2e7d32]'
                       }`}
                       style={{ width: `${Math.min(level, 100)}%` }}
                     />
@@ -261,34 +260,34 @@ export function ManageDams() {
                 </div>
 
                 {/* Key Metrics */}
-                <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-[#1F2C45] text-xs">
-                  <div className="bg-[#0B1220] p-2.5 rounded-lg border border-[#1F2C45]/60">
-                    <p className="text-[#8A9BB8]">Total Capacity</p>
-                    <p className="text-sm font-bold text-[#E6EDF7] mt-0.5">
+                <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-200 text-xs">
+                  <div className="bg-[#f8fafc] p-2.5 rounded-md border border-slate-200">
+                    <p className="text-slate-500">Total Capacity</p>
+                    <p className="text-sm font-serif font-bold text-[#152e52] mt-0.5">
                       {dam.capacityMegaLitres} ML
                     </p>
                   </div>
-                  <div className="bg-[#0B1220] p-2.5 rounded-lg border border-[#1F2C45]/60">
-                    <p className="text-[#8A9BB8]">Current Volume</p>
-                    <p className="text-sm font-bold text-[#22D3EE] mt-0.5">
+                  <div className="bg-[#f8fafc] p-2.5 rounded-md border border-slate-200">
+                    <p className="text-slate-500">Current Volume</p>
+                    <p className="text-sm font-serif font-bold text-[#152e52] mt-0.5">
                       {(dam.volumeMegaLitres ?? (dam.capacityMegaLitres * (level / 100))).toFixed(1)} ML
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-1.5 text-[11px] text-[#8A9BB8] mt-3">
-                  <Clock className="w-3 h-3" />
-                  <span>Last Reading: {dam.lastUpdatedSast || 'Today, 08:00 (SAST)'}</span>
+                <div className="flex items-center space-x-1.5 text-[11px] text-slate-500 mt-3 font-normal">
+                  <Clock className="w-3 h-3 text-slate-400" />
+                  <span>Last Reading: {dam.lastUpdatedCAT || 'Today, 08:00 (CAT)'}</span>
                 </div>
               </div>
 
               {/* Action Button */}
-              <div className="mt-5 pt-4 border-t border-[#1F2C45]">
+              <div className="mt-5 pt-4 border-t border-slate-200">
                 <button
                   onClick={() => handleOpenReadingModal(dam)}
-                  className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-[#22D3EE]/10 hover:bg-[#22D3EE]/20 border border-[#22D3EE]/30 text-[#22D3EE] font-semibold text-xs md:text-sm transition-all"
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-md border border-slate-300 bg-white text-[#152e52] hover:bg-slate-50 font-medium text-xs md:text-sm transition-colors cursor-pointer"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4 text-[#152e52]" />
                   <span>Record Gauge Reading</span>
                 </button>
               </div>
@@ -299,18 +298,23 @@ export function ManageDams() {
 
       {/* Record Reading Modal */}
       {isReadingModalOpen && selectedDam && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-6 w-full max-w-md shadow-2xl text-[#E6EDF7]">
-            <h3 className="text-lg font-bold text-[#E6EDF7] mb-1">
-              Record Water Level Reading
-            </h3>
-            <p className="text-xs text-[#8A9BB8] mb-4">
-              Enter the official certified water gauge measurement for <strong className="text-[#22D3EE]">{selectedDam.name}</strong>.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 w-full max-w-md shadow-xl text-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+              <h3 className="font-serif text-lg font-bold text-[#152e52]">
+                Record Water Level Reading
+              </h3>
+              <button onClick={() => setIsReadingModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mb-4 font-normal">
+              Enter official certified water gauge measurement for <strong className="text-[#152e52]">{selectedDam.name}</strong>.
             </p>
 
             <form onSubmit={handleRecordReading} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#8A9BB8] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Water Level Percentage (%)
                 </label>
                 <div className="relative">
@@ -322,21 +326,21 @@ export function ManageDams() {
                     value={readingPercent}
                     onChange={(e) => setReadingPercent(e.target.value)}
                     required
-                    className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl px-3.5 py-2.5 text-sm text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                     placeholder="e.g. 64.5"
                   />
-                  <span className="absolute right-3.5 top-2.5 text-sm font-bold text-[#8A9BB8]">%</span>
+                  <span className="absolute right-3 top-2 text-sm font-bold text-slate-400">%</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#8A9BB8] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Reading Source
                 </label>
                 <select
                   value={readingSource}
                   onChange={(e) => setReadingSource(e.target.value)}
-                  className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl px-3.5 py-2.5 text-sm text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                 >
                   <option value="Manual">Manual Gauge Inspection</option>
                   <option value="Telemetry">Municipal Telemetry Sensor</option>
@@ -344,17 +348,17 @@ export function ManageDams() {
                 </select>
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-[#1F2C45]">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsReadingModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#8A9BB8] hover:text-[#E6EDF7] hover:bg-[#1F2C45]/50 transition-colors"
+                  className="px-4 py-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 border border-slate-300 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#22D3EE] hover:bg-[#22D3EE]/90 text-[#0B1220] font-bold text-xs md:text-sm shadow-md transition-all active:scale-95"
+                  className="px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs transition-colors cursor-pointer"
                 >
                   Submit Certified Reading
                 </button>
@@ -366,18 +370,23 @@ export function ManageDams() {
 
       {/* Add Reservoir Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-6 w-full max-w-md shadow-2xl text-[#E6EDF7]">
-            <h3 className="text-lg font-bold text-[#E6EDF7] mb-1">
-              Register New Reservoir
-            </h3>
-            <p className="text-xs text-[#8A9BB8] mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 w-full max-w-md shadow-xl text-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+              <h3 className="font-serif text-lg font-bold text-[#152e52]">
+                Register New Reservoir
+              </h3>
+              <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mb-4 font-normal">
               Add a municipal dam or reservoir to the Sol Plaatje monitoring grid.
             </p>
 
-            <form onSubmit={handleCreateDam} className="space-y-3.5">
+            <form onSubmit={handleCreateDam} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#8A9BB8] uppercase mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Reservoir / Dam Name
                 </label>
                 <input
@@ -386,12 +395,12 @@ export function ManageDams() {
                   onChange={(e) => setNewDamName(e.target.value)}
                   required
                   placeholder="e.g. Galeshewe High Tank"
-                  className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl px-3.5 py-2 text-sm text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#8A9BB8] uppercase mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Capacity (MegaLitres)
                 </label>
                 <input
@@ -401,13 +410,13 @@ export function ManageDams() {
                   onChange={(e) => setNewDamCapacity(e.target.value)}
                   required
                   placeholder="e.g. 75.0"
-                  className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl px-3.5 py-2 text-sm text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#8A9BB8] uppercase mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
                     Latitude
                   </label>
                   <input
@@ -417,11 +426,11 @@ export function ManageDams() {
                     onChange={(e) => setNewDamLat(e.target.value)}
                     required
                     placeholder="-28.7419"
-                    className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl px-3 py-2 text-sm text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#8A9BB8] uppercase mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
                     Longitude
                   </label>
                   <input
@@ -431,22 +440,22 @@ export function ManageDams() {
                     onChange={(e) => setNewDamLng(e.target.value)}
                     required
                     placeholder="24.7719"
-                    className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl px-3 py-2 text-sm text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-[#1F2C45]">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#8A9BB8] hover:text-[#E6EDF7]"
+                  className="px-4 py-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 border border-slate-300 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#22D3EE] text-[#0B1220] font-bold text-xs shadow-md"
+                  className="px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs transition-colors cursor-pointer"
                 >
                   Register Reservoir
                 </button>

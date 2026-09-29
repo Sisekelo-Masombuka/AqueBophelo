@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as signalR from '@microsoft/signalr';
 
-const HUB_URL = import.meta.env.VITE_SIGNALR_URL || 'https://localhost:7154/hubs/trucks';
+const HUB_URL = import.meta.env.VITE_SIGNALR_URL || 'http://localhost:5094/hubs/trucks';
 
 // Kimberley sample initial coordinates matching backend seed data
 const INITIAL_TRUCKS = [
   {
     id: 1,
-    registrationNumber: 'NC-542-KM',
+    registrationNumber: '542-KM NC',
     capacityLitres: 10000,
     status: 'OnTrip',
     lastLatitude: -28.7183,
@@ -20,7 +20,7 @@ const INITIAL_TRUCKS = [
   },
   {
     id: 2,
-    registrationNumber: 'NC-882-KM',
+    registrationNumber: '882-KM NC',
     capacityLitres: 15000,
     status: 'OnTrip',
     lastLatitude: -28.7419,
@@ -33,7 +33,7 @@ const INITIAL_TRUCKS = [
   },
   {
     id: 3,
-    registrationNumber: 'NC-104-KM',
+    registrationNumber: '104-KM NC',
     capacityLitres: 10000,
     status: 'Available',
     lastLatitude: -28.6921,
@@ -64,7 +64,7 @@ export function useSignalR() {
             speedKmh: data.speedKmh ?? truck.speedKmh,
             heading: data.heading ?? truck.heading,
             status: data.status || truck.status,
-            lastUpdated: new Date().toLocaleTimeString('en-ZA', { timeZone: 'Africa/Johannesburg' }) + ' SAST',
+            lastUpdated: new Date().toLocaleTimeString('en-ZA', { timeZone: 'Africa/Johannesburg' }) + ' CAT',
           };
         }
         return truck;

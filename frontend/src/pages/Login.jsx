@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck, KeyRound, Building2 } from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { Droplet, AlertCircle, KeyRound, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
+import BrandLogo from '../components/BrandLogo';
+import Footer from '../components/Footer';
 
 export function Login() {
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
@@ -17,6 +20,8 @@ export function Login() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const validateForm = () => {
     if (!email || !email.includes('@')) {
@@ -61,90 +66,147 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-surface-blue via-white to-white flex items-center justify-center p-4 selection:bg-brand-accent selection:text-white">
-      <div className="w-full max-w-md bg-white border border-border rounded-2xl p-6 sm:p-8 shadow-md relative">
-        {/* Branding Header */}
-        <div className="text-center mb-6 space-y-2">
-          <Link to="/" className="inline-block group">
-            <div className="w-16 h-16 bg-surface-blue border border-brand-accent/30 rounded-2xl flex items-center justify-center mx-auto p-2 shadow-xs transition-transform group-hover:scale-105">
-              <img src="/AquaBophelo_logo.svg" alt="AquaBophelo Logo" className="w-12 h-12 object-contain" />
-            </div>
+    <div className="min-h-screen bg-white text-slate-800 font-sans selection:bg-[#1d70b8] selection:text-white flex flex-col">
+      {/* Top Navbar */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center group">
+            <BrandLogo variant="full" size="md" />
           </Link>
-          <h1 className="text-2xl font-black text-brand-navy tracking-tight">AquaBophelo</h1>
-          <p className="text-xs text-brand-green font-semibold italic">Elke druppel tel • Metsi ke bophelo</p>
-          <p className="text-xs text-muted">Sol Plaatje Municipality — Kimberley Water Portal</p>
-        </div>
 
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-6 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start space-x-2.5 text-xs text-red-700 font-medium">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-            <span className="leading-relaxed">{error}</span>
-          </div>
-        )}
-
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Email Address"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="e.g. resident@solplaatje.gov.za"
-            required
-            autoComplete="email"
-          />
-
-          <div>
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              autoComplete="current-password"
-            />
-            <div className="flex justify-end mt-1.5">
-              <button
-                type="button"
-                onClick={() => setIsForgotModalOpen(true)}
-                className="text-xs font-semibold text-brand-blue hover:underline inline-flex items-center gap-1 cursor-pointer"
-              >
-                <KeyRound className="w-3 h-3 text-brand-blue" />
-                <span>Forgot Password?</span>
-              </button>
-            </div>
-          </div>
-
-          <Button
-            type="submit"
-            variant="default"
-            size="lg"
-            isLoading={isSubmitting}
-            className="w-full font-bold mt-2"
-          >
-            <span>Sign In to Water Portal</span>
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </form>
-
-        {/* Registration Link & Civic Footer */}
-        <div className="mt-8 pt-5 border-t border-border text-center space-y-3">
-          <p className="text-xs text-muted">
-            Don&apos;t have an account yet?{' '}
-            <Link to="/register" className="text-brand-blue hover:underline font-bold">
-              Create Account
+          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-700">
+            <Link to="/" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('home')}
             </Link>
-          </p>
+            <a href="/#water-status" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('waterStatus')}
+            </a>
+            <a href="/#tankers" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('liveMap')}
+            </a>
+            <Link to="/about" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('aboutUs')}
+            </Link>
+            <Link to="/contact" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('contactUs')}
+            </Link>
+          </nav>
 
-          <div className="inline-flex items-center space-x-1.5 text-[11px] text-muted bg-surface-blue px-3 py-1 rounded-full border border-brand-accent/20 font-medium">
-            <ShieldCheck className="w-3.5 h-3.5 text-brand-green" />
-            <span>Official Sol Plaatje Municipal Authentication</span>
+          <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher />
+            <Link to="/login" className="text-sm font-medium text-[#152e52]">
+              {t('signIn')}
+            </Link>
+            <Link to="/register">
+              <button className="bg-[#152e52] hover:bg-[#0f223d] text-white px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer">
+                {t('createAccount')}
+              </button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Form Body */}
+      <div className="flex-1 flex items-center justify-center p-4 py-12 bg-white">
+        <div className="w-full max-w-md bg-white border border-slate-200 rounded-lg p-6 sm:p-8 shadow-xs">
+          {/* Card Header */}
+          <div className="mb-6 space-y-2 text-left">
+            <h1 className="font-serif text-3xl font-bold text-[#152e52]">AquaBophelo</h1>
+            <div className="flex items-center gap-2 border-l-2 border-[#2e7d32] pl-2">
+              <span className="text-[#2e7d32] font-medium text-xs italic">
+                {t('motto')}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-normal">
+              {t('subheading')}
+            </p>
+          </div>
+
+          {/* Error Banner */}
+          {error && (
+            <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-md flex items-start space-x-2 text-xs text-red-700">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                {t('emailAddress')}
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g. resident@solplaatje.gov.za"
+                required
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                {t('password')}
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Your password"
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                  title={showPassword ? t('hidePassword') : t('showPassword')}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <div className="flex justify-end mt-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotModalOpen(true)}
+                  className="text-xs font-medium text-[#1d70b8] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-[#1d70b8]" />
+                  <span>{t('forgotPasswordTitle')}?</span>
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-[#152e52] hover:bg-[#0f223d] text-white py-2.5 rounded-md font-medium text-sm transition-colors cursor-pointer disabled:opacity-50 mt-2"
+            >
+              {isSubmitting ? 'Signing in...' : t('loginButton')}
+            </button>
+          </form>
+
+          {/* Footer */}
+          <div className="mt-8 pt-5 border-t border-slate-200 text-center space-y-3">
+            <p className="text-xs text-slate-500 font-normal">
+              {t('dontHaveAccount')}{' '}
+              <Link to="/register" className="text-[#1d70b8] hover:underline font-medium">
+                {t('createAccount')}
+              </Link>
+            </p>
+
+            <div className="flex items-center justify-center space-x-1.5 text-xs text-slate-500 font-normal">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#2e7d32]" />
+              <span>{t('officialAuth')}</span>
+            </div>
           </div>
         </div>
       </div>
 
+      <Footer />
       <ForgotPasswordModal isOpen={isForgotModalOpen} onClose={() => setIsForgotModalOpen(false)} />
     </div>
   );

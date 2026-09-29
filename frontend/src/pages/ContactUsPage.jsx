@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
-import { Phone, Mail, MapPin, Send, CheckCircle2, AlertCircle, Clock, ShieldCheck } from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { Phone, Mail, MapPin, CheckCircle2, AlertCircle, Clock, Droplet, Send } from 'lucide-react';
+import BrandLogo from '../components/BrandLogo';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import Footer from '../components/Footer';
+import { useLanguage } from '../context/LanguageContext';
 
 export function ContactUsPage() {
+  const { t } = useLanguage();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -56,126 +59,116 @@ export function ContactUsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#EAF6FC] text-[#0A2A4F] flex flex-col font-sans">
-      {/* Sol Plaatje Top Civic Banner */}
-      <div className="bg-[#0A2A4F] text-[#F0F7FF] text-xs py-2 px-4 border-b border-[#0E4C8C]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
-          <div className="flex items-center space-x-2 font-semibold">
-            <span className="bg-[#2E9E4F] text-white px-2 py-0.5 rounded text-[10px] font-extrabold uppercase">Official</span>
-            <span>SOL PLAATJE MUNICIPALITY — Kimberley, Northern Cape</span>
-          </div>
-          <div className="flex items-center space-x-4 text-[11px] text-[#A3C7EB]">
-            <span>Emergency Water Line: <strong className="text-white">053 830 6100</strong></span>
-            <span className="hidden md:inline">|</span>
-            <span className="hidden md:inline">Call Centre: <strong className="text-white">053 830 6911</strong></span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Brand Header */}
-      <header className="bg-[#0E4C8C] text-white border-b border-[#0A2A4F] sticky top-0 z-30 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link to="/landing" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 p-1 bg-white/10 rounded-xl border border-white/20 flex items-center justify-center shrink-0">
-              <img src="/AquaBophelo_logo.svg" alt="AquaBophelo Logo" className="w-8 h-8 object-contain" />
-            </div>
-            <div>
-              <div className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-                <span>AquaBophelo</span>
-                <span className="text-xs bg-[#2E9E4F] text-white px-2 py-0.5 rounded-full font-bold">SPM</span>
-              </div>
-              <p className="text-[10px] text-[#A3C7EB] font-semibold italic">Elke druppel tel • Metsi ke bophelo</p>
-            </div>
+    <div className="min-h-screen bg-white text-slate-800 font-sans flex flex-col selection:bg-[#1d70b8] selection:text-white">
+      {/* Top Navbar */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center group">
+            <BrandLogo variant="full" size="md" />
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-6 text-sm font-bold text-[#A3C7EB]">
-            <Link to="/landing" className="hover:text-white transition-colors">Home</Link>
-            <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
-            <Link to="/contact" className="text-white border-b-2 border-[#2E9E4F] pb-1">Contact Us</Link>
-            <Link to="/landing#status" className="hover:text-white transition-colors">Dam Levels</Link>
+          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-700">
+            <Link to="/" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('home')}
+            </Link>
+            <a href="/#water-status" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('waterStatus')}
+            </a>
+            <a href="/#tankers" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('liveMap')}
+            </a>
+            <Link to="/about" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('aboutUs')}
+            </Link>
+            <Link to="/contact" className="text-[#152e52] font-semibold">
+              {t('contactUs')}
+            </Link>
           </nav>
 
-          <div className="flex items-center space-x-3">
-            <Link to="/login" className="px-4 py-2 rounded-xl text-xs font-bold bg-[#0A2A4F] text-white border border-[#2991C8]/40 hover:bg-[#2991C8] transition-all">
-              Sign In
+          <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher />
+            <Link to="/login" className="text-sm font-medium text-slate-700 hover:text-[#152e52]">
+              {t('signIn')}
             </Link>
-            <Link to="/register" className="px-4 py-2 rounded-xl text-xs font-bold bg-[#2E9E4F] text-white hover:bg-[#215E22] transition-all shadow-md">
-              Sign Up
+            <Link to="/register">
+              <button className="bg-[#152e52] hover:bg-[#0f223d] text-white px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer">
+                {t('createAccount')}
+              </button>
             </Link>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-12 flex-1 space-y-12">
-        <div className="text-center max-w-2xl mx-auto space-y-3">
-          <span className="px-3 py-1 rounded-full bg-[#2E9E4F]/20 border border-[#2E9E4F]/40 text-[#215E22] text-xs font-bold uppercase tracking-wider">
-            Municipal Support Desk
-          </span>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-[#0A2A4F] tracking-tight">
-            Contact Sol Plaatje Water Desk
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14 flex-1 space-y-8 w-full">
+        {/* Header Title */}
+        <div className="space-y-1 text-left">
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#152e52]">
+            {t('contactUs')}
           </h1>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Have questions about water distribution, tanker schedules, or dam readings in Kimberley? Send us a message or reach out to our emergency hotlines.
+          <p className="text-slate-500 text-sm">
+            {t('contactDesc')}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 items-start">
-          {/* Contact Info Sidebar Card */}
-          <div className="bg-[#0E4C8C] text-white p-6 md:p-8 rounded-3xl shadow-xl space-y-6">
-            <h2 className="text-xl font-bold border-b border-[#2991C8]/40 pb-3">Emergency Hotlines</h2>
-            
-            <div className="space-y-4 text-sm">
-              <div className="flex items-start space-x-3">
-                <Phone className="w-5 h-5 text-[#2991C8] shrink-0 mt-1" />
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          {/* Emergency Hotlines Card */}
+          <div className="md:col-span-4 bg-[#f8fafc] border border-slate-200 rounded-lg p-6 space-y-6">
+            <h2 className="font-serif text-xl font-bold text-[#152e52]">{t('emergencyHotlines')}</h2>
+
+            <div className="space-y-5 text-xs text-slate-600">
+              <div className="flex items-start gap-3">
+                <Phone className="w-4 h-4 text-[#152e52] shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs text-[#A3C7EB] font-semibold">24/7 Water Emergency Line</p>
-                  <p className="font-extrabold text-white text-base">053 830 6100</p>
+                  <p className="text-slate-500 font-normal">{t('response247')}</p>
+                  <p className="font-bold text-[#152e52] text-sm mt-0.5">053 830 6100</p>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3">
-                <Phone className="w-5 h-5 text-[#2E9E4F] shrink-0 mt-1" />
+              <div className="flex items-start gap-3">
+                <Phone className="w-4 h-4 text-[#152e52] shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs text-[#A3C7EB] font-semibold">Sol Plaatje Call Centre</p>
-                  <p className="font-extrabold text-white text-base">053 830 6911</p>
+                  <p className="text-slate-500 font-normal">{t('callCentre')}</p>
+                  <p className="font-bold text-[#152e52] text-sm mt-0.5">053 830 6911</p>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3">
-                <Mail className="w-5 h-5 text-[#2991C8] shrink-0 mt-1" />
+              <div className="flex items-start gap-3">
+                <Mail className="w-4 h-4 text-[#152e52] shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs text-[#A3C7EB] font-semibold">Official Email</p>
-                  <p className="font-bold text-white text-xs">water@solplaatje.org.za</p>
+                  <p className="text-slate-500 font-normal">Official email</p>
+                  <p className="font-bold text-[#152e52] text-xs mt-0.5">water@solplaatje.org.za</p>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3">
-                <MapPin className="w-5 h-5 text-[#2E9E4F] shrink-0 mt-1" />
+              <div className="flex items-start gap-3">
+                <MapPin className="w-4 h-4 text-[#152e52] shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs text-[#A3C7EB] font-semibold">Municipal Office Location</p>
-                  <p className="text-xs text-white">Sol Plaatje Civic Centre, Sol Plaatje Drive, Kimberley, 8301</p>
+                  <p className="text-slate-500 font-normal">Municipal office location</p>
+                  <p className="text-slate-700 text-xs mt-0.5 leading-relaxed">
+                    Sol Plaatje Civic Centre, Sol Plaatje Drive, Kimberley, 8301
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-[#0A2A4F] p-4 rounded-2xl border border-[#2991C8]/30 space-y-1">
-              <p className="text-xs font-bold text-white flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-[#2E9E4F]" />
-                <span>Response Time (CAT)</span>
+            <div className="bg-white p-4 rounded-md border border-slate-200 space-y-1">
+              <p className="text-xs font-semibold text-[#152e52] flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-slate-500" />
+                <span>Response time (CAT)</span>
               </p>
-              <p className="text-[11px] text-[#A3C7EB]">Inquiries submitted online are answered within 24 hours.</p>
+              <p className="text-[11px] text-slate-500">Inquiries submitted online are answered within 24 hours.</p>
             </div>
           </div>
 
-          {/* Contact Form Card */}
-          <div className="md:col-span-2 bg-white p-6 md:p-8 rounded-3xl border border-[#2991C8]/20 shadow-xl space-y-6">
-            <h2 className="text-xl font-bold text-[#0A2A4F]">Send a Support Inquiry</h2>
+          {/* Send Support Inquiry Card */}
+          <div className="md:col-span-8 bg-white border border-slate-200 rounded-lg p-6 sm:p-8 space-y-6">
+            <h2 className="font-serif text-2xl font-bold text-[#152e52]">{t('contactTitle')}</h2>
 
             {successResponse && (
-              <div className="p-4 rounded-2xl bg-[#EAF6E3] border border-[#2E9E4F]/40 text-[#215E22] space-y-1 animate-in fade-in">
-                <p className="font-bold text-sm flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-[#2E9E4F]" />
+              <div className="p-4 rounded-md bg-[#f2f9f3] border border-[#2e7d32]/30 text-[#2e7d32] space-y-1">
+                <p className="font-semibold text-sm flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#2e7d32]" />
                   <span>{successResponse.message}</span>
                 </p>
                 <p className="text-xs font-mono">Reference Ticket: <strong>{successResponse.referenceNumber}</strong></p>
@@ -183,82 +176,88 @@ export function ContactUsPage() {
             )}
 
             {error && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+              <div className="p-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <Input
-                  label="Full Name *"
-                  placeholder="e.g. Sipho Nkosi"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  disabled={isSubmitting}
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                    {t('yourName')} *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Sipho Nkosi"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    disabled={isSubmitting}
+                    required
+                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8]"
+                  />
+                </div>
 
-                <Input
-                  label="Email Address *"
-                  type="email"
-                  placeholder="e.g. sipho@gmail.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                    {t('emailAddress')} *
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="e.g. sipho@gmail.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isSubmitting}
+                    required
+                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  {t('subject')}
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Water tanker schedule query in Galeshewe"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
                   disabled={isSubmitting}
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8]"
                 />
               </div>
 
-              <Input
-                label="Subject (Optional)"
-                placeholder="e.g. Water Tanker Schedule Query in Galeshewe"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                disabled={isSubmitting}
-              />
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-[#0A2A4F]">
-                  Message Content *
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  {t('message')} *
                 </label>
                 <textarea
                   rows={5}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2991C8] focus:border-transparent transition-all"
+                  className="w-full bg-white border border-slate-300 rounded-md p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] resize-y"
                   placeholder="Describe your inquiry or question..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   disabled={isSubmitting}
+                  required
                 />
               </div>
 
-              <Button
+              <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 bg-[#2E9E4F] hover:bg-[#215E22] text-white font-bold rounded-xl shadow-md flex items-center justify-center space-x-2 cursor-pointer transition-all"
+                className="bg-[#152e52] hover:bg-[#0f223d] text-white px-5 py-2.5 rounded-md font-medium text-sm transition-colors cursor-pointer disabled:opacity-50"
               >
-                <Send className="w-4 h-4" />
-                <span>{isSubmitting ? 'Sending Inquiry...' : 'Submit Support Inquiry'}</span>
-              </Button>
+                {isSubmitting ? 'Sending...' : t('sendMessage')}
+              </button>
             </form>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-[#0A2A4F] text-[#A3C7EB] border-t border-[#0E4C8C] py-8 px-4 text-xs">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div>
-            <p className="font-bold text-white">AquaBophelo — Sol Plaatje Municipality Water Monitoring</p>
-            <p className="text-[11px] mt-1">Diploma in ICT Capstone Project · Sol Plaatje University, Kimberley</p>
-          </div>
-          <div className="flex space-x-6 text-xs font-semibold">
-            <Link to="/landing" className="hover:text-white transition-colors">Home</Link>
-            <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
-            <Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link>
-            <Link to="/login" className="hover:text-white transition-colors">Sign In</Link>
-          </div>
-        </div>
-      </footer>
+      {/* Shared Municipal Footer */}
+      <Footer />
     </div>
   );
 }

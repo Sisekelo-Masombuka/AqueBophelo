@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { X, Bell, Mail, CheckCircle2, AlertCircle, Loader2, ShieldCheck, MapPin } from 'lucide-react';
+import { X, Bell, Mail, CheckCircle2, AlertCircle, ShieldCheck, MapPin } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
-import { Button } from './ui/Button';
-import { Input } from './ui/Input';
 
 export function AlertSubscriptionsModal({ isOpen, onClose }) {
   const { user } = useAuth();
@@ -43,31 +41,31 @@ export function AlertSubscriptionsModal({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs"
       onClick={onClose}
       aria-modal="true"
       role="dialog"
     >
       <div
-        className="w-full max-w-lg bg-white border border-border rounded-3xl p-6 shadow-soft relative text-brand-navy-dark max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg bg-white border border-slate-200 rounded-lg p-6 shadow-xl relative text-slate-800 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-border mb-5">
+        <div className="flex items-start justify-between pb-4 border-b border-slate-200 mb-5">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-brand-accent/10 text-brand-blue">
+            <div className="p-2.5 rounded-md bg-[#eaf4fb] border border-[#bcd6ea] text-[#1d70b8]">
               <Bell className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-brand-navy-dark">Municipal Email Alert Preferences</h2>
-              <p className="text-xs text-muted">
+              <h2 className="font-serif text-lg font-bold text-[#152e52]">Municipal Email Alert Preferences</h2>
+              <p className="text-xs text-slate-500 font-normal">
                 Get real-time email notices &amp; delivery updates for your neighborhood
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-muted hover:text-brand-navy-dark hover:bg-surface-blue transition-colors"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -76,108 +74,115 @@ export function AlertSubscriptionsModal({ isOpen, onClose }) {
 
         {/* Feedback Alerts */}
         {errorMessage && (
-          <div className="mb-4 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-400 flex items-center gap-2">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex items-center gap-2 font-medium">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="mb-4 p-3.5 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-xs text-emerald-400 flex items-center gap-2 animate-fade-in">
+          <div className="mb-4 p-3 bg-[#f2f9f3] border border-[#b8e3bd] rounded-md text-xs text-[#2e7d32] flex items-center gap-2 font-medium">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{successMessage}</span>
           </div>
         )}
 
-        <form onSubmit={handleSave} className="space-y-5">
+        <form onSubmit={handleSave} className="space-y-4">
           {/* Municipal Area Selection */}
           <div>
-            <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-2">
-              Select Subscribed Suburb / Area
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">
+              Subscribed Suburb / Area
             </label>
-            <div className="relative">
-              <MapPin className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <select
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-border rounded-xl text-sm text-brand-navy-dark focus:outline-none focus:border-brand-accent"
-              >
-                <option value="Galeshewe">Galeshewe (Zones 1-4)</option>
-                <option value="Kimberley Central">Kimberley Central</option>
-                <option value="Roodepan">Roodepan</option>
-              </select>
-            </div>
+            <select
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+              className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
+            >
+              <option value="Galeshewe">Galeshewe (Zones 1-4)</option>
+              <option value="Kimberley Central">Kimberley Central</option>
+              <option value="Roodepan">Roodepan</option>
+            </select>
           </div>
 
           {/* Primary Email Channel */}
           <div>
-            <Input
-              label="Recipient Email Address"
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">
+              Recipient Email Address
+            </label>
+            <input
               type="email"
-              icon={Mail}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="resident@example.co.za"
-              helpText="Direct email notifications for water tanker dispatches and drought advisories"
               required
+              className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
             />
+            <p className="text-[11px] text-slate-500 mt-1">Direct email notifications for water tanker dispatches and drought advisories</p>
           </div>
 
           {/* Alert Trigger Topics */}
           <div>
-            <label className="block text-xs font-semibold text-[#8A9BB8] uppercase tracking-wider mb-2">
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">
               Email Alert Topics
             </label>
             <div className="space-y-2">
-              <label className="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 border border-border cursor-pointer text-xs text-brand-navy-dark">
+              <label className="flex items-center space-x-3 p-3 rounded-md bg-[#f8fafc] border border-slate-200 cursor-pointer text-xs text-slate-800">
                 <input
                   type="checkbox"
                   checked={lowDamAlerts}
                   onChange={(e) => setLowDamAlerts(e.target.checked)}
-                  className="w-4 h-4 rounded-md accent-brand-blue"
+                  className="w-4 h-4 rounded text-[#152e52] focus:ring-0"
                 />
                 <div>
-                  <span className="font-bold">Dam Storage Warnings</span>
-                  <p className="text-[11px] text-muted">Notify when Newton or Riverton storage drops below 50%</p>
+                  <span className="font-semibold text-[#152e52]">Dam Storage Warnings</span>
+                  <p className="text-[11px] text-slate-500 font-normal">Notify when Newton or Riverton storage drops below 50%</p>
                 </div>
               </label>
 
-              <label className="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 border border-border cursor-pointer text-xs text-brand-navy-dark">
+              <label className="flex items-center space-x-3 p-3 rounded-md bg-[#f8fafc] border border-slate-200 cursor-pointer text-xs text-slate-800">
                 <input
                   type="checkbox"
                   checked={truckArrivalAlerts}
                   onChange={(e) => setTruckArrivalAlerts(e.target.checked)}
-                  className="w-4 h-4 rounded-md accent-brand-blue"
+                  className="w-4 h-4 rounded text-[#152e52] focus:ring-0"
                 />
                 <div>
-                  <span className="font-bold">Water Tanker Dispatched to {area}</span>
-                  <p className="text-[11px] text-muted">Get notified when a truck departs for your zone</p>
+                  <span className="font-semibold text-[#152e52]">Water Tanker Dispatched to {area}</span>
+                  <p className="text-[11px] text-slate-500 font-normal">Get notified when a truck departs for your zone</p>
                 </div>
               </label>
 
-              <label className="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 border border-border cursor-pointer text-xs text-brand-navy-dark">
+              <label className="flex items-center space-x-3 p-3 rounded-md bg-[#f8fafc] border border-slate-200 cursor-pointer text-xs text-slate-800">
                 <input
                   type="checkbox"
                   checked={emergencyAlerts}
                   onChange={(e) => setEmergencyAlerts(e.target.checked)}
-                  className="w-4 h-4 rounded-md accent-brand-blue"
+                  className="w-4 h-4 rounded text-[#152e52] focus:ring-0"
                 />
                 <div>
-                  <span className="font-bold">Emergency Municipal Announcements</span>
-                  <p className="text-[11px] text-muted">Urgent pipe repairs, maintenance, or boil notices</p>
+                  <span className="font-semibold text-[#152e52]">Emergency Municipal Announcements</span>
+                  <p className="text-[11px] text-slate-500 font-normal">Urgent pipe repairs, maintenance, or boil notices</p>
                 </div>
               </label>
             </div>
           </div>
 
           {/* Modal Action Buttons */}
-          <div className="pt-3 border-t border-[#1F2C45] flex items-center justify-end space-x-3">
-            <Button type="button" variant="ghost" onClick={onClose}>
+          <div className="pt-3 border-t border-slate-200 flex items-center justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50 text-xs font-medium cursor-pointer"
+            >
               Cancel
-            </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmitting} icon={ShieldCheck}>
-              Save Email Subscriptions
-            </Button>
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {isSubmitting ? 'Saving...' : 'Save Email Subscriptions'}
+            </button>
           </div>
         </form>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, Plus, UserCheck, ShieldAlert, CheckCircle, AlertCircle, Wrench, Search, Radio } from 'lucide-react';
+import { Truck, Plus, UserCheck, CheckCircle, AlertCircle, Search, X } from 'lucide-react';
 import apiClient from '../../api/client';
 import StatusBadge from '../../components/StatusBadge';
 
@@ -7,7 +7,7 @@ export function ManageTrucks() {
   const [trucks, setTrucks] = useState([
     {
       id: 1,
-      registrationNumber: 'NC-542-KM',
+      registrationNumber: '542-KM NC',
       capacityLitres: 10000,
       status: 'OnTrip',
       driverId: 'drv-1',
@@ -18,7 +18,7 @@ export function ManageTrucks() {
     },
     {
       id: 2,
-      registrationNumber: 'NC-882-KM',
+      registrationNumber: '882-KM NC',
       capacityLitres: 15000,
       status: 'OnTrip',
       driverId: 'drv-2',
@@ -29,7 +29,7 @@ export function ManageTrucks() {
     },
     {
       id: 3,
-      registrationNumber: 'NC-104-KM',
+      registrationNumber: '104-KM NC',
       capacityLitres: 10000,
       status: 'Available',
       driverId: 'drv-3',
@@ -179,21 +179,21 @@ export function ManageTrucks() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-xs font-semibold text-[#22D3EE] uppercase tracking-wider mb-1">
+          <div className="flex items-center space-x-2 text-xs font-semibold text-[#1d70b8] mb-1">
             <Truck className="w-3.5 h-3.5" />
             <span>Municipal Fleet Administration</span>
           </div>
-          <h2 className="text-xl md:text-2xl font-bold text-[#E6EDF7]">
+          <h2 className="font-serif text-2xl md:text-3xl font-bold text-[#152e52]">
             Water Tankers &amp; Driver Roster
           </h2>
-          <p className="text-xs md:text-sm text-[#8A9BB8] mt-1">
+          <p className="text-xs md:text-sm text-slate-500 mt-1 font-normal">
             Register municipal water delivery vehicles, inspect mechanical readiness, and allocate staff drivers.
           </p>
         </div>
 
         <button
           onClick={() => setIsRegisterModalOpen(true)}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-[#22D3EE] hover:bg-[#22D3EE]/90 text-[#0B1220] font-bold text-xs md:text-sm transition-all shadow-md active:scale-95"
+          className="inline-flex items-center space-x-2 px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs md:text-sm transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4 shrink-0" />
           <span>Register New Tanker</span>
@@ -203,10 +203,10 @@ export function ManageTrucks() {
       {/* Feedback Banner */}
       {feedback && (
         <div
-          className={`p-3.5 rounded-xl border flex items-center space-x-3 text-xs md:text-sm ${
+          className={`p-3.5 rounded-md border flex items-center space-x-3 text-xs md:text-sm ${
             feedback.type === 'success'
-              ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]'
-              : 'bg-[#EF4444]/10 border-[#EF4444]/30 text-[#EF4444]'
+              ? 'bg-[#f2f9f3] border-[#b8e3bd] text-[#2e7d32]'
+              : 'bg-red-50 border-red-200 text-red-700'
           }`}
         >
           {feedback.type === 'success' ? (
@@ -219,72 +219,72 @@ export function ManageTrucks() {
       )}
 
       {/* Search & Stats Bar */}
-      <div className="bg-[#111B2E] border border-[#1F2C45] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+      <div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-[#8A9BB8] absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Search by registration (e.g. NC-542-KM) or driver..."
+            placeholder="Search by registration (e.g. 542-KM NC) or driver..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-lg pl-9 pr-3 py-1.5 text-xs text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+            className="w-full bg-white border border-slate-300 rounded-md pl-9 pr-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-[#1d70b8]"
           />
         </div>
 
-        <div className="flex items-center space-x-3 text-xs text-[#8A9BB8]">
-          <span>Total Fleet: <strong className="text-[#E6EDF7]">{trucks.length}</strong></span>
+        <div className="flex items-center space-x-3 text-xs text-slate-500 font-normal">
+          <span>Total Fleet: <strong className="text-[#152e52] font-semibold">{trucks.length}</strong></span>
           <span>·</span>
-          <span>Active: <strong className="text-[#22C55E]">{trucks.filter((t) => t.status === 'OnTrip').length}</strong></span>
+          <span>Active: <strong className="text-[#2e7d32] font-semibold">{trucks.filter((t) => t.status === 'OnTrip').length}</strong></span>
           <span>·</span>
-          <span>Available: <strong className="text-[#22D3EE]">{trucks.filter((t) => t.status === 'Available').length}</strong></span>
+          <span>Available: <strong className="text-[#1d70b8] font-semibold">{trucks.filter((t) => t.status === 'Available').length}</strong></span>
         </div>
       </div>
 
       {/* Trucks Table */}
-      <div className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl overflow-hidden shadow-lg">
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs md:text-sm text-[#E6EDF7]">
-            <thead className="bg-[#0B1220] text-[#8A9BB8] uppercase text-[11px] font-semibold tracking-wider border-b border-[#1F2C45]">
+          <table className="w-full text-left text-xs md:text-sm text-slate-800">
+            <thead className="bg-[#f8fafc] text-slate-600 text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200">
               <tr>
-                <th className="py-3.5 px-4">Registration</th>
-                <th className="py-3.5 px-4">Capacity</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4">Assigned Driver</th>
-                <th className="py-3.5 px-4">Last Telemetry</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
+                <th className="py-3 px-4">Registration</th>
+                <th className="py-3 px-4">Capacity</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4">Assigned Driver</th>
+                <th className="py-3 px-4">Last Telemetry</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1F2C45]">
+            <tbody className="divide-y divide-slate-200">
               {filteredTrucks.map((truck) => (
-                <tr key={truck.id} className="hover:bg-[#16233B]/50 transition-colors">
-                  <td className="py-3.5 px-4 font-mono font-bold text-[#22D3EE]">
+                <tr key={truck.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-4 font-mono font-bold text-[#152e52]">
                     {truck.registrationNumber}
                   </td>
-                  <td className="py-3.5 px-4 font-medium text-[#E6EDF7]">
+                  <td className="py-3 px-4 font-medium text-slate-700">
                     {truck.capacityLitres?.toLocaleString()} L
                   </td>
-                  <td className="py-3.5 px-4">
+                  <td className="py-3 px-4">
                     <StatusBadge status={truck.status} />
                   </td>
-                  <td className="py-3.5 px-4 text-[#E6EDF7]">
+                  <td className="py-3 px-4 text-slate-900">
                     {truck.driverName ? (
                       <span className="inline-flex items-center space-x-1.5 font-medium">
-                        <span className="w-2 h-2 rounded-full bg-[#22C55E]"></span>
+                        <span className="w-2 h-2 rounded-full bg-[#2e7d32]"></span>
                         <span>{truck.driverName}</span>
                       </span>
                     ) : (
-                      <span className="text-[#8A9BB8] italic">Unassigned</span>
+                      <span className="text-slate-400 italic">Unassigned</span>
                     )}
                   </td>
-                  <td className="py-3.5 px-4 text-xs text-[#8A9BB8]">
+                  <td className="py-3 px-4 text-xs text-slate-500 font-normal">
                     {truck.lastSeenAtFormatted || 'Never seen'}
                   </td>
-                  <td className="py-3.5 px-4 text-right">
+                  <td className="py-3 px-4 text-right">
                     <button
                       onClick={() => handleOpenAssignModal(truck)}
-                      className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-[#22D3EE]/10 hover:bg-[#22D3EE]/20 border border-[#22D3EE]/30 text-[#22D3EE] font-semibold text-xs transition-colors"
+                      className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-md border border-slate-300 bg-white text-[#152e52] hover:bg-slate-50 font-medium text-xs transition-colors cursor-pointer"
                     >
-                      <UserCheck className="w-3.5 h-3.5" />
+                      <UserCheck className="w-3.5 h-3.5 text-[#152e52]" />
                       <span>Assign Driver</span>
                     </button>
                   </td>
@@ -297,38 +297,43 @@ export function ManageTrucks() {
 
       {/* Register Tanker Modal */}
       {isRegisterModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-6 w-full max-w-md shadow-2xl text-[#E6EDF7]">
-            <h3 className="text-lg font-bold text-[#E6EDF7] mb-1">
-              Register Water Tanker
-            </h3>
-            <p className="text-xs text-[#8A9BB8] mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 w-full max-w-md shadow-xl text-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+              <h3 className="font-serif text-lg font-bold text-[#152e52]">
+                Register Water Tanker
+              </h3>
+              <button onClick={() => setIsRegisterModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mb-4 font-normal">
               Add a municipal bulk water truck to the Sol Plaatje delivery fleet.
             </p>
 
             <form onSubmit={handleRegisterTruck} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#8A9BB8] uppercase mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Registration Plate Number
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. NC-942-KM"
+                  placeholder="e.g. 942-KM NC"
                   value={newReg}
                   onChange={(e) => setNewReg(e.target.value)}
                   required
-                  className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl px-3.5 py-2.5 text-sm uppercase font-mono text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm uppercase font-mono text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#8A9BB8] uppercase mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Water Tank Capacity (Litres)
                 </label>
                 <select
                   value={newCapacity}
                   onChange={(e) => setNewCapacity(e.target.value)}
-                  className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl px-3.5 py-2.5 text-sm text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                 >
                   <option value="5000">5,000 Litres (Compact Tanker)</option>
                   <option value="10000">10,000 Litres (Standard Tanker)</option>
@@ -337,17 +342,17 @@ export function ManageTrucks() {
                 </select>
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-[#1F2C45]">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsRegisterModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#8A9BB8] hover:text-[#E6EDF7]"
+                  className="px-4 py-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 border border-slate-300 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#22D3EE] text-[#0B1220] font-bold text-xs shadow-md"
+                  className="px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs transition-colors cursor-pointer"
                 >
                   Register Tanker
                 </button>
@@ -359,24 +364,29 @@ export function ManageTrucks() {
 
       {/* Assign Driver Modal */}
       {isAssignModalOpen && selectedTruck && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-6 w-full max-w-md shadow-2xl text-[#E6EDF7]">
-            <h3 className="text-lg font-bold text-[#E6EDF7] mb-1">
-              Assign Municipal Driver
-            </h3>
-            <p className="text-xs text-[#8A9BB8] mb-4">
-              Allocate a certified driver to operate tanker <strong className="text-[#22D3EE] font-mono">{selectedTruck.registrationNumber}</strong>.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 w-full max-w-md shadow-xl text-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+              <h3 className="font-serif text-lg font-bold text-[#152e52]">
+                Assign Municipal Driver
+              </h3>
+              <button onClick={() => setIsAssignModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mb-4 font-normal">
+              Allocate a certified driver to operate tanker <strong className="text-[#152e52] font-mono">{selectedTruck.registrationNumber}</strong>.
             </p>
 
             <form onSubmit={handleAssignDriver} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#8A9BB8] uppercase mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Select Certified Driver
                 </label>
                 <select
                   value={selectedDriverId}
                   onChange={(e) => setSelectedDriverId(e.target.value)}
-                  className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl px-3.5 py-2.5 text-sm text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                 >
                   <option value="">-- Unassigned (Standby) --</option>
                   {municipalDrivers.map((driver) => (
@@ -387,17 +397,17 @@ export function ManageTrucks() {
                 </select>
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-[#1F2C45]">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsAssignModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#8A9BB8] hover:text-[#E6EDF7]"
+                  className="px-4 py-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 border border-slate-300 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#22D3EE] text-[#0B1220] font-bold text-xs shadow-md"
+                  className="px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs transition-colors cursor-pointer"
                 >
                   Save Driver Assignment
                 </button>

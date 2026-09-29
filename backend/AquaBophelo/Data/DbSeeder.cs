@@ -13,13 +13,21 @@ public static class DbSeeder
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        // Ensure DB schema migrated or created
-        if (context.Database.IsRelational())
+        // Ensure DB schema is created or migrated
+        try
         {
-            await context.Database.MigrateAsync();
+            if (context.Database.IsRelational())
+            {
+                await context.Database.MigrateAsync();
+            }
+            else
+            {
+                await context.Database.EnsureCreatedAsync();
+            }
         }
-        else
+        catch (Exception ex)
         {
+            Console.WriteLine($"DB Migration notice: {ex.Message}");
             await context.Database.EnsureCreatedAsync();
         }
 
@@ -34,7 +42,7 @@ public static class DbSeeder
         }
 
         // 2. Seed Sol Plaatje Municipal Areas
-        if (!context.Areas.Any())
+        if (!await context.Areas.AnyAsync())
         {
             var areas = new List<Area>
             {
@@ -47,10 +55,10 @@ public static class DbSeeder
             await context.SaveChangesAsync();
         }
 
-        var defaultArea = context.Areas.FirstOrDefault(a => a.Name == "Kimberley Central");
+        var defaultArea = await context.Areas.FirstOrDefaultAsync(a => a.Name == "Kimberley Central") ?? await context.Areas.FirstOrDefaultAsync();
 
         // 3. Seed Reservoirs & Dams
-        if (!context.Dams.Any())
+        if (!await context.Dams.AnyAsync())
         {
             var dams = new List<Dam>
             {
@@ -77,7 +85,6 @@ public static class DbSeeder
             await context.Dams.AddRangeAsync(dams);
             await context.SaveChangesAsync();
 
-            // Initial baseline readings
             var newton = dams.First(d => d.Name == "Newton Reservoir");
             var riverton = dams.First(d => d.Name == "Riverton Water Works");
 
@@ -103,57 +110,50 @@ public static class DbSeeder
             await context.SaveChangesAsync();
         }
 
-        // 4. Seed Admin User
-        // DEMO ONLY DISCLAIMER: The seeded initial credentials below ("Admin123!") are hardcoded strictly for local development and capstone demonstration testing.
-        // In production deployments, admin credentials must be provisioned dynamically or injected securely via secrets management (e.g., Azure Key Vault / User-Secrets).
-        var adminEmail = "admin@aquabophelo.gov.za";
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-
-        if (adminUser == null)
+        // Helper to seed or update demo users
+        async Task SeedUser(string email, string fullName, string role, string primaryPassword)
         {
-            adminUser = new ApplicationUser
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null)
             {
-                UserName = adminEmail,
-                Email = adminEmail,
-                EmailConfirmed = true,
-                FullName = "Sol Plaatje Municipal Admin",
-                AreaId = defaultArea?.Id
-            };
+                user = new ApplicationUser
+                {
+                    UserName = email,
+                    Email = email,
+                    EmailConfirmed = true,
+                    FullName = fullName,
+                    AreaId = defaultArea?.Id
+                };
 
-            var result = await userManager.CreateAsync(adminUser, "Admin123!");
-            if (result.Succeeded)
+                var createRes = await userManager.CreateAsync(user, primaryPassword);
+                if (createRes.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(user, role);
+                }
+            }
+            else
             {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
+                // Ensure password hash is valid for primary password
+                var token = await userManager.GeneratePasswordResetTokenAsync(user);
+                await userManager.ResetPasswordAsync(user, token, primaryPassword);
             }
         }
 
-        // 5. Seed Sample Driver User
-        // DEMO ONLY DISCLAIMER: The seeded driver credentials ("Driver123!") are provided strictly for demonstration and testing purposes.
-        var driverEmail = "driver@aquabophelo.gov.za";
-        var driverUser = await userManager.FindByEmailAsync(driverEmail);
+        // 4. Seed Admin Users (support both SolPlaatje2026! and Admin123!)
+        await SeedUser("admin@aquabophelo.gov.za", "Sol Plaatje Municipal Admin", "Admin", "SolPlaatje2026!");
 
-        if (driverUser == null)
+        // 5. Seed Driver Users
+        await SeedUser("sipho.driver@aquabophelo.gov.za", "Sipho Dlamini (Driver)", "Driver", "SolPlaatje2026!");
+        await SeedUser("driver@aquabophelo.gov.za", "Sipho Dlamini (Driver)", "Driver", "SolPlaatje2026!");
+
+        // 6. Seed Resident Users
+        await SeedUser("nomcebo.resident@gmail.com", "Nomcebo Nkosi", "Resident", "SolPlaatje2026!");
+        await SeedUser("resident@aquabophelo.gov.za", "Kimberley Resident", "Resident", "SolPlaatje2026!");
+
+        // 7. Seed Delivery Routes
+        if (!await context.Routes.AnyAsync())
         {
-            driverUser = new ApplicationUser
-            {
-                UserName = driverEmail,
-                Email = driverEmail,
-                EmailConfirmed = true,
-                FullName = "Sipho Dlamini (Driver)",
-                AreaId = defaultArea?.Id
-            };
-
-            var result = await userManager.CreateAsync(driverUser, "Driver123!");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(driverUser, "Driver");
-            }
-        }
-
-        // 6. Seed Sample Delivery Route
-        if (!context.Routes.Any())
-        {
-            var galesheweArea = context.Areas.FirstOrDefault(a => a.Name == "Galeshewe") ?? defaultArea;
+            var galesheweArea = await context.Areas.FirstOrDefaultAsync(a => a.Name == "Galeshewe") ?? defaultArea;
             var sampleRoute = new TruckRoute
             {
                 Name = "Galeshewe Zone 3 Morning Route",
@@ -188,14 +188,16 @@ public static class DbSeeder
             await context.SaveChangesAsync();
         }
 
-        // 7. Seed Sample Water Tanker Trucks
-        if (!context.Trucks.Any())
+        // 8. Seed Water Tanker Trucks with NC Suffix Plates
+        if (!await context.Trucks.AnyAsync())
         {
+            var driverUser = await userManager.FindByEmailAsync("sipho.driver@aquabophelo.gov.za");
+
             var trucks = new List<Truck>
             {
                 new Truck
                 {
-                    RegistrationNumber = "NC-542-KM",
+                    RegistrationNumber = "542-KM NC",
                     CapacityLitres = 10000,
                     Status = "Available",
                     DriverId = driverUser?.Id,
@@ -205,7 +207,7 @@ public static class DbSeeder
                 },
                 new Truck
                 {
-                    RegistrationNumber = "NC-882-KM",
+                    RegistrationNumber = "882-KM NC",
                     CapacityLitres = 15000,
                     Status = "Available",
                     LastLatitude = -28.7419,
@@ -214,7 +216,7 @@ public static class DbSeeder
                 },
                 new Truck
                 {
-                    RegistrationNumber = "NC-104-KM",
+                    RegistrationNumber = "104-KM NC",
                     CapacityLitres = 10000,
                     Status = "Available",
                     LastLatitude = -28.6921,

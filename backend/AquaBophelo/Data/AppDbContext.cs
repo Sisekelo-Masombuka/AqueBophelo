@@ -22,6 +22,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Alert> Alerts => Set<Alert>();
     public DbSet<AlertSubscription> AlertSubscriptions => Set<AlertSubscription>();
     public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
+    public DbSet<IssueReport> IssueReports => Set<IssueReport>();
+    public DbSet<ScheduledOutage> ScheduledOutages => Set<ScheduledOutage>();
+    public DbSet<DriverProblemReport> DriverProblems => Set<DriverProblemReport>();
+    public DbSet<VehicleInspectionCheck> VehicleInspectionChecks => Set<VehicleInspectionCheck>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

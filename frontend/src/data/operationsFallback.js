@@ -30,7 +30,7 @@ export const FALLBACK_DAMS = [
 export const FALLBACK_TRUCKS = [
   {
     id: 1,
-    registrationNumber: 'NC-542-KM',
+    registrationNumber: '542-KM NC',
     capacityLitres: 10000,
     status: 'OnTrip',
     lastLatitude: -28.7183,
@@ -43,7 +43,7 @@ export const FALLBACK_TRUCKS = [
   },
   {
     id: 2,
-    registrationNumber: 'NC-882-KM',
+    registrationNumber: '882-KM NC',
     capacityLitres: 15000,
     status: 'OnTrip',
     lastLatitude: -28.7419,
@@ -56,7 +56,7 @@ export const FALLBACK_TRUCKS = [
   },
   {
     id: 3,
-    registrationNumber: 'NC-104-KM',
+    registrationNumber: '104-KM NC',
     capacityLitres: 10000,
     status: 'Available',
     lastLatitude: -28.6921,

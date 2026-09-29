@@ -12,7 +12,7 @@ public class AlertResponseDto
     public int? AreaId { get; set; }
     public string? AreaName { get; set; }
     public DateTime CreatedAt { get; set; }
-    public string CreatedAtSast { get; set; } = string.Empty;
+    public string CreatedAtCAT { get; set; } = string.Empty;
     public string? CreatedByUserId { get; set; }
     public string? CreatedByName { get; set; }
 }

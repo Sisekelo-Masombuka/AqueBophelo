@@ -15,6 +15,8 @@ public class RegisterDto
 
     public string? PhoneNumber { get; set; }
     public int? AreaId { get; set; }
+    public string? AreaName { get; set; }
+    public string PreferredLanguage { get; set; } = "EN";
 }
 
 public class LoginDto
@@ -32,6 +34,7 @@ public class AuthResponseDto
     public string Email { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+    public string PreferredLanguage { get; set; } = "EN";
     public DateTime ExpiresAt { get; set; }
     public string Message { get; set; } = "Authentication successful";
 }
@@ -45,4 +48,5 @@ public class UserProfileDto
     public string Role { get; set; } = string.Empty;
     public int? AreaId { get; set; }
     public string? AreaName { get; set; }
+    public string PreferredLanguage { get; set; } = "EN";
 }

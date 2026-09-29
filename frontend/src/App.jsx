@@ -15,8 +15,11 @@ import DamsPage from './pages/resident/DamsPage';
 import LiveTrucksPage from './pages/resident/LiveTrucksPage';
 import AlertsPage from './pages/resident/AlertsPage';
 import ProfilePage from './pages/ProfilePage';
+import PrivacyPage from './pages/PrivacyPage';
 import DriverTripScreen from './pages/driver/DriverTripScreen';
 import DriverStopsScreen from './pages/driver/DriverStopsScreen';
+import DriverVehiclePage from './pages/driver/DriverVehiclePage';
+import DriverActivityPage from './pages/driver/DriverActivityPage';
 import AdminOverview from './pages/admin/AdminOverview';
 import ManageDams from './pages/admin/ManageDams';
 import ManageTrucks from './pages/admin/ManageTrucks';
@@ -48,6 +51,7 @@ export function App() {
           <Route path="/landing" element={<LandingPage />} />
           <Route path="/about" element={<AboutUsPage />} />
           <Route path="/contact" element={<ContactUsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -73,6 +77,7 @@ export function App() {
             <Route path="trucks" element={<LiveTrucksPage />} />
             <Route path="alerts" element={<AlertsPage />} />
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="privacy" element={<PrivacyPage />} />
 
             {/* Driver Role-Guarded Routes */}
             <Route
@@ -88,6 +93,22 @@ export function App() {
               element={
                 <ProtectedRoute allowedRoles={['Driver', 'Admin']}>
                   <DriverStopsScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="driver/vehicle"
+              element={
+                <ProtectedRoute allowedRoles={['Driver', 'Admin']}>
+                  <DriverVehiclePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="driver/activity"
+              element={
+                <ProtectedRoute allowedRoles={['Driver', 'Admin']}>
+                  <DriverActivityPage />
                 </ProtectedRoute>
               }
             />

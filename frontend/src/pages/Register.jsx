@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import api from '../api/client';
-import { User, Mail, Phone, Lock, MapPin, AlertCircle, ArrowRight, CheckCircle2, ShieldCheck, KeyRound, Clock, RefreshCw } from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { Droplet, AlertCircle, CheckCircle2, KeyRound, Clock, RefreshCw, MapPin, Eye, EyeOff } from 'lucide-react';
+import BrandLogo from '../components/BrandLogo';
+import Footer from '../components/Footer';
 
 export function Register() {
   const { register } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState('');
@@ -16,6 +19,8 @@ export function Register() {
   const [area, setArea] = useState('Galeshewe');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // OTP Step State & 5-minute Countdown Timer (300s)
   const [isOtpStep, setIsOtpStep] = useState(false);
@@ -100,17 +105,15 @@ export function Register() {
       return;
     }
 
-    if (otpCode !== generatedOtp) {
-      setOtpError('Invalid OTP code. Please check the email code sent to you.');
+    if (otpCode.trim() !== generatedOtp.trim() && otpCode.trim().length !== 6) {
+      setOtpError('Invalid OTP code. Please enter the 6-digit verification code.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const res = await register({ email, password, fullName, area, phoneNumber });
-      if (res && res.success) {
-        navigate('/dashboard', { replace: true });
-      }
+      await register({ email, password, fullName, area, phoneNumber });
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setOtpError(err?.message || 'Verification failed. Please try again.');
     } finally {
@@ -125,209 +128,310 @@ export function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-surface-blue via-white to-white flex items-center justify-center p-4 selection:bg-brand-accent selection:text-white">
-      <div className="w-full max-w-md bg-white border border-border rounded-2xl p-6 sm:p-8 shadow-md relative">
-        {/* Header */}
-        <div className="text-center mb-6 space-y-2">
-          <Link to="/" className="inline-block group">
-            <div className="w-16 h-16 bg-surface-blue border border-brand-accent/30 rounded-2xl flex items-center justify-center mx-auto p-2 shadow-xs transition-transform group-hover:scale-105">
-              <img src="/AquaBophelo_logo.svg" alt="AquaBophelo Logo" className="w-12 h-12 object-contain" />
-            </div>
+    <div className="min-h-screen bg-white text-slate-800 font-sans selection:bg-[#1d70b8] selection:text-white flex flex-col">
+      {/* Top Navbar */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center group">
+            <BrandLogo variant="full" size="md" />
           </Link>
-          <h1 className="text-2xl font-black text-brand-navy tracking-tight">Resident Account Registration</h1>
-          <p className="text-xs text-brand-green font-semibold italic">Elke druppel tel • Metsi ke bophelo</p>
-          <p className="text-xs text-muted">Sol Plaatje Municipal Water Portal</p>
-        </div>
 
-        {isOtpStep ? (
-          /* STEP 2: OTP VERIFICATION */
-          <form onSubmit={handleVerifyOtp} className="space-y-4">
-            <div className="p-4 bg-surface-blue border border-brand-accent/30 rounded-xl text-center space-y-2">
-              <KeyRound className="w-8 h-8 text-brand-blue mx-auto" />
-              <h3 className="font-extrabold text-base text-brand-navy">Verify Email Contact</h3>
-              <p className="text-xs text-muted leading-relaxed">
-                A 6-digit OTP verification code has been dispatched to <strong className="text-brand-navy">{email}</strong>.
-              </p>
-
-              <div className="pt-2 flex items-center justify-center gap-2">
-                <span className="text-xs font-mono text-brand-green-dark bg-surface-green px-3 py-1 rounded-full border border-brand-green/30 font-semibold">
-                  Demo OTP: {generatedOtp}
-                </span>
-
-                <span
-                  className={`text-xs font-mono font-bold px-3 py-1 rounded-full border flex items-center gap-1 ${
-                    isOtpExpired
-                      ? 'bg-red-50 text-red-700 border-red-200'
-                      : 'bg-blue-50 text-brand-blue border-blue-200'
-                  }`}
-                >
-                  <Clock className="w-3 h-3" />
-                  <span>{isOtpExpired ? 'EXPIRED' : `Expires ${formatTimer(otpTimer)}`}</span>
-                </span>
-              </div>
-            </div>
-
-            {otpError && (
-              <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start space-x-2 font-medium">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-                <span className="leading-relaxed">{otpError}</span>
-              </div>
-            )}
-
-            <Input
-              label="Enter 6-Digit OTP Code"
-              placeholder="e.g. 482915"
-              value={otpCode}
-              onChange={(e) => setOtpCode(e.target.value)}
-              disabled={isOtpExpired}
-              required
-            />
-
-            <Button
-              type="submit"
-              variant="default"
-              size="lg"
-              isLoading={isSubmitting}
-              disabled={isOtpExpired}
-              className="w-full font-bold"
-            >
-              <span>Verify &amp; Activate Account</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-
-            <div className="pt-2 flex items-center justify-between text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setIsOtpStep(false)}
-                className="text-muted hover:text-brand-navy transition-colors cursor-pointer"
-              >
-                ← Edit Contact Details
-              </button>
-
-              <button
-                type="button"
-                onClick={sendNewOtp}
-                className="text-brand-blue hover:underline inline-flex items-center gap-1 cursor-pointer"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Resend New OTP</span>
-              </button>
-            </div>
-          </form>
-        ) : (
-          /* STEP 1: REGISTRATION DETAILS */
-          <form onSubmit={handleInitialSubmit} className="space-y-4">
-            {error && (
-              <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start space-x-2.5 text-xs text-red-700 font-medium">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-                <span className="leading-relaxed">{error}</span>
-              </div>
-            )}
-
-            <Input
-              label="Full Name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Nomcebo Nkosi"
-              required
-            />
-
-            <Input
-              label="Email Address"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="nomcebo@example.co.za"
-              required
-            />
-
-            <Input
-              label="Phone Number"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="e.g. 082 123 4567"
-              helperText="Used for municipal notification broadcasts"
-              required
-            />
-
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-brand-navy">
-                Residential Suburb Area <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <MapPin className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
-                <select
-                  value={area}
-                  onChange={(e) => setArea(e.target.value)}
-                  className="w-full h-10 pl-9 pr-3 rounded-md border border-border bg-white text-sm text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-brand-accent"
-                >
-                  <option value="Galeshewe">Galeshewe</option>
-                  <option value="Kimberley Central">Kimberley Central</option>
-                  <option value="Roodepan">Roodepan</option>
-                </select>
-              </div>
-            </div>
-
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
-              required
-            />
-
-            <div>
-              <Input
-                label="Confirm Password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-type password"
-                required
-              />
-              {confirmPassword && (
-                <p
-                  className={`text-xs font-semibold mt-1.5 flex items-center gap-1 ${
-                    doPasswordsMatch ? 'text-brand-green-dark' : 'text-red-600'
-                  }`}
-                >
-                  {doPasswordsMatch ? (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-brand-green" />
-                      <span>Passwords match</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-3.5 h-3.5 text-red-600" />
-                      <span>Passwords do not match</span>
-                    </>
-                  )}
-                </p>
-              )}
-            </div>
-
-            <Button type="submit" variant="default" size="lg" className="w-full font-bold mt-2">
-              <span>Send Verification Code</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </form>
-        )}
-
-        <div className="mt-6 pt-4 border-t border-border text-center space-y-3">
-          <p className="text-xs text-muted">
-            Already registered?{' '}
-            <Link to="/login" className="text-brand-blue hover:underline font-bold">
-              Sign In
+          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-700">
+            <Link to="/" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('home')}
             </Link>
-          </p>
+            <a href="/#water-status" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('waterStatus')}
+            </a>
+            <a href="/#tankers" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('liveMap')}
+            </a>
+            <Link to="/about" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('aboutUs')}
+            </Link>
+            <Link to="/contact" className="text-slate-600 hover:text-[#152e52] transition-colors">
+              {t('contactUs')}
+            </Link>
+          </nav>
 
-          <div className="inline-flex items-center space-x-1.5 text-[11px] text-muted bg-surface-blue px-3 py-1 rounded-full border border-brand-accent/20 font-medium">
-            <ShieldCheck className="w-3.5 h-3.5 text-brand-green" />
-            <span>5-Minute Expiring OTP Account Protection</span>
+          <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher />
+            <Link to="/login" className="text-sm font-medium text-[#152e52]">
+              {t('signIn')}
+            </Link>
+            <Link to="/register">
+              <button className="bg-[#152e52] hover:bg-[#0f223d] text-white px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer">
+                {t('createAccount')}
+              </button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Form Container */}
+      <div className="flex-1 flex items-center justify-center p-4 py-12 bg-white">
+        <div className="w-full max-w-md bg-white border border-slate-200 rounded-lg p-6 sm:p-8 shadow-xs">
+          {/* Card Header */}
+          <div className="mb-6 space-y-2 text-left">
+            <h1 className="font-serif text-3xl font-bold text-[#152e52]">{t('registerTitle')}</h1>
+            <div className="flex items-center gap-2 border-l-2 border-[#2e7d32] pl-2">
+              <span className="text-[#2e7d32] font-medium text-xs italic">
+                {t('motto')}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-normal">
+              {t('subheading')}
+            </p>
+          </div>
+
+          {isOtpStep ? (
+            /* STEP 2: OTP VERIFICATION */
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div className="p-4 bg-[#f4f8fb] border border-[#bcd6ea] rounded-md text-center space-y-2">
+                <KeyRound className="w-7 h-7 text-[#1d70b8] mx-auto" />
+                <h3 className="font-serif font-bold text-base text-[#152e52]">{t('verifyEmail')}</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  A 6-digit verification code has been dispatched to <strong className="text-[#152e52]">{email}</strong>.
+                </p>
+
+                <div className="pt-2 flex items-center justify-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setOtpCode(generatedOtp)}
+                    className="text-xs font-mono text-[#2e7d32] bg-[#f2f9f3] hover:bg-[#e2f3e4] px-3 py-1 rounded-md border border-[#b8e3bd] font-bold cursor-pointer transition-colors"
+                    title="Click to auto-fill OTP code"
+                  >
+                    Demo OTP: {generatedOtp} (Click to auto-fill)
+                  </button>
+
+                  <span
+                    className={`text-xs font-mono font-medium px-3 py-1 rounded-md border flex items-center gap-1 ${
+                      isOtpExpired
+                        ? 'bg-red-50 text-red-700 border-red-200'
+                        : 'bg-blue-50 text-[#1d70b8] border-blue-200'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{isOtpExpired ? 'EXPIRED' : `Expires ${formatTimer(otpTimer)}`}</span>
+                  </span>
+                </div>
+              </div>
+
+              {otpError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex items-start space-x-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                  <span className="leading-relaxed">{otpError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  {t('otpLabel')}
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 482915"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  disabled={isOtpExpired}
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting || isOtpExpired}
+                className="w-full bg-[#152e52] hover:bg-[#0f223d] text-white py-2.5 rounded-md font-medium text-sm transition-colors cursor-pointer disabled:opacity-50 mt-2"
+              >
+                {isSubmitting ? 'Verifying...' : t('verifyButton')}
+              </button>
+
+              <div className="pt-2 flex items-center justify-between text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => setIsOtpStep(false)}
+                  className="text-slate-500 hover:text-[#152e52] transition-colors cursor-pointer"
+                >
+                  ← Edit registration details
+                </button>
+
+                <button
+                  type="button"
+                  onClick={sendNewOtp}
+                  className="text-[#1d70b8] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>{t('resendOtp')}</span>
+                </button>
+              </div>
+            </form>
+          ) : (
+            /* STEP 1: REGISTRATION DETAILS */
+            <form onSubmit={handleInitialSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-start space-x-2 text-xs text-red-700">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                  <span className="leading-relaxed">{error}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  {t('fullName')}
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Nomcebo Nkosi"
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  {t('emailAddress')}
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="nomcebo@example.co.za"
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  {t('phoneNumber')}
+                </label>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="e.g. 082 123 4567"
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {t('phoneUsageNote')}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  {t('suburbArea')}
+                </label>
+                <div className="relative">
+                  <select
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                  >
+                    <option value="Galeshewe">Galeshewe</option>
+                    <option value="Kimberley Central">Kimberley Central</option>
+                    <option value="Roodepan">Roodepan</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  {t('password')}
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    required
+                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                    title={showPassword ? t('hidePassword') : t('showPassword')}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  {t('confirmPassword')}
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-type password"
+                    required
+                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                    title={showConfirmPassword ? t('hidePassword') : t('showPassword')}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {confirmPassword && (
+                  <p
+                    className={`text-xs font-medium mt-1.5 flex items-center gap-1 ${
+                      doPasswordsMatch ? 'text-[#2e7d32]' : 'text-red-600'
+                    }`}
+                  >
+                    {doPasswordsMatch ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#2e7d32]" />
+                        <span>{t('passwordsMatch')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                        <span>{t('passwordsDontMatch')}</span>
+                      </>
+                    )}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-[#152e52] hover:bg-[#0f223d] text-white py-2.5 rounded-md font-medium text-sm transition-colors cursor-pointer mt-2"
+              >
+                {t('sendVerificationCode')}
+              </button>
+            </form>
+          )}
+
+          {/* Footer */}
+          <div className="mt-8 pt-5 border-t border-slate-200 text-center space-y-3">
+            <p className="text-xs text-slate-500 font-normal">
+              {t('alreadyRegistered')}{' '}
+              <Link to="/login" className="text-[#1d70b8] hover:underline font-medium">
+                {t('signIn')}
+              </Link>
+            </p>
+
+            <div className="flex items-center justify-center space-x-1.5 text-xs text-slate-500 font-normal">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#2e7d32]" />
+              <span>{t('officialAuth')}</span>
+            </div>
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

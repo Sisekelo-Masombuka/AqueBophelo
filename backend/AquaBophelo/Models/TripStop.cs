@@ -11,5 +11,13 @@ public class TripStop
     public RouteStop? RouteStop { get; set; }
 
     public DateTime? ArrivedAt { get; set; }
+    public DateTime? DeliveryStartedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+
+    public double? LitresDelivered { get; set; }
+    public string? DeliveryLocation { get; set; }
+    public string? Notes { get; set; }
+
+    public string StopStatus { get; set; } = "Pending"; // Pending, Arrived, Delivering, Completed
     public bool Completed { get; set; } = false;
 }

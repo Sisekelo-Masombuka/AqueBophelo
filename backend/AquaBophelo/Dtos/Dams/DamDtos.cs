@@ -16,7 +16,7 @@ public class DamResponseDto
     public double? LatestVolumeMegaLitres { get; set; }
     public string StatusBand { get; set; } = "Healthy"; // Healthy, Watch, Low, Critical
     public string StatusColor { get; set; } = "Green";   // Green, Amber, Red
-    public string? LastUpdatedSast { get; set; }
+    public string? LastUpdatedCAT { get; set; }
 }
 
 public class CreateDamDto
@@ -62,7 +62,7 @@ public class DamReadingResponseDto
     public double LevelPercent { get; set; }
     public double VolumeMegaLitres { get; set; }
     public DateTime RecordedAtUtc { get; set; }
-    public string RecordedAtSast { get; set; } = string.Empty;
+    public string RecordedAtCAT { get; set; } = string.Empty;
     public string Source { get; set; } = "Manual";
 }
 

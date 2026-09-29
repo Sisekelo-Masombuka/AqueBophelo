@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Plus, Trash2, CheckCircle, AlertCircle, Navigation, ChevronRight, Layers } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, AlertCircle, Navigation, Layers, X } from 'lucide-react';
 import apiClient from '../../api/client';
 
 export function ManageRoutes() {
@@ -152,21 +152,21 @@ export function ManageRoutes() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-xs font-semibold text-[#22D3EE] uppercase tracking-wider mb-1">
+          <div className="flex items-center space-x-2 text-xs font-semibold text-[#1d70b8] mb-1">
             <Navigation className="w-3.5 h-3.5" />
             <span>Distribution Network</span>
           </div>
-          <h2 className="text-xl md:text-2xl font-bold text-[#E6EDF7]">
+          <h2 className="font-serif text-2xl md:text-3xl font-bold text-[#152e52]">
             Delivery Routes &amp; Water Drop Points
           </h2>
-          <p className="text-xs md:text-sm text-[#8A9BB8] mt-1">
+          <p className="text-xs md:text-sm text-slate-500 mt-1 font-normal">
             Configure scheduled routes, municipal zone coverage, and sequenced community collection points.
           </p>
         </div>
 
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-[#22D3EE] hover:bg-[#22D3EE]/90 text-[#0B1220] font-bold text-xs md:text-sm transition-all shadow-md active:scale-95"
+          className="inline-flex items-center space-x-2 px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs md:text-sm transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4 shrink-0" />
           <span>Create New Route</span>
@@ -176,10 +176,10 @@ export function ManageRoutes() {
       {/* Feedback Banner */}
       {feedback && (
         <div
-          className={`p-3.5 rounded-xl border flex items-center space-x-3 text-xs md:text-sm ${
+          className={`p-3.5 rounded-md border flex items-center space-x-3 text-xs md:text-sm ${
             feedback.type === 'success'
-              ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]'
-              : 'bg-[#EF4444]/10 border-[#EF4444]/30 text-[#EF4444]'
+              ? 'bg-[#f2f9f3] border-[#b8e3bd] text-[#2e7d32]'
+              : 'bg-red-50 border-red-200 text-red-700'
           }`}
         >
           {feedback.type === 'success' ? (
@@ -196,45 +196,43 @@ export function ManageRoutes() {
         {routes.map((route) => (
           <div
             key={route.id}
-            className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-5 shadow-lg"
+            className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs"
           >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-[#1F2C45]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200">
               <div className="flex items-center space-x-3">
-                <div className="p-2.5 bg-[#22D3EE]/10 rounded-xl text-[#22D3EE]">
-                  <Layers className="w-5 h-5" />
-                </div>
+                <Layers className="w-5 h-5 text-[#152e52] shrink-0" />
                 <div>
-                  <h3 className="text-base font-bold text-[#E6EDF7]">{route.name}</h3>
-                  <div className="flex items-center space-x-2 mt-0.5 text-xs text-[#8A9BB8]">
-                    <span className="text-[#22D3EE] font-medium">{route.areaName}</span>
+                  <h3 className="font-serif text-base font-bold text-[#152e52]">{route.name}</h3>
+                  <div className="flex items-center space-x-2 mt-0.5 text-xs text-slate-500 font-normal">
+                    <span className="text-[#1d70b8] font-medium">{route.areaName}</span>
                     <span>·</span>
                     <span>{route.stops?.length || 0} scheduled drop points</span>
                   </div>
                 </div>
               </div>
 
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20 self-start sm:self-auto">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-[#f2f9f3] text-[#2e7d32] border border-[#b8e3bd] self-start sm:self-auto">
                 Active Route
               </span>
             </div>
 
             {/* Sequence of stops */}
             <div className="mt-4">
-              <h4 className="text-xs font-semibold text-[#8A9BB8] uppercase tracking-wider mb-3">
+              <h4 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">
                 Sequenced Drop Points
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {route.stops?.map((stop, idx) => (
                   <div
                     key={stop.id || idx}
-                    className="bg-[#0B1220] border border-[#1F2C45] rounded-xl p-3 flex items-start space-x-3"
+                    className="bg-[#f8fafc] border border-slate-200 rounded-md p-3 flex items-start space-x-3"
                   >
-                    <div className="w-6 h-6 rounded-full bg-[#22D3EE]/20 text-[#22D3EE] font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="w-6 h-6 rounded-full bg-[#152e52] text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                       {stop.sequence || idx + 1}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-[#E6EDF7] truncate">{stop.name}</p>
-                      <p className="text-[10px] text-[#8A9BB8] mt-0.5 font-mono">
+                      <p className="text-xs font-semibold text-[#152e52] truncate">{stop.name}</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5 font-mono font-normal">
                         {stop.latitude.toFixed(4)}, {stop.longitude.toFixed(4)}
                       </p>
                     </div>
@@ -248,18 +246,23 @@ export function ManageRoutes() {
 
       {/* Create Route Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-[#111B2E] border border-[#1F2C45] rounded-2xl p-6 w-full max-w-xl shadow-2xl text-[#E6EDF7] my-8">
-            <h3 className="text-lg font-bold text-[#E6EDF7] mb-1">
-              Create Scheduled Route
-            </h3>
-            <p className="text-xs text-[#8A9BB8] mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 w-full max-w-xl shadow-xl text-slate-800 my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+              <h3 className="font-serif text-lg font-bold text-[#152e52]">
+                Create Scheduled Route
+              </h3>
+              <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mb-4 font-normal">
               Define a new delivery corridor and add community drop points.
             </p>
 
             <form onSubmit={handleCreateRoute} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#8A9BB8] uppercase mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Route Name
                 </label>
                 <input
@@ -268,18 +271,18 @@ export function ManageRoutes() {
                   value={routeName}
                   onChange={(e) => setRouteName(e.target.value)}
                   required
-                  className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl px-3.5 py-2.5 text-sm text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#8A9BB8] uppercase mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Municipal Area
                 </label>
                 <select
                   value={selectedAreaId}
                   onChange={(e) => setSelectedAreaId(e.target.value)}
-                  className="w-full bg-[#0B1220] border border-[#1F2C45] rounded-xl px-3.5 py-2.5 text-sm text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                 >
                   {municipalAreas.map((area) => (
                     <option key={area.id} value={area.id}>
@@ -291,13 +294,13 @@ export function ManageRoutes() {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-semibold text-[#8A9BB8] uppercase">
+                  <label className="block text-xs font-medium text-slate-700">
                     Delivery Stops
                   </label>
                   <button
                     type="button"
                     onClick={handleAddStopField}
-                    className="inline-flex items-center space-x-1 text-xs text-[#22D3EE] hover:underline"
+                    className="inline-flex items-center space-x-1 text-xs text-[#1d70b8] hover:underline font-medium cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Stop</span>
@@ -308,9 +311,9 @@ export function ManageRoutes() {
                   {stops.map((stop, idx) => (
                     <div
                       key={idx}
-                      className="bg-[#0B1220] border border-[#1F2C45] rounded-xl p-3 flex items-center space-x-2"
+                      className="bg-[#f8fafc] border border-slate-200 rounded-md p-3 flex items-center space-x-2"
                     >
-                      <span className="w-5 h-5 rounded-full bg-[#22D3EE]/20 text-[#22D3EE] text-[10px] font-bold flex items-center justify-center shrink-0">
+                      <span className="w-5 h-5 rounded-full bg-[#152e52] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                         {idx + 1}
                       </span>
                       <input
@@ -319,7 +322,7 @@ export function ManageRoutes() {
                         value={stop.name}
                         onChange={(e) => handleStopChange(idx, 'name', e.target.value)}
                         required
-                        className="flex-1 bg-[#111B2E] border border-[#1F2C45] rounded-lg px-2.5 py-1.5 text-xs text-[#E6EDF7] focus:outline-hidden focus:border-[#22D3EE]"
+                        className="flex-1 bg-white border border-slate-300 rounded-md px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                       />
                       <input
                         type="number"
@@ -327,7 +330,7 @@ export function ManageRoutes() {
                         placeholder="Lat"
                         value={stop.latitude}
                         onChange={(e) => handleStopChange(idx, 'latitude', e.target.value)}
-                        className="w-20 bg-[#111B2E] border border-[#1F2C45] rounded-lg px-2 py-1.5 text-xs text-[#E6EDF7] focus:outline-hidden"
+                        className="w-20 bg-white border border-slate-300 rounded-md px-2 py-1.5 text-xs text-slate-900 focus:outline-none"
                       />
                       <input
                         type="number"
@@ -335,13 +338,13 @@ export function ManageRoutes() {
                         placeholder="Lng"
                         value={stop.longitude}
                         onChange={(e) => handleStopChange(idx, 'longitude', e.target.value)}
-                        className="w-20 bg-[#111B2E] border border-[#1F2C45] rounded-lg px-2 py-1.5 text-xs text-[#E6EDF7] focus:outline-hidden"
+                        className="w-20 bg-white border border-slate-300 rounded-md px-2 py-1.5 text-xs text-slate-900 focus:outline-none"
                       />
                       {stops.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveStopField(idx)}
-                          className="p-1 text-[#8A9BB8] hover:text-[#EF4444] transition-colors"
+                          className="p-1 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -351,17 +354,17 @@ export function ManageRoutes() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-[#1F2C45]">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#8A9BB8] hover:text-[#E6EDF7]"
+                  className="px-4 py-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 border border-slate-300 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#22D3EE] text-[#0B1220] font-bold text-xs shadow-md"
+                  className="px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs transition-colors cursor-pointer"
                 >
                   Save Route
                 </button>

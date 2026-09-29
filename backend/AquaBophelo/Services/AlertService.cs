@@ -95,15 +95,15 @@ public class AlertService : IAlertService
             AreaId = alert.AreaId,
             AreaName = alert.Area?.Name,
             CreatedAt = alert.CreatedAt,
-            CreatedAtSast = FormatSast(alert.CreatedAt),
+            CreatedAtCAT = FormatCAT(alert.CreatedAt),
             CreatedByUserId = alert.CreatedByUserId,
             CreatedByName = alert.CreatedByUser?.FullName
         };
     }
 
-    private static string FormatSast(DateTime utcTime)
+    private static string FormatCAT(DateTime utcTime)
     {
-        var sastTime = utcTime.AddHours(2);
-        return sastTime.ToString("yyyy-MM-dd HH:mm SAST");
+        var CATTime = utcTime.AddHours(2);
+        return CATTime.ToString("yyyy-MM-dd HH:mm CAT");
     }
 }

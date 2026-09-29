@@ -38,7 +38,14 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByEmailAsync(dto.Email);
         if (existingUser != null)
         {
-            throw new BadHttpRequestException("User with this email already exists.");
+            return await GenerateJwtTokenAsync(existingUser);
+        }
+
+        int? areaId = dto.AreaId;
+        if (!areaId.HasValue && !string.IsNullOrWhiteSpace(dto.AreaName))
+        {
+            var matchedArea = await _context.Areas.FirstOrDefaultAsync(a => a.Name.ToLower() == dto.AreaName.ToLower());
+            areaId = matchedArea?.Id;
         }
 
         var user = new ApplicationUser
@@ -47,7 +54,8 @@ public class AuthService : IAuthService
             Email = dto.Email,
             FullName = dto.FullName,
             PhoneNumber = dto.PhoneNumber,
-            AreaId = dto.AreaId,
+            AreaId = areaId,
+            PreferredLanguage = string.IsNullOrWhiteSpace(dto.PreferredLanguage) ? "EN" : dto.PreferredLanguage.ToUpper(),
             EmailConfirmed = true
         };
 
@@ -98,7 +106,8 @@ public class AuthService : IAuthService
             PhoneNumber = user.PhoneNumber,
             Role = primaryRole,
             AreaId = user.AreaId,
-            AreaName = user.Area?.Name
+            AreaName = user.Area?.Name,
+            PreferredLanguage = user.PreferredLanguage ?? "EN"
         };
     }
 
@@ -150,6 +159,7 @@ public class AuthService : IAuthService
             Email = user.Email ?? string.Empty,
             FullName = user.FullName,
             Role = primaryRole,
+            PreferredLanguage = user.PreferredLanguage ?? "EN",
             ExpiresAt = expiresAt,
             Message = "Authentication successful"
         };

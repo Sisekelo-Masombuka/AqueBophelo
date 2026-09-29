@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../api/client';
-import { KeyRound, Mail, Lock, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { Droplet, KeyRound, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
+import BrandLogo from '../components/BrandLogo';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import Footer from '../components/Footer';
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -61,91 +62,132 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A2A4F] text-[#F0F7FF] flex items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-md bg-[#0E4C8C] border border-[#0A2A4F] rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-[#2991C8]/20 border border-[#2991C8]/40 text-[#2991C8] flex items-center justify-center mx-auto shadow-sm">
-            <KeyRound className="w-6 h-6" />
+    <div className="min-h-screen bg-white text-slate-800 font-sans selection:bg-[#1d70b8] selection:text-white flex flex-col">
+      {/* Top Navbar */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center group">
+            <BrandLogo variant="full" size="md" />
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <Link to="/login" className="text-sm font-medium text-[#152e52]">
+              Sign in
+            </Link>
           </div>
-          <h1 className="text-2xl font-black text-[#F0F7FF] tracking-tight">Set New Password</h1>
-          <p className="text-xs text-[#A3C7EB]">Sol Plaatje Municipal Account Security</p>
         </div>
+      </header>
 
-        {success ? (
-          <div className="p-6 bg-[#2E9E4F]/20 border border-[#2E9E4F]/40 rounded-2xl text-center space-y-3">
-            <CheckCircle2 className="w-12 h-12 text-[#2E9E4F] mx-auto" />
-            <h3 className="font-bold text-base text-[#F0F7FF]">Password Reset Successful!</h3>
-            <p className="text-xs text-[#A3C7EB]">Your account credentials have been updated. Redirecting to Login screen...</p>
+      {/* Main Content */}
+      <div className="flex-1 flex items-center justify-center p-4 py-12 bg-white">
+        <div className="w-full max-w-md bg-white border border-slate-200 rounded-lg p-6 sm:p-8 shadow-xs">
+          {/* Card Header */}
+          <div className="mb-6 space-y-2 text-left">
+            <h1 className="font-serif text-3xl font-bold text-[#152e52]">Set New Password</h1>
+            <div className="flex items-center gap-2 border-l-2 border-[#2e7d32] pl-2">
+              <span className="text-[#2e7d32] font-medium text-xs italic">
+                Elke druppel tel • Metsi ke bophelo
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-normal">
+              Sol Plaatje Municipal Account Security &amp; Password Reset
+            </p>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="p-3.5 bg-red-500/20 border border-red-500/40 rounded-xl text-xs text-red-200 flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
-                <span>{error}</span>
+
+          {success ? (
+            <div className="p-6 bg-[#f2f9f3] border border-[#b8e3bd] rounded-lg text-center space-y-3">
+              <CheckCircle2 className="w-12 h-12 text-[#2e7d32] mx-auto" />
+              <h3 className="font-serif font-bold text-lg text-[#152e52]">Password Reset Successful!</h3>
+              <p className="text-xs text-slate-600">
+                Your account credentials have been updated. Redirecting to Login screen...
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex items-start space-x-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                  <span className="leading-relaxed">{error}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  Email address
+                </label>
+                <input
+                  type="email"
+                  placeholder="e.g. resident@solplaatje.gov.za"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                />
               </div>
-            )}
 
-            <Input
-              label="Email Address *"
-              type="email"
-              icon={Mail}
-              placeholder="e.g. resident@gmail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  Reset code / token
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Paste the reset token code from your email here..."
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                />
+              </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-[#F0F7FF]">Reset Code / Token *</label>
-              <textarea
-                rows={3}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-[#1B5D9E] bg-[#0A2A4F] text-[#F0F7FF] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#2991C8]"
-                placeholder="Paste the reset token code from your email here..."
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                required
-              />
-            </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  New password
+                </label>
+                <input
+                  type="password"
+                  placeholder="At least 6 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                />
+              </div>
 
-            <Input
-              label="New Password *"
-              type="password"
-              icon={Lock}
-              placeholder="At least 6 characters"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  Confirm new password
+                </label>
+                <input
+                  type="password"
+                  placeholder="Re-type new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                />
+              </div>
 
-            <Input
-              label="Confirm New Password *"
-              type="password"
-              icon={Lock}
-              placeholder="Re-type new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-[#152e52] hover:bg-[#0f223d] text-white py-2.5 rounded-md font-medium text-sm transition-colors cursor-pointer disabled:opacity-50 mt-2"
+              >
+                {isSubmitting ? 'Resetting password...' : 'Reset password'}
+              </button>
 
-            <Button
-              type="submit"
-              isLoading={isSubmitting}
-              className="w-full py-3 bg-[#2E9E4F] hover:bg-[#215E22] text-white font-bold rounded-xl shadow-md cursor-pointer transition-all"
-            >
-              Reset Password
-            </Button>
-
-            <div className="pt-2 text-center">
-              <Link to="/login" className="inline-flex items-center space-x-1.5 text-xs text-[#A3C7EB] hover:text-[#F0F7FF] transition-colors">
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back to Login</span>
-              </Link>
-            </div>
-          </form>
-        )}
+              <div className="pt-2 text-center">
+                <Link to="/login" className="inline-flex items-center space-x-1.5 text-xs text-[#1d70b8] hover:underline font-medium">
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to Login</span>
+                </Link>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

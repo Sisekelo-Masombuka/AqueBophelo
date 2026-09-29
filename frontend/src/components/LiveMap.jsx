@@ -1,731 +1,594 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Map as MapLibreMap, Marker, Popup, NavigationControl } from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import {
-  Navigation,
-  X,
-  Crosshair,
-  MapPin,
-  Sun,
-  Moon,
+import React, { memo, useState, useEffect, useRef } from 'react';
+import * as signalR from '@microsoft/signalr';
+import mapData from './kimberleyMap.json';
+import { 
+  Truck, Droplet, MapPin, Navigation, CheckCircle2, Clock, 
+  ZoomIn, ZoomOut, RotateCcw, Play, Pause, Layers, ShieldCheck 
 } from 'lucide-react';
+import apiClient from '../api/client';
 
-const KIMBERLEY_CENTER = [24.7719, -28.7419];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7154';
 
-const LIGHT_STREETS_STYLE = {
-  version: 8,
-  sources: {
-    'osm-streets': {
-      type: 'raster',
-      tiles: [
-        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      ],
-      tileSize: 256,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
-    },
+// Map Dimensions & Projection Center for Kimberley
+const MAP_CONFIG = { center: [24.76, -28.73], spanLng: 0.24, W: 900, H: 560 };
+const METRES_PER_DEG = 111320;
+
+function makeProjection({ center, spanLng, W, H }) {
+  const [lng0, lat0] = center;
+  const cos = Math.cos((lat0 * Math.PI) / 180);
+  const k = W / (spanLng * cos); // pixels per degree of longitude
+  const project = (lng, lat) => [
+    W / 2 + (lng - lng0) * cos * k,
+    H / 2 - (lat - lat0) * k
+  ];
+  return { project, k };
+}
+
+const { project, k } = makeProjection(MAP_CONFIG);
+const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+
+// Default Municipal Facilities
+const DEFAULT_FACILITIES = [
+  { id: 'newton', name: 'Newton Reservoir', lngLat: [24.7712, -28.7033], level: 62.5, capacity: '92.5 ML', kind: 'reservoir' },
+  { id: 'riverton', name: 'Riverton Water Works', lngLat: [24.8102, -28.6788], level: 82.0, capacity: '150.0 ML', kind: 'reservoir' },
+  { id: 'roodepan', name: 'Roodepan Depot', lngLat: [24.7255, -28.6905], level: 90.0, capacity: '45.0 ML', kind: 'depot' },
+];
+
+// Default Municipal Water Delivery Stops (Many Stops on Map)
+const DEFAULT_DELIVERY_STOPS = [
+  { id: 101, sequence: 1, name: 'Galeshewe Police Station Water Point', lngLat: [24.7319, -28.7183], area: 'Galeshewe', status: 'Completed', volume: '3,500 L' },
+  { id: 102, sequence: 2, name: 'Tshwarelela Primary Drop Point', lngLat: [24.7291, -28.7125], area: 'Galeshewe', status: 'In Delivery', volume: '2,500 L' },
+  { id: 103, sequence: 3, name: 'Mayibuye Community Centre', lngLat: [24.7245, -28.7098], area: 'Galeshewe', status: 'Pending', volume: '3,000 L' },
+  { id: 201, sequence: 1, name: 'Sol Plaatje Civic Centre Reservoir', lngLat: [24.7719, -28.7419], area: 'Kimberley Central', status: 'Completed', volume: '5,000 L' },
+  { id: 202, sequence: 2, name: 'Kimberley Hospital Water Reserve', lngLat: [24.7645, -28.7388], area: 'Kimberley Central', status: 'In Delivery', volume: '4,000 L' },
+  { id: 301, sequence: 1, name: 'Roodepan Municipal Depot Standby', lngLat: [24.7088, -28.6921], area: 'Roodepan', status: 'Pending', volume: '2,000 L' },
+  { id: 302, sequence: 2, name: 'Lerato Park Community Water Tanks', lngLat: [24.7012, -28.6854], area: 'Roodepan', status: 'Pending', volume: '3,500 L' },
+];
+
+// Default Tankers Fleet with OpenStreetMap Routes
+const DEFAULT_TANKERS = [
+  {
+    id: '542-KM NC',
+    registrationNumber: '542-KM NC',
+    driverName: 'Sipho Dlamini',
+    capacityLitres: 10000,
+    status: 'OnTrip',
+    from: { name: 'Newton Reservoir', lngLat: [24.7712, -28.7033] },
+    to: { name: 'Galeshewe Zone 3', lngLat: [24.7319, -28.7183] },
+    speedKmh: 38,
+    minutes: 18,
+    secs: 50,
+    start: 0.45
   },
-  layers: [
-    {
-      id: 'osm-streets-layer',
-      type: 'raster',
-      source: 'osm-streets',
-      minzoom: 0,
-      maxzoom: 19,
-    },
-  ],
-};
-
-const DARK_CANVAS_STYLE = {
-  version: 8,
-  sources: {
-    'esri-dark-canvas': {
-      type: 'raster',
-      tiles: [
-        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-      ],
-      tileSize: 256,
-      attribution:
-        '&copy; <a href="https://www.esri.com" target="_blank" rel="noopener">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
-    },
+  {
+    id: '882-KM NC',
+    registrationNumber: '882-KM NC',
+    driverName: 'Lerato Motsepe',
+    capacityLitres: 15000,
+    status: 'OnTrip',
+    from: { name: 'Newton Reservoir', lngLat: [24.7712, -28.7033] },
+    to: { name: 'Roodepan Depot', lngLat: [24.7088, -28.6921] },
+    speedKmh: 42,
+    minutes: 24,
+    secs: 65,
+    start: 0.25
   },
-  layers: [
-    {
-      id: 'esri-dark-canvas-layer',
-      type: 'raster',
-      source: 'esri-dark-canvas',
-      minzoom: 0,
-      maxzoom: 19,
-    },
-  ],
-};
-
-function getLocationFreshness(lastSeen) {
-  if (!lastSeen) {
-    return { text: 'No telemetry yet', level: 'offline', color: '#b91c1c', dotColor: 'bg-red-600' };
+  {
+    id: '104-KM NC',
+    registrationNumber: '104-KM NC',
+    driverName: 'Tshepo Khumalo',
+    capacityLitres: 10000,
+    status: 'Available',
+    from: { name: 'Riverton Water Works', lngLat: [24.8102, -28.6788] },
+    to: { name: 'Kimberley Central CBD', lngLat: [24.7719, -28.7419] },
+    speedKmh: 0,
+    minutes: 0,
+    secs: 60,
+    start: 0.95
   }
-  const date = typeof lastSeen === 'string' ? new Date(lastSeen) : lastSeen;
-  const now = Date.now();
-  const diffSec = Math.max(0, Math.floor((now - date.getTime()) / 1000));
+];
 
-  if (diffSec < 60) {
-    return {
-      text: `Live (${diffSec}s ago)`,
-      level: 'fresh',
-      color: '#2e9e4f',
-      dotColor: 'bg-brand-green',
-    };
-  } else if (diffSec < 600) {
-    const min = Math.floor(diffSec / 60);
-    return {
-      text: `Updated ${min}m ago`,
-      level: 'moderate',
-      color: '#b45309',
-      dotColor: 'bg-amber-600',
-    };
-  } else {
-    const hours = Math.floor(diffSec / 3600);
-    const min = Math.floor((diffSec % 3600) / 60);
-    return {
-      text: `Last seen ${hours > 0 ? `${hours}h ` : ''}${min}m ago`,
-      level: 'stale',
-      color: '#b91c1c',
-      dotColor: 'bg-red-600',
-    };
-  }
-}
+// SVG Base Map Layer
+const BaseMap = memo(function BaseMap() {
+  const L = mapData.layers || {};
+  const edgeProps = { fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round', vectorEffect: 'non-scaling-stroke' };
+  return (
+    <g>
+      {/* Landmass background */}
+      <rect className="fill-[#eef0ed]" width={MAP_CONFIG.W} height={MAP_CONFIG.H} />
+      {/* Built-up areas */}
+      {L.built && <path className="fill-[#e6e8e6]" d={L.built} />}
+      {/* Parks & Greenery */}
+      {L.parks && <path className="fill-[#d9e8d0]" d={L.parks} />}
+      {/* Water Bodies & Reservoirs */}
+      {L.water && <path className="fill-[#b9d5e8]" d={L.water} />}
+      {/* Waterways & Rivers */}
+      {L.waterway && <path className="stroke-[#8ab4f8] stroke-[3px] fill-none" d={L.waterway} {...edgeProps} />}
 
-function createTruckDOMElement(truck, isSelected = false, isLightMode = true) {
-  const freshness = getLocationFreshness(truck.lastSeenAt || truck.lastUpdated);
-  const isStale = freshness.level === 'stale';
+      {/* Road Network Layers */}
+      <defs>
+        <path id="stm-minor" d={L.minor || ''} {...edgeProps} />
+        <path id="stm-medium" d={L.medium || ''} {...edgeProps} />
+        <path id="stm-major" d={L.major || ''} {...edgeProps} />
+      </defs>
 
-  let statusColor = '#2e9e4f'; // Brand green
-  if (truck.status === 'Maintenance') statusColor = '#b45309';
-  else if (truck.status === 'Available') statusColor = '#0e4c8c';
-  if (isStale) statusColor = '#b91c1c';
+      {/* Minor Streets */}
+      <use href="#stm-minor" className="stroke-[#d3d9de] stroke-[3.4px] fill-none" />
+      <use href="#stm-minor" className="stroke-white stroke-[2.2px] fill-none" />
+      {/* Medium Connectors */}
+      <use href="#stm-medium" className="stroke-[#c0c7d0] stroke-[5.4px] fill-none" />
+      <use href="#stm-medium" className="stroke-white stroke-[3.8px] fill-none" />
+      {/* Major Arterial Routes */}
+      <use href="#stm-major" className="stroke-[#dcbf82] stroke-[8px] fill-none" />
+      <use href="#stm-major" className="stroke-[#f5dca6] stroke-[6px] fill-none" />
+    </g>
+  );
+});
 
-  const el = document.createElement('div');
-  el.className = 'ab-truck-marker';
-  el.style.width = '38px';
-  el.style.height = '38px';
-  el.style.position = 'relative';
-  el.style.cursor = 'pointer';
-  el.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+// Top-Down Water Tanker Truck Vector Graphic (Uber/Bolt Style)
+const UberStyleTankerIcon = ({ isSelected = false }) => (
+  <g className="cursor-pointer transition-transform duration-300 hover:scale-110">
+    {/* Ground drop shadow */}
+    <ellipse cx="0" cy="4" rx="20" ry="32" fill="#000000" opacity="0.25" />
 
-  const pulseHtml =
-    !isStale && (truck.status === 'OnTrip' || truck.status === 'Active')
-      ? `<span style="
-          position: absolute;
-          inset: -4px;
-          border-radius: 50%;
-          background: ${statusColor};
-          opacity: 0.35;
-          animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-          pointer-events: none;
-        "></span>`
-      : '';
+    {/* Selected Pulse Ring */}
+    {isSelected && (
+      <circle cx="0" cy="0" r="32" className="animate-ping fill-none stroke-[#2e7d32] stroke-[2.5px]" opacity="0.7" />
+    )}
 
-  const selectionRing = isSelected
-    ? `<div style="
-        position: absolute;
-        inset: -5px;
-        border-radius: 50%;
-        border: 3px solid #0A2A4F;
-        pointer-events: none;
-      "></div>`
-    : '';
+    {/* Tanker Main Chassis / Tanker Body */}
+    <rect x="-15" y="-22" width="30" height="44" rx="12" fill="url(#tankGrad)" stroke="#0f223d" strokeWidth="1.5" />
 
-  el.innerHTML = `
-    ${selectionRing}
-    ${pulseHtml}
-    <div style="
-      width: 38px;
-      height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      filter: drop-shadow(0 3px 6px rgba(14, 76, 140, 0.3));
-      position: relative;
-    ">
-      <img src="/truck_pin_badge.svg" alt="Water Tanker ${truck.registrationNumber}" style="width: 38px; height: 38px; object-fit: contain;" />
-    </div>
+    {/* Tanker Ribs */}
+    <line x1="-12" y1="-12" x2="12" y2="-12" stroke="#0f223d" strokeWidth="2" opacity="0.4" />
+    <line x1="-12" y1="0" x2="12" y2="0" stroke="#0f223d" strokeWidth="2" opacity="0.4" />
+    <line x1="-12" y1="12" x2="12" y2="12" stroke="#0f223d" strokeWidth="2" opacity="0.4" />
 
-    <!-- Registration Plate -->
-    <div style="
-      position: absolute;
-      bottom: -16px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #FFFFFF;
-      border: 1px solid ${isSelected ? '#0e4c8c' : '#d4e4ef'};
-      color: ${isSelected ? '#0e4c8c' : '#0a2a4f'};
-      font-family: ui-monospace, monospace;
-      font-weight: 800;
-      font-size: 9.5px;
-      padding: 1px 5px;
-      border-radius: 4px;
-      white-space: nowrap;
-      box-shadow: 0 2px 4px rgba(10,42,79,0.15);
-      pointer-events: none;
-    ">
-      ${truck.registrationNumber}
-    </div>
-  `;
+    {/* Water Drop Emblem on Tanker Top */}
+    <path d="M0 -14 C 4 -8, 6 -4, 6 -1 C 6 3, 3 6, 0 6 C -3 6, -6 3, -6 -1 C -6 -4, -4 -8, 0 -14 Z" fill="#ffffff" />
 
-  return el;
-}
+    {/* Driver Cab Front */}
+    <rect x="-12" y="-28" width="24" height="15" rx="4" fill="#152e52" stroke="#0a182c" strokeWidth="1.5" />
+    {/* Windshield Glass */}
+    <rect x="-9" y="-25" width="18" height="6" rx="2" fill="#bfe3f5" opacity="0.9" />
 
-function createDamDOMElement(dam, isLightMode = true) {
-  const level = dam.latestLevel ?? 50;
+    {/* Side Mirrors */}
+    <rect x="-15" y="-24" width="3" height="4" rx="1" fill="#0a182c" />
+    <rect x="12" y="-24" width="3" height="4" rx="1" fill="#0a182c" />
 
-  let damMarkerSvg = '/dam_marker_healthy.svg';
-  let badgeBg = '#2e9e4f';
-
-  if (level < 15) {
-    damMarkerSvg = '/dam_marker_critical.svg';
-    badgeBg = '#b91c1c';
-  } else if (level < 30) {
-    damMarkerSvg = '/dam_marker_low.svg';
-    badgeBg = '#b91c1c';
-  } else if (level < 60) {
-    damMarkerSvg = '/dam_marker_watch.svg';
-    badgeBg = '#b45309';
-  } else {
-    damMarkerSvg = '/dam_marker_healthy.svg';
-    badgeBg = '#2e9e4f';
-  }
-
-  const el = document.createElement('div');
-  el.className = 'ab-dam-marker';
-  el.style.width = '38px';
-  el.style.height = '38px';
-  el.style.position = 'relative';
-  el.style.cursor = 'pointer';
-
-  el.innerHTML = `
-    <div style="
-      width: 38px;
-      height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      filter: drop-shadow(0 3px 6px rgba(10, 42, 79, 0.25));
-      position: relative;
-    ">
-      <img src="${damMarkerSvg}" alt="${dam.name}" style="width: 38px; height: 38px; object-fit: contain;" />
-      <span style="
-        position: absolute;
-        top: -4px;
-        right: -6px;
-        background: ${badgeBg};
-        color: #FFFFFF;
-        font-weight: 800;
-        font-size: 9px;
-        padding: 1px 5px;
-        border-radius: 9999px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-      ">${Math.round(level)}%</span>
-    </div>
-  `;
-  return el;
-}
-
-const ROAD_ROUTES = {
-  1: [
-    [24.7685, -28.7485],
-    [24.7700, -28.7420],
-    [24.7675, -28.7395],
-    [24.7645, -28.7360],
-    [24.7580, -28.7315],
-    [24.7510, -28.7270],
-    [24.7430, -28.7210],
-    [24.7350, -28.7145],
-    [24.7260, -28.7065],
-    [24.7180, -28.6975],
-  ],
-  2: [
-    [24.7725, -28.7425],
-    [24.7660, -28.7405],
-    [24.7585, -28.7355],
-    [24.7505, -28.7305],
-    [24.7435, -28.7255],
-    [24.7365, -28.7210],
-    [24.7295, -28.7160],
-  ],
-  3: [
-    [24.7612, -28.7511],
-    [24.7655, -28.7535],
-    [24.7695, -28.7475],
-    [24.7680, -28.7410],
-    [24.7645, -28.7365],
-  ],
-};
-
-function calculateHeading(fromLng, fromLat, toLng, toLat) {
-  const dLng = toLng - fromLng;
-  const dLat = toLat - fromLat;
-  const angleRad = Math.atan2(dLng, dLat);
-  const deg = Math.round((angleRad * 180) / Math.PI);
-  return (deg + 360) % 360;
-}
+    {/* Front Heading Direction Arrow Chevron */}
+    <path d="M0 -34 L5 -28 L-5 -28 Z" fill={isSelected ? '#2e7d32' : '#152e52'} />
+  </g>
+);
 
 export function LiveMap({
+  height = '560px',
   dams = [],
   trucks = [],
-  zoom = 13.8,
-  height = '560px',
-  selectedTruckId = null,
-  onTruckSelect = null,
+  stops = DEFAULT_DELIVERY_STOPS,
+  onTruckSelect,
+  onStopSelect
 }) {
-  const mapContainerRef = useRef(null);
-  const mapRef = useRef(null);
-  const markersRef = useRef({ trucks: {}, dams: {} });
+  const svgRef = useRef(null);
+  const elementsRef = useRef({});
+  const simRef = useRef({});
+  const viewRef = useRef({ x: 0, y: 0, w: MAP_CONFIG.W, h: MAP_CONFIG.H });
+  const zoomRef = useRef(1);
+  const pausedRef = useRef(false);
+  const dragRef = useRef(null);
 
-  const [activeTruck, setActiveTruck] = useState(null);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [isLightMode, setIsLightMode] = useState(true);
-  const [animatedTrucks, setAnimatedTrucks] = useState(trucks);
+  const [zoom, setZoom] = useState(1);
+  const [selectedTruckId, setSelectedTruckId] = useState('542-KM NC');
+  const [selectedStop, setSelectedStop] = useState(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [speedMult, setSpeedMult] = useState(1);
+  const [truckPositions, setTruckPositions] = useState({});
+  const [activeSignalR, setActiveSignalR] = useState(false);
 
-  const movementStateRef = useRef({});
+  const activeTankers = trucks.length > 0 ? trucks : DEFAULT_TANKERS;
+  const activeStops = stops.length > 0 ? stops : DEFAULT_DELIVERY_STOPS;
 
+  // SignalR Real-Time Location Telemetry Connection
   useEffect(() => {
-    setAnimatedTrucks(trucks);
-  }, [trucks]);
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${API_BASE_URL}/hubs/trucks`, {
+        skipNegotiation: false,
+        transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,
+      })
+      .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.Warning)
+      .build();
 
-  useEffect(() => {
-    if (selectedTruckId) {
-      const found = animatedTrucks.find((t) => t.id === selectedTruckId);
-      if (found) setActiveTruck(found);
+    connection.on('LocationUpdated', (payload) => {
+      if (payload && payload.registrationNumber) {
+        setTruckPositions((prev) => ({
+          ...prev,
+          [payload.registrationNumber]: {
+            latitude: payload.latitude,
+            longitude: payload.longitude,
+            heading: payload.heading || 0,
+            speedKmh: payload.speedKmh || 0,
+          },
+        }));
+      }
+    });
+
+    async function startHub() {
+      try {
+        await connection.start();
+        setActiveSignalR(true);
+      } catch (err) {
+        console.warn('SignalR Hub unavailable, map operating in high-precision simulated telemetry mode.', err);
+      }
     }
-  }, [selectedTruckId]);
+    startHub();
 
+    return () => {
+      connection.stop();
+    };
+  }, []);
+
+  // Zoom controls helper
+  const applyViewBox = () => {
+    const v = viewRef.current;
+    svgRef.current?.setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`);
+  };
+
+  const handleZoom = (nextZoom) => {
+    const v = viewRef.current;
+    const cx = v.x + v.w / 2;
+    const cy = v.y + v.h / 2;
+    const z = clamp(nextZoom, 1, 5);
+    v.w = MAP_CONFIG.W / z;
+    v.h = MAP_CONFIG.H / z;
+    v.x = clamp(cx - v.w / 2, 0, MAP_CONFIG.W - v.w);
+    v.y = clamp(cy - v.h / 2, 0, MAP_CONFIG.H - v.h);
+    zoomRef.current = z;
+    setZoom(z);
+    applyViewBox();
+  };
+
+  // Pointer drag panning
+  const handlePointerDown = (e) => {
+    dragRef.current = { id: e.pointerId, startX: e.clientX, startY: e.clientY };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!dragRef.current || !svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const v = viewRef.current;
+    const scale = Math.max(rect.width / v.w, rect.height / v.h);
+    v.x = clamp(v.x - e.movementX / scale, 0, MAP_CONFIG.W - v.w);
+    v.y = clamp(v.y - e.movementY / scale, 0, MAP_CONFIG.H - v.h);
+    applyViewBox();
+  };
+
+  const handlePointerUp = () => {
+    dragRef.current = null;
+  };
+
+  // Main animation tick loop for Uber-style smooth vehicle movement on streets
   useEffect(() => {
-    const interval = setInterval(() => {
-      setAnimatedTrucks((prevTrucks) =>
-        prevTrucks.map((truck) => {
-          if (truck.status === 'Available' || !truck.lastLatitude) return truck;
+    // Sample routes from kimberleyMap.json
+    activeTankers.forEach((t) => {
+      const reg = t.registrationNumber || t.id;
+      const el = elementsRef.current[reg];
+      if (!el?.trail) return;
+      const len = el.trail.getTotalLength();
+      const samples = Array.from({ length: 201 }, (_, i) => el.trail.getPointAtLength((i / 200) * len));
+      simRef.current[reg] = { len, samples, p: t.start || 0.2, hold: 0, heading: 0 };
+    });
 
-          const routePoints = ROAD_ROUTES[truck.id] || ROAD_ROUTES[1];
-          const numSegments = routePoints.length - 1;
+    let rafId = 0;
+    let lastTime = performance.now();
 
-          if (!movementStateRef.current[truck.id]) {
-            movementStateRef.current[truck.id] = {
-              segmentIndex: (truck.id - 1) % numSegments,
-              progress: 0.1,
-              direction: 1,
-            };
-          }
+    const tick = (now) => {
+      const dt = Math.min(0.1, (now - lastTime) / 1000);
+      lastTime = now;
+      const invScale = 1 / zoomRef.current;
 
-          const state = movementStateRef.current[truck.id];
-          state.progress += 0.04;
+      for (const t of activeTankers) {
+        const reg = t.registrationNumber || t.id;
+        const s = simRef.current[reg];
+        const e = elementsRef.current[reg];
+        if (!s || !e) continue;
 
-          if (state.progress >= 1.0) {
-            state.progress = 0.0;
-            state.segmentIndex += state.direction;
+        const liveGps = truckPositions[reg];
+        let x, y;
 
-            if (state.segmentIndex >= numSegments) {
-              state.segmentIndex = numSegments - 1;
-              state.direction = -1;
-            } else if (state.segmentIndex < 0) {
-              state.segmentIndex = 0;
-              state.direction = 1;
+        if (liveGps && liveGps.latitude && liveGps.longitude) {
+          [x, y] = project(liveGps.longitude, liveGps.latitude);
+          if (liveGps.heading != null) s.heading = liveGps.heading;
+        } else {
+          if (!pausedRef.current) {
+            if (s.p >= 1) {
+              s.hold += dt;
+              if (s.hold > 3.0) { s.p = 0; s.hold = 0; }
+            } else {
+              s.p = Math.min(1, s.p + (dt * speedMult) / (t.secs || 50));
             }
           }
 
-          const fromPoint = routePoints[state.segmentIndex];
-          const nextIndex = state.segmentIndex + state.direction;
-          const toPoint = routePoints[nextIndex >= 0 && nextIndex < routePoints.length ? nextIndex : state.segmentIndex];
+          const at = s.p * s.len;
+          const ptA = e.trail.getPointAtLength(at);
+          const ptB = e.trail.getPointAtLength(Math.min(s.len, at + 3));
+          x = ptA.x;
+          y = ptA.y;
 
-          const currentLng = fromPoint[0] + (toPoint[0] - fromPoint[0]) * state.progress;
-          const currentLat = fromPoint[1] + (toPoint[1] - fromPoint[1]) * state.progress;
-
-          const heading = calculateHeading(fromPoint[0], fromPoint[1], toPoint[0], toPoint[1]);
-
-          return {
-            ...truck,
-            lastLongitude: currentLng,
-            lastLatitude: currentLat,
-            heading: heading,
-            speedKmh: Math.floor(32 + Math.sin(Date.now() / 1000 + truck.id) * 8),
-            lastSeenAt: new Date(),
-          };
-        })
-      );
-    }, 1200);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (!mapContainerRef.current) return;
-
-    try {
-      const map = new MapLibreMap({
-        container: mapContainerRef.current,
-        style: isLightMode ? LIGHT_STREETS_STYLE : DARK_CANVAS_STYLE,
-        center: KIMBERLEY_CENTER,
-        zoom: zoom,
-        pitch: 24,
-        bearing: -5,
-        attributionControl: true,
-      });
-
-      map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
-
-      map.on('dragstart', () => {
-        setIsFollowing(false);
-      });
-
-      map.on('click', (e) => {
-        if (!e.defaultPrevented) {
-          setActiveTruck(null);
-          setIsFollowing(false);
+          // Uber/Bolt rotation heading angle calculation along path
+          if (s.p < 0.995) {
+            s.heading = (Math.atan2(ptB.x - ptA.x, -(ptB.y - ptA.y)) * 180) / Math.PI;
+          }
         }
-      });
 
-      map.on('load', () => {
-        mapRef.current = map;
-
-        try {
-          map.addSource('selected-truck-route', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: [],
-            },
-          });
-
-          map.addLayer({
-            id: 'truck-route-glow',
-            type: 'line',
-            source: 'selected-truck-route',
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round',
-            },
-            paint: {
-              'line-color': '#0e4c8c',
-              'line-width': 7,
-              'line-opacity': 0.35,
-              'line-blur': 4,
-            },
-          });
-
-          map.addLayer({
-            id: 'truck-route-main',
-            type: 'line',
-            source: 'selected-truck-route',
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round',
-            },
-            paint: {
-              'line-color': '#0e4c8c',
-              'line-width': 4,
-              'line-dasharray': [2, 1],
-            },
-          });
-        } catch (layerErr) {
-          console.warn('Route layer init warning:', layerErr);
-        }
-      });
-
-      return () => {
-        try {
-          map.remove();
-        } catch (rmErr) {}
-        mapRef.current = null;
-      };
-    } catch (err) {
-      console.error('Failed to initialize map:', err);
-    }
-  }, [isLightMode, zoom]);
-
-  const handleSelectTruck = useCallback(
-    (truck) => {
-      setActiveTruck(truck);
-      setIsFollowing(true);
-      if (onTruckSelect) onTruckSelect(truck);
-
-      const map = mapRef.current;
-      if (map && truck.lastLongitude && truck.lastLatitude) {
-        try {
-          map.flyTo({
-            center: [truck.lastLongitude, truck.lastLatitude],
-            zoom: 15.4,
-            pitch: 35,
-            speed: 1.2,
-            curve: 1.3,
-            essential: true,
-          });
-        } catch (flyErr) {
-          console.warn('FlyTo error:', flyErr);
-        }
-      }
-    },
-    [onTruckSelect]
-  );
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
-
-    try {
-      const source = map.getSource('selected-truck-route');
-      if (!source) return;
-
-      if (!activeTruck || activeTruck.status === 'Available' || !activeTruck.lastLongitude) {
-        source.setData({ type: 'FeatureCollection', features: [] });
-        return;
+        // Apply smooth transform to truck marker
+        e.g?.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${invScale})`);
+        e.rot?.setAttribute('transform', `rotate(${s.heading.toFixed(1)})`);
+        // Update dashed trail
+        e.done?.setAttribute('stroke-dasharray', `${(s.p * s.len).toFixed(1)} ${s.len.toFixed(1)}`);
       }
 
-      const roadWaypoints = ROAD_ROUTES[activeTruck.id] || ROAD_ROUTES[1];
-      const coordinates = [[activeTruck.lastLongitude, activeTruck.lastLatitude], ...roadWaypoints];
+      rafId = requestAnimationFrame(tick);
+    };
 
-      source.setData({
-        type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            geometry: {
-              type: 'LineString',
-              coordinates,
-            },
-          },
-        ],
-      });
-    } catch (err) {
-      console.warn('Route update warning:', err);
-    }
-  }, [activeTruck]);
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [activeTankers, truckPositions, speedMult]);
 
-  const currentActiveTruck = activeTruck
-    ? animatedTrucks.find((t) => t.id === activeTruck.id) || activeTruck
-    : null;
+  const inv = 1 / zoom;
 
-  useEffect(() => {
-    if (isFollowing && currentActiveTruck && mapRef.current) {
-      if (currentActiveTruck.lastLongitude && currentActiveTruck.lastLatitude) {
-        try {
-          mapRef.current.easeTo({
-            center: [currentActiveTruck.lastLongitude, currentActiveTruck.lastLatitude],
-            duration: 800,
-            essential: true,
-          });
-        } catch (easeErr) {}
-      }
-    }
-  }, [isFollowing, currentActiveTruck]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    try {
-      animatedTrucks.forEach((truck) => {
-        if (!truck.lastLatitude || !truck.lastLongitude) return;
-
-        const isSelected = activeTruck?.id === truck.id;
-        const lngLat = [truck.lastLongitude, truck.lastLatitude];
-
-        if (markersRef.current.trucks[truck.id]) {
-          const existingMarker = markersRef.current.trucks[truck.id];
-          existingMarker.setLngLat(lngLat);
-
-          if (truck.heading != null) {
-            existingMarker.setRotation(truck.heading);
-          }
-
-          const el = existingMarker.getElement();
-          if (el) {
-            const freshEl = createTruckDOMElement(truck, isSelected, isLightMode);
-            el.innerHTML = freshEl.innerHTML;
-          }
-        } else {
-          const el = createTruckDOMElement(truck, isSelected, isLightMode);
-          el.addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleSelectTruck(truck);
-          });
-
-          const marker = new Marker({
-            element: el,
-            rotationAlignment: 'map',
-          })
-            .setLngLat(lngLat)
-            .addTo(map);
-
-          if (truck.heading != null) {
-            marker.setRotation(truck.heading);
-          }
-
-          markersRef.current.trucks[truck.id] = marker;
-        }
-      });
-
-      const currentIds = new Set(animatedTrucks.map((t) => t.id));
-      Object.keys(markersRef.current.trucks).forEach((id) => {
-        if (!currentIds.has(Number(id))) {
-          markersRef.current.trucks[id].remove();
-          delete markersRef.current.trucks[id];
-        }
-      });
-    } catch (markerErr) {
-      console.warn('Truck marker update error:', markerErr);
-    }
-  }, [animatedTrucks, activeTruck, isLightMode, handleSelectTruck]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    try {
-      dams.forEach((dam) => {
-        if (!dam.latitude || !dam.longitude) return;
-
-        if (!markersRef.current.dams[dam.id]) {
-          const el = createDamDOMElement(dam, isLightMode);
-
-          const popup = new Popup({ offset: 22, closeButton: false }).setHTML(`
-            <div style="background: #FFFFFF; color: #0A2A4F; padding: 12px; border-radius: 12px; min-width: 190px; font-family: sans-serif; border: 1px solid #D4E4EF; box-shadow: 0 8px 24px rgba(10,42,79,0.12);">
-              <div style="font-weight: 800; font-size: 13px; color: #0E4C8C; margin-bottom: 4px;">${dam.name}</div>
-              <div style="font-size: 11px; color: #4D6278;">Capacity: <strong style="color: #0A2A4F;">${dam.capacityMegaLitres} ML</strong></div>
-              <div style="font-size: 11px; color: #4D6278; margin-top: 4px;">Fill Level: <strong style="color: #2E9E4F;">${dam.latestLevel ?? 50}%</strong></div>
-            </div>
-          `);
-
-          const marker = new Marker({ element: el })
-            .setLngLat([dam.longitude, dam.latitude])
-            .setPopup(popup)
-            .addTo(map);
-
-          markersRef.current.dams[dam.id] = marker;
-        }
-      });
-    } catch (damErr) {
-      console.warn('Dam marker update error:', damErr);
-    }
-  }, [dams, isLightMode]);
-
-  const isDelivering = currentActiveTruck?.status === 'OnTrip' || currentActiveTruck?.status === 'Active';
+  // Function to resolve SVG path for route
+  const getRoutePath = (t) => {
+    const reg = t.registrationNumber || t.id;
+    if (mapData.routes && mapData.routes[reg]) return mapData.routes[reg];
+    const fromCoords = t.from?.lngLat || [24.7712, -28.7033];
+    const toCoords = t.to?.lngLat || [24.7319, -28.7183];
+    const [x1, y1] = project(...fromCoords);
+    const [x2, y2] = project(...toCoords);
+    return `M${x1} ${y1}L${x2} ${y2}`;
+  };
 
   return (
-    <div className="ab-map-shell w-full relative select-none" style={{ height }}>
-      <div ref={mapContainerRef} className="w-full h-full bg-surface-blue" />
+    <div className="relative w-full border border-slate-200 rounded-lg overflow-hidden bg-[#eef0ed] shadow-xs select-none" style={{ height }}>
+      {/* SVG Canvas Map */}
+      <svg
+        ref={svgRef}
+        className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
+        viewBox={`0 0 ${MAP_CONFIG.W} ${MAP_CONFIG.H}`}
+        preserveAspectRatio="xMidYMid slice"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
+        <defs>
+          <linearGradient id="tankGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#1d70b8" />
+            <stop offset="50%" stopColor="#152e52" />
+            <stop offset="100%" stopColor="#1d70b8" />
+          </linearGradient>
+        </defs>
 
-      <div className="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setIsLightMode((prev) => !prev)}
-          className="px-3 py-1.5 bg-white border border-border text-xs font-semibold text-brand-navy flex items-center gap-2 hover:bg-background-soft transition-colors duration-200 cursor-pointer"
-        >
-          {isLightMode ? (
-            <>
-              <Sun className="w-3.5 h-3.5 text-amber-700" />
-              <span>Light map</span>
-            </>
-          ) : (
-            <>
-              <Moon className="w-3.5 h-3.5 text-brand-navy" />
-              <span>Night map</span>
-            </>
-          )}
-        </button>
+        {/* Base Map Roads, Water, Parks */}
+        <BaseMap />
 
-        <p className="px-3 py-1.5 bg-white border border-border text-xs font-medium text-brand-navy">
-          {animatedTrucks.length} tankers on map
-        </p>
+        {/* Municipal Suburb Place Labels */}
+        {(mapData.places || []).map((p) => (
+          <text
+            key={p.name}
+            className="font-serif italic text-xs font-semibold fill-slate-600 pointer-events-none select-none"
+            transform={`translate(${p.x} ${p.y}) scale(${inv})`}
+            textAnchor="middle"
+          >
+            {p.name}
+          </text>
+        ))}
+
+        {/* Municipal Facilities (Newton, Riverton, Roodepan) */}
+        {DEFAULT_FACILITIES.map((f) => {
+          const [x, y] = project(...f.lngLat);
+          return (
+            <g key={f.id} transform={`translate(${x} ${y}) scale(${inv})`} className="cursor-pointer">
+              <rect x="-12" y="-12" width="24" height="24" rx="4" className="fill-[#152e52] stroke-white stroke-2 shadow-xs" />
+              <path d="M0 -6 C0 -6 -5 1 -5 3.5 a5 5 0 0 0 10 0 C5 1 0 -6 0 -6Z" fill="#ffffff" />
+              <text className="font-sans font-bold text-[11px] fill-[#152e52] font-mono pointer-events-none" x="16" y="4">
+                {f.name} ({f.level}%)
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Delivery Stop Pins (Many Stops on Map) */}
+        {activeStops.map((stop) => {
+          const [x, y] = project(...stop.lngLat);
+          const isCompleted = stop.status === 'Completed';
+          const isInDelivery = stop.status === 'In Delivery';
+
+          return (
+            <g
+              key={stop.id}
+              transform={`translate(${x} ${y}) scale(${inv})`}
+              className="cursor-pointer transition-transform hover:scale-125"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedStop(stop);
+                if (onStopSelect) onStopSelect(stop);
+              }}
+            >
+              {/* Drop Shadow */}
+              <ellipse cx="0" cy="14" rx="8" ry="3" fill="#000000" opacity="0.3" />
+
+              {/* Pin Teardrop Shape */}
+              <path
+                d="M0 -22 C -12 -22, -18 -12, -18 -4 C -18 8, 0 16, 0 16 C 0 16, 18 8, 18 -4 C 18 -12, 12 -22, 0 -22 Z"
+                fill={isCompleted ? '#2e7d32' : isInDelivery ? '#1d70b8' : '#152e52'}
+                stroke="#ffffff"
+                strokeWidth="2"
+              />
+
+              {/* Inner Badge Icon or Number */}
+              <text textAnchor="middle" y="-6" className="font-bold text-[10px] fill-white font-sans pointer-events-none">
+                {stop.sequence}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Route Trails for Active Tankers */}
+        {activeTankers.map((t) => {
+          const reg = t.registrationNumber || t.id;
+          return (
+            <g key={`trail-${reg}`}>
+              <path
+                ref={(n) => { (elementsRef.current[reg] ||= {}).trail = n; }}
+                d={getRoutePath(t)}
+                className="fill-none stroke-[#1d70b8] opacity-30 stroke-[3.5px] stroke-dasharray-[3,6] stroke-linecap-round"
+                vectorEffect="non-scaling-stroke"
+              />
+              <path
+                ref={(n) => { (elementsRef.current[reg] ||= {}).done = n; }}
+                d={getRoutePath(t)}
+                className="fill-none stroke-[#152e52] stroke-[4px] stroke-linecap-round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </g>
+          );
+        })}
+
+        {/* Moving Tanker Truck Vehicles (Uber / Bolt Style) */}
+        {activeTankers.map((t) => {
+          const reg = t.registrationNumber || t.id;
+          const isSelected = selectedTruckId === reg;
+
+          return (
+            <g
+              key={reg}
+              ref={(n) => { (elementsRef.current[reg] ||= {}).g = n; }}
+              tabIndex={0}
+              role="button"
+              className="cursor-pointer outline-none"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedTruckId(reg);
+                if (onTruckSelect) onTruckSelect(t);
+              }}
+            >
+              {/* Rotating Truck Body in Direction of Travel */}
+              <g ref={(n) => { (elementsRef.current[reg] ||= {}).rot = n; }}>
+                <UberStyleTankerIcon isSelected={isSelected} />
+              </g>
+
+              {/* Floating Uber/Bolt Style Vehicle Badge */}
+              <g transform="translate(0 -42)" className="pointer-events-none">
+                <rect
+                  x="-55"
+                  y="-12"
+                  width="110"
+                  height="24"
+                  rx="4"
+                  fill={isSelected ? '#152e52' : '#ffffff'}
+                  stroke={isSelected ? '#2e7d32' : '#bcd6ea'}
+                  strokeWidth="1.5"
+                  className="shadow-md"
+                />
+                <text
+                  textAnchor="middle"
+                  y="4"
+                  className={`font-bold text-[11px] font-mono ${isSelected ? 'fill-white' : 'fill-[#152e52]'}`}
+                >
+                  {reg} · {t.status === 'OnTrip' ? `${t.speedKmh || 35}km/h` : 'Standby'}
+                </text>
+              </g>
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Top Header Map Controls Bar */}
+      <div className="absolute top-3 left-3 flex items-center gap-2 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-md border border-slate-200 shadow-xs">
+        <span className="flex items-center gap-1.5 text-xs font-bold text-[#152e52]">
+          <Truck className="w-4 h-4 text-[#1d70b8]" />
+          <span>{activeTankers.length} Active Tankers</span>
+        </span>
+        <span className="text-slate-300">|</span>
+        <span className="flex items-center gap-1 text-xs font-semibold text-[#2e7d32]">
+          <MapPin className="w-3.5 h-3.5 text-[#2e7d32]" />
+          <span>{activeStops.length} Water Stops</span>
+        </span>
+        {activeSignalR && (
+          <span className="ml-1 text-[10px] font-bold text-[#2e7d32] bg-[#f2f9f3] px-2 py-0.5 rounded border border-[#b8e3bd]">
+            LIVE GPS SYNC
+          </span>
+        )}
       </div>
 
-      {currentActiveTruck && (
-        <div className="ab-map-drawer inset-x-0 bottom-0 md:inset-x-auto border-t-4 border-t-brand-navy p-4 md:p-5 text-brand-navy">
-          <div className="flex items-start justify-between gap-3 pb-3 border-b border-border">
-            <div>
-              <p className="font-mono text-base font-bold tracking-wide text-brand-navy-dark">
-                {currentActiveTruck.registrationNumber}
-              </p>
-              <p className="text-sm text-muted mt-1">
-                {isDelivering ? 'On a delivery trip' : currentActiveTruck.status || 'Available'}
-                {currentActiveTruck.capacityLitres != null
-                  ? ` · ${currentActiveTruck.capacityLitres.toLocaleString()} L`
-                  : ''}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTruck(null);
-                setIsFollowing(false);
-              }}
-              className="text-muted hover:text-brand-navy p-1 hover:bg-background-soft transition-colors duration-200 cursor-pointer"
-              aria-label="Close truck details"
-            >
-              <X className="w-5 h-5" />
+      {/* Top Right Zoom Controls */}
+      <div className="absolute top-3 right-3 flex flex-col bg-white/95 backdrop-blur-xs border border-slate-200 rounded-md shadow-xs overflow-hidden">
+        <button
+          onClick={() => handleZoom(zoomRef.current * 1.5)}
+          className="p-2 text-slate-700 hover:bg-slate-100 border-b border-slate-200 cursor-pointer"
+          title="Zoom In"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => handleZoom(zoomRef.current / 1.5)}
+          className="p-2 text-slate-700 hover:bg-slate-100 border-b border-slate-200 cursor-pointer"
+          title="Zoom Out"
+        >
+          <ZoomOut className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => handleZoom(1)}
+          className="p-2 text-slate-700 hover:bg-slate-100 cursor-pointer"
+          title="Reset Map View"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Selected Stop Drawer Prompt */}
+      {selectedStop && (
+        <div className="absolute bottom-3 left-3 right-3 md:left-auto md:right-3 md:w-80 bg-white/95 backdrop-blur-xs border border-slate-200 rounded-lg p-4 shadow-xl z-20 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-[#1d70b8] uppercase tracking-wider flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Stop #{selectedStop.sequence} · {selectedStop.area}</span>
+            </span>
+            <button onClick={() => setSelectedStop(null)} className="text-slate-400 hover:text-slate-600 text-xs font-bold">
+              ✕
             </button>
           </div>
-
-          {currentActiveTruck.driverName ? (
-            <p className="mt-3 text-sm">
-              <span className="text-muted">Driver </span>
-              <span className="font-semibold text-brand-navy-dark">{currentActiveTruck.driverName}</span>
-              {currentActiveTruck.driverRating != null ? (
-                <span className="text-muted"> · {currentActiveTruck.driverRating}</span>
-              ) : null}
-            </p>
-          ) : null}
-
-          <dl className="mt-3 space-y-2 text-sm">
-            {currentActiveTruck.route ? (
-              <div className="flex gap-2">
-                <Navigation className="w-4 h-4 text-brand-navy mt-0.5 shrink-0" aria-hidden="true" />
-                <div>
-                  <dt className="sr-only">Route</dt>
-                  <dd>{currentActiveTruck.route}</dd>
-                </div>
-              </div>
-            ) : null}
-            {currentActiveTruck.destination ? (
-              <div className="flex gap-2">
-                <MapPin className="w-4 h-4 text-brand-droplet mt-0.5 shrink-0" aria-hidden="true" />
-                <div>
-                  <dt className="sr-only">Next stop</dt>
-                  <dd>Next stop: {currentActiveTruck.destination}</dd>
-                </div>
-              </div>
-            ) : null}
-          </dl>
-
-          <div className="mt-4 flex gap-6 text-sm">
-            <div>
-              <p className="text-xs text-muted">Speed</p>
-              <p className="font-semibold tabular-nums">
-                {currentActiveTruck.speedKmh != null && currentActiveTruck.speedKmh > 0
-                  ? `${Math.round(currentActiveTruck.speedKmh)} km/h`
-                  : 'Stationary'}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted">Est. arrival</p>
-              <p className="font-semibold">{currentActiveTruck.estimatedArrival || '—'}</p>
-            </div>
+          <h4 className="font-serif text-sm font-bold text-[#152e52]">{selectedStop.name}</h4>
+          <div className="flex items-center justify-between text-xs pt-1">
+            <span className="text-slate-500">Volume: <strong className="text-slate-800 font-mono">{selectedStop.volume}</strong></span>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+              selectedStop.status === 'Completed' ? 'bg-[#f2f9f3] text-[#2e7d32] border border-[#b8e3bd]' :
+              selectedStop.status === 'In Delivery' ? 'bg-blue-100 text-blue-800 border border-blue-300 animate-pulse' :
+              'bg-slate-100 text-slate-600 border border-slate-200'
+            }`}>
+              {selectedStop.status}
+            </span>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setIsFollowing((prev) => !prev)}
-            className={`mt-4 w-full py-2.5 font-semibold text-sm flex items-center justify-center gap-2 transition-colors duration-200 cursor-pointer ${
-              isFollowing
-                ? 'bg-brand-navy text-white'
-                : 'bg-white text-brand-navy border border-border hover:bg-background-soft'
-            }`}
-          >
-            <Crosshair className="w-4 h-4" />
-            <span>{isFollowing ? 'Following this tanker' : 'Follow on map'}</span>
-          </button>
         </div>
       )}
+
+      {/* Map Legend */}
+      <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-xs border border-slate-200 rounded-md p-2.5 text-[11px] text-slate-700 shadow-xs hidden sm:flex items-center gap-4">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#152e52]"></span>
+          <span>Tankers (Uber Style)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#2e7d32]"></span>
+          <span>Completed Stop</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#1d70b8]"></span>
+          <span>In Delivery</span>
+        </div>
+      </div>
     </div>
   );
 }
