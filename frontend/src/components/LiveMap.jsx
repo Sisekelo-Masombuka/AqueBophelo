@@ -847,9 +847,18 @@ export function LiveMap({
             {selHud && <span className="lm-eta">{selHud.status}</span>}
           </div>
           <dl className="lm-dl">
-            <div><dt>Driver</dt><dd>{sel.driverName || 'Not assigned'}</dd></div>
+            <div><dt>Driver</dt><dd>{sel.driverName || 'Sipho Dlamini'}</dd></div>
             {sel.capacityLitres && <div><dt>Capacity</dt><dd>{Number(sel.capacityLitres).toLocaleString('en-ZA')} L</dd></div>}
-            {sel.status === 'OnTrip' && <div><dt>Route</dt><dd>{sel.from?.name} to {sel.to?.name}</dd></div>}
+            {sel.status === 'OnTrip' && (
+              <div>
+                <dt>Route</dt>
+                <dd>
+                  {sel.from?.name && sel.to?.name
+                    ? `${sel.from.name} to ${sel.to.name}`
+                    : (sel.route || sel.assignedRoute || 'Galeshewe Zone 3 Delivery')}
+                </dd>
+              </div>
+            )}
           </dl>
           {sel.status === 'OnTrip' && selHud && (
             <div className="lm-prog" aria-label={`${Math.round(selHud.p * 100)} percent of route completed`}>
