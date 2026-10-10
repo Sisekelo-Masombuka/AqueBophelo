@@ -1,0 +1,1019 @@
+import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import * as signalR from '@microsoft/signalr';
+import { Truck, MapPin, Droplet, ZoomIn, ZoomOut, RotateCcw, Sun, Moon, X } from 'lucide-react';
+import mapData from './kimberleyMap.json';
+
+/* ------------------------------------------------------------------ */
+/*  Config                                                             */
+/* ------------------------------------------------------------------ */
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7154';
+const MAP_CONFIG = { center: [24.76, -28.73], spanLng: 0.24, W: 900, H: 560 };
+const MAX_ZOOM = 5;
+const PAD = 90;                 // how far past the map edge you can pan, so edge labels are never cut off
+const THEME_KEY = 'aquabophelo-map-theme';
+
+function makeProjection({ center, spanLng, W, H }) {
+  const [lng0, lat0] = center;
+  const cos = Math.cos((lat0 * Math.PI) / 180);
+  const k = W / (spanLng * cos);
+  const project = (lng, lat) => [W / 2 + (lng - lng0) * cos * k, H / 2 - (lat - lat0) * k];
+  return { project, k };
+}
+const { project } = makeProjection(MAP_CONFIG);
+const clamp = (n, lo, hi) => (lo > hi ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, n)));
+
+/* ------------------------------------------------------------------ */
+/*  Your data (unchanged)                                              */
+/* ------------------------------------------------------------------ */
+const DEFAULT_FACILITIES = [
+  { id: 'newton', name: 'Newton Reservoir', lngLat: [24.7712, -28.7033], level: 62.5, capacity: '92.5 ML', kind: 'reservoir' },
+  { id: 'riverton', name: 'Riverton Water Works', lngLat: [24.8102, -28.6788], level: 82.0, capacity: '150.0 ML', kind: 'reservoir' },
+  { id: 'roodepan', name: 'Roodepan Depot', lngLat: [24.7255, -28.6905], level: 90.0, capacity: '45.0 ML', kind: 'depot' },
+];
+
+const DEFAULT_DELIVERY_STOPS = [
+  { id: 101, sequence: 1, name: 'Galeshewe Police Station Water Point', lngLat: [24.7319, -28.7183], area: 'Galeshewe', status: 'Completed', volume: '3,500 L' },
+  { id: 102, sequence: 2, name: 'Tshwarelela Primary Drop Point', lngLat: [24.7291, -28.7125], area: 'Galeshewe', status: 'In Delivery', volume: '2,500 L' },
+  { id: 103, sequence: 3, name: 'Mayibuye Community Centre', lngLat: [24.7245, -28.7098], area: 'Galeshewe', status: 'Pending', volume: '3,000 L' },
+  { id: 201, sequence: 1, name: 'Sol Plaatje Civic Centre Reservoir', lngLat: [24.7719, -28.7419], area: 'Kimberley Central', status: 'Completed', volume: '5,000 L' },
+  { id: 202, sequence: 2, name: 'Kimberley Hospital Water Reserve', lngLat: [24.7645, -28.7388], area: 'Kimberley Central', status: 'In Delivery', volume: '4,000 L' },
+  { id: 301, sequence: 1, name: 'Roodepan Municipal Depot Standby', lngLat: [24.7088, -28.6921], area: 'Roodepan', status: 'Pending', volume: '2,000 L' },
+  { id: 302, sequence: 2, name: 'Lerato Park Community Water Tanks', lngLat: [24.7012, -28.6854], area: 'Roodepan', status: 'Pending', volume: '3,500 L' },
+];
+
+const DEFAULT_TANKERS = [
+  { id: '542-KM NC', registrationNumber: '542-KM NC', driverName: 'Sipho Dlamini', capacityLitres: 10000, status: 'OnTrip',
+    from: { name: 'Newton Reservoir', lngLat: [24.7712, -28.7033] }, to: { name: 'Galeshewe Zone 3', lngLat: [24.7319, -28.7183] },
+    speedKmh: 38, minutes: 18, secs: 50, start: 0.45 },
+  { id: '882-KM NC', registrationNumber: '882-KM NC', driverName: 'Lerato Motsepe', capacityLitres: 15000, status: 'OnTrip',
+    from: { name: 'Newton Reservoir', lngLat: [24.7712, -28.7033] }, to: { name: 'Roodepan Depot', lngLat: [24.7088, -28.6921] },
+    speedKmh: 42, minutes: 24, secs: 65, start: 0.25 },
+  { id: '104-KM NC', registrationNumber: '104-KM NC', driverName: 'Tshepo Khumalo', capacityLitres: 10000, status: 'Available',
+    from: { name: 'Riverton Water Works', lngLat: [24.8102, -28.6788] }, to: { name: 'Kimberley Central CBD', lngLat: [24.7719, -28.7419] },
+    speedKmh: 0, minutes: 0, secs: 60, start: 0.95 },
+];
+
+const regOf = (t) => t.registrationNumber || t.id;
+
+/* ------------------------------------------------------------------ */
+/*  Routes: find a road route for each tanker                          */
+/* ------------------------------------------------------------------ */
+// "542-KM NC" and "NC-542-KM" are the same plate written in a different order.
+const normPlate = (s = '') => String(s).toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean).sort().join('-');
+const r1 = (n) => Math.round(n * 10) / 10;
+const toPath = (pts) => pts.map(([x, y], i) => `${i ? 'L' : 'M'}${r1(x)} ${r1(y)}`).join('');
+const straightPath = (from, to) => toPath([project(...from), project(...to)]);
+
+// A route stored in kimberleyMap.json is only used if it really starts and ends where this trip does.
+function prebuiltRoute(reg, from, to) {
+  const key = Object.keys(mapData.routes || {}).find((k) => normPlate(k) === normPlate(reg));
+  if (!key) return null;
+  const d = mapData.routes[key];
+  const n = [...d.matchAll(/-?\d+(?:\.\d+)?/g)].map((m) => +m[0]);
+  if (n.length < 4) return null;
+  const [fx, fy] = project(...from);
+  const [tx, ty] = project(...to);
+  const ok = Math.hypot(n[0] - fx, n[1] - fy) < 14 && Math.hypot(n[n.length - 2] - tx, n[n.length - 1] - ty) < 14;
+  return ok ? d : null;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Offline road routing over YOUR map data (no server, no API)        */
+/* ------------------------------------------------------------------ */
+// kimberleyMap.json already contains every road. We turn it into a graph once and find
+// the shortest drive between two points with A*. Main roads are cheaper than side streets,
+// so trucks prefer arterials, like real drivers.
+let roadGraph;
+function getRoadGraph() {
+  if (roadGraph) return roadGraph;
+  const L = mapData.layers || {};
+  const cost = { minor: 1.0, medium: 0.9, major: 0.8 };
+  const nodes = [], adj = [], grid = new Map();
+
+  const nodeFor = (x, y) => {                       // reuse a node if one is within 0.6px
+    const cx = Math.floor(x), cy = Math.floor(y);
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      const list = grid.get(`${cx + dx},${cy + dy}`);
+      if (list) for (const id of list) if (Math.hypot(nodes[id][0] - x, nodes[id][1] - y) < 0.6) return id;
+    }
+    const id = nodes.length;
+    nodes.push([x, y]); adj.push([]);
+    const key = `${cx},${cy}`;
+    if (!grid.has(key)) grid.set(key, []);
+    grid.get(key).push(id);
+    return id;
+  };
+
+  for (const [layer, factor] of Object.entries(cost)) {
+    if (!L[layer]) continue;
+    for (const way of L[layer].split('M')) {
+      if (!way) continue;
+      let prev = -1;
+      for (const pair of way.split('L')) {
+        const [xs, ys] = pair.trim().split(/\s+/);
+        const x = +xs, y = +ys;
+        if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+        const id = nodeFor(x, y);
+        if (prev >= 0 && prev !== id) {
+          const w = Math.hypot(nodes[id][0] - nodes[prev][0], nodes[id][1] - nodes[prev][1]) * factor;
+          adj[prev].push([id, w]); adj[id].push([prev, w]);
+        }
+        prev = id;
+      }
+    }
+  }
+
+  // Only snap to the biggest connected network, so we never start on an isolated piece of road.
+  const comp = new Int32Array(nodes.length).fill(-1);
+  const sizes = [];
+  for (let s = 0; s < nodes.length; s++) {
+    if (comp[s] !== -1) continue;
+    const id = sizes.length; let count = 0; const stack = [s]; comp[s] = id;
+    while (stack.length) {
+      const n = stack.pop(); count++;
+      for (const [m] of adj[n]) if (comp[m] === -1) { comp[m] = id; stack.push(m); }
+    }
+    sizes.push(count);
+  }
+  const main = sizes.indexOf(Math.max(...sizes));
+  roadGraph = { nodes, adj, comp, main };
+  return roadGraph;
+}
+
+function nearestRoadNode(g, [x, y]) {
+  let best = -1, bestD = Infinity;
+  for (let i = 0; i < g.nodes.length; i++) {
+    if (g.comp[i] !== g.main) continue;
+    const d = (g.nodes[i][0] - x) ** 2 + (g.nodes[i][1] - y) ** 2;
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}
+
+function roadRoute(from, to) {
+  const g = getRoadGraph();
+  if (!g.nodes.length) return null;
+  const a = project(...from), b = project(...to);
+  const start = nearestRoadNode(g, a), goal = nearestRoadNode(g, b);
+  if (start < 0 || goal < 0) return null;
+
+  const dist = new Float64Array(g.nodes.length).fill(Infinity);
+  const prev = new Int32Array(g.nodes.length).fill(-1);
+  const h = (i) => Math.hypot(g.nodes[i][0] - g.nodes[goal][0], g.nodes[i][1] - g.nodes[goal][1]) * 0.8;
+  const heap = [[h(start), start]];
+  dist[start] = 0;
+  const push = (item) => {                          // tiny binary min-heap
+    heap.push(item);
+    let i = heap.length - 1;
+    while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; }
+  };
+  const pop = () => {
+    const top = heap[0], last = heap.pop();
+    if (heap.length) {
+      heap[0] = last;
+      let i = 0;
+      for (;;) {
+        const l = 2 * i + 1, r = l + 1; let m = i;
+        if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
+        if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+        if (m === i) break;
+        [heap[m], heap[i]] = [heap[i], heap[m]]; i = m;
+      }
+    }
+    return top;
+  };
+
+  while (heap.length) {
+    const [, n] = pop();
+    if (n === goal) break;
+    for (const [m, w] of g.adj[n]) {
+      const nd = dist[n] + w;
+      if (nd < dist[m]) { dist[m] = nd; prev[m] = n; push([nd + h(m), m]); }
+    }
+  }
+  if (dist[goal] === Infinity) return null;
+
+  const pts = [];
+  for (let n = goal; n !== -1; n = prev[n]) pts.push(g.nodes[n]);
+  pts.reverse();
+  return toPath([a, ...pts, b]);                    // start exactly at the depot, end exactly at the stop
+}
+
+// Best available route: stored route, then a route over your own roads, then a straight line.
+function resolveRoute(reg, from, to) {
+  const stored = prebuiltRoute(reg, from, to);
+  if (stored) return stored;
+  try { return roadRoute(from, to) || straightPath(from, to); } catch { return straightPath(from, to); }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Theme: follows the website, with a toggle on the map               */
+/* ------------------------------------------------------------------ */
+function readSiteTheme() {
+  if (typeof document === 'undefined') return 'light';
+  const el = document.documentElement;
+  return el.classList.contains('dark') || el.dataset.theme === 'dark' ? 'dark' : 'light';
+}
+function useMapTheme(forced) {
+  const [override, setOverride] = useState(() => {
+    try { const v = localStorage.getItem(THEME_KEY); return v === 'dark' || v === 'light' ? v : null; } catch { return null; }
+  });
+  const [site, setSite] = useState(readSiteTheme);
+  useEffect(() => {
+    const mo = new MutationObserver(() => setSite(readSiteTheme()));
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+    return () => mo.disconnect();
+  }, []);
+  const theme = forced || override || site;
+  const toggle = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setOverride(next);
+    try { localStorage.setItem(THEME_KEY, next); } catch { /* ignore */ }
+  };
+  return [theme, toggle];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Label decluttering: show the important names, hide the overlaps    */
+/* ------------------------------------------------------------------ */
+const LABEL_FONT = 'italic 500 11px Lora, Georgia, serif';
+const UI_FONT = '600 11px system-ui, sans-serif';
+let measureCtx;
+function textWidth(text, font) {
+  if (typeof document === 'undefined') return text.length * 6;
+  measureCtx ||= document.createElement('canvas').getContext('2d');
+  if (!measureCtx) return text.length * 6;
+  measureCtx.font = font;
+  return measureCtx.measureText(text).width;
+}
+const PLACE_PRIORITY = ['Kimberley', 'Galeshewe', 'Roodepan', 'Kimberley North', 'Homevale', 'Vergenoeg', 'De Beers', 'Belgravia',
+  'Beaconsfield', 'Kirstenhof', 'Greenside', 'Southridge', 'Kenilworth', 'Colville', 'Verwoerd Park', 'Kanfers Dam'];
+const rankOf = (name) => { const i = PLACE_PRIORITY.indexOf(name); return i === -1 ? 100 : i; };
+const hit = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+
+function layoutLabels(places, u, obstacles) {
+  const placed = [...obstacles];
+  const shown = new Set();
+  [...places].sort((a, b) => rankOf(a.name) - rankOf(b.name)).forEach((p) => {
+    const w = textWidth(p.name, LABEL_FONT) + 10, h = 16;
+    const box = { x: p.x * u - w / 2, y: p.y * u - h / 2, w, h };
+    if (!placed.some((o) => hit(o, box))) { placed.push(box); shown.add(p.name); }
+  });
+  return shown;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Pieces of the map                                                  */
+/* ------------------------------------------------------------------ */
+const BaseMap = memo(function BaseMap() {
+  const L = mapData.layers || {};
+  const edge = { fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round', vectorEffect: 'non-scaling-stroke' };
+  return (
+    <g>
+      <rect className="lm-land" x={-PAD * 2} y={-PAD * 2} width={MAP_CONFIG.W + PAD * 4} height={MAP_CONFIG.H + PAD * 4} />
+      {L.built && <path className="lm-built" d={L.built} />}
+      {L.parks && <path className="lm-parks" d={L.parks} />}
+      {L.water && <path className="lm-water" d={L.water} />}
+      {L.waterway && <path className="lm-waterway" d={L.waterway} {...edge} />}
+      <defs>
+        <path id="lm-minor" d={L.minor || ''} {...edge} />
+        <path id="lm-medium" d={L.medium || ''} {...edge} />
+        <path id="lm-major" d={L.major || ''} {...edge} />
+      </defs>
+      <use href="#lm-minor" className="lm-minor-edge" />
+      <use href="#lm-minor" className="lm-minor" />
+      <use href="#lm-medium" className="lm-medium-edge" />
+      <use href="#lm-medium" className="lm-medium" />
+      <use href="#lm-major" className="lm-major-edge" />
+      <use href="#lm-major" className="lm-major" />
+    </g>
+  );
+});
+
+// Top-down tanker, drawn small (about 12 x 24 px on screen) so it sits on the road instead of swallowing it.
+const TruckIcon = memo(function TruckIcon() {
+  return (
+    <g transform="scale(0.86)">
+      <ellipse cx="0" cy="2" rx="8.5" ry="15" fill="#000" opacity="0.16" />
+      <rect x="-7" y="-13.5" width="14" height="28" rx="5.5" fill="#fff" />
+      <rect x="-5.2" y="-5" width="10.4" height="18.5" rx="4" fill="url(#lm-tank)" stroke="#0f223d" strokeWidth="0.8" />
+      <line x1="-4" y1="4" x2="4" y2="4" stroke="#0f223d" strokeWidth="1" opacity="0.35" />
+      <line x1="-4" y1="10" x2="4" y2="10" stroke="#0f223d" strokeWidth="1" opacity="0.35" />
+      <path d="M0 5.2 c1.5 1.9 2.3 3 2.3 4.1 a2.3 2.3 0 0 1 -4.6 0 c0 -1.1 0.8 -2.2 2.3 -4.1Z" fill="#fff" />
+      <rect x="-5.2" y="-12" width="10.4" height="8.4" rx="2.6" fill="#152e52" stroke="#0a182c" strokeWidth="0.8" />
+      <rect x="-3.7" y="-10.8" width="7.4" height="3" rx="1" fill="#bfe3f5" />
+      <path className="lm-chev" d="M0 -19.5 L3.6 -14.8 L-3.6 -14.8Z" stroke="#fff" strokeWidth="1.6" strokeLinejoin="round" />
+    </g>
+  );
+});
+
+function FacilityMarker({ f, x, y, scale, compact, onPick }) {
+  const textRef = useRef(null);
+  const rectRef = useRef(null);
+  const measure = useCallback(() => {
+    if (textRef.current && rectRef.current) rectRef.current.setAttribute('width', textRef.current.getComputedTextLength() + 16);
+  }, []);
+  useLayoutEffect(() => {
+    measure();
+    document.fonts?.ready.then(measure);
+  }, [measure, f.name, f.level, compact]);
+  return (
+    <g
+      transform={`translate(${x} ${y}) scale(${scale})`}
+      className="lm-fac-g"
+      tabIndex={0}
+      role="button"
+      aria-label={`${f.name}, ${f.level ?? ''} percent full`}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => { e.stopPropagation(); onPick(f); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(f); } }}
+    >
+      <rect x="-11" y="-11" width="22" height="22" rx="5" className="lm-fac" />
+      <path d="M0 -5.5 C0 -5.5 -4.6 0.8 -4.6 3.2 a4.6 4.6 0 0 0 9.2 0 C4.6 0.8 0 -5.5 0 -5.5Z" fill="#fff" />
+      <g transform="translate(13 0)">
+        <rect ref={rectRef} x="0" y="-11" width="120" height="22" rx="4" className="lm-chip-bg" />
+        <text ref={textRef} x="8" y="4" className="lm-chip-text">
+          {compact ? <tspan className="lm-chip-level">{f.level}%</tspan> : <>{f.name}{f.level != null && <tspan className="lm-chip-level" dx="5">{f.level}%</tspan>}</>}
+        </text>
+      </g>
+    </g>
+  );
+}
+
+function StopPin({ stop, x, y, scale, onPick }) {
+  const color = stop.status === 'Completed' ? '#2e7d32' : stop.status === 'In Delivery' ? '#1d70b8' : '#152e52';
+  return (
+    <g
+      transform={`translate(${x} ${y}) scale(${scale})`}
+      className="lm-stop"
+      tabIndex={0}
+      role="button"
+      aria-label={`Stop ${stop.sequence}: ${stop.name}, ${stop.status}`}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => { e.stopPropagation(); onPick(stop); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(stop); } }}
+    >
+      <circle cx="0" cy="-11" r="15" fill="transparent" />
+      <ellipse cx="0" cy="0" rx="5" ry="2" fill="#000" opacity="0.18" />
+      <path d="M0 0 C-2 -4 -8 -8.5 -8 -14 a8 8 0 0 1 16 0 C8 -8.5 2 -4 0 0Z" fill={color} stroke="#fff" strokeWidth="1.8" />
+      <text textAnchor="middle" y="-10.6" className="lm-stop-num">{stop.sequence}</text>
+    </g>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  The map                                                            */
+/* ------------------------------------------------------------------ */
+export function LiveMap({
+  height = '560px',
+  trucks = [],
+  stops = DEFAULT_DELIVERY_STOPS,
+  facilities = DEFAULT_FACILITIES,
+  theme: themeProp,          // optional: 'light' | 'dark' to force a theme
+  onTruckSelect,
+  onStopSelect,
+}) {
+  const tankers = trucks.length > 0 ? trucks : DEFAULT_TANKERS;
+  const activeStops = stops.length > 0 ? stops : DEFAULT_DELIVERY_STOPS;
+  const tankerKey = tankers.map(regOf).join('|');
+
+  const rootRef = useRef(null);
+  const svgRef = useRef(null);
+  const elRef = useRef({});
+  const simRef = useRef({});
+  const positionsRef = useRef({});
+  const pointers = useRef(new Map());
+  const pinch = useRef(null);
+  const selectedRef = useRef(regOf(tankers[0]));
+  const cardRef = useRef(null);
+  const pausedRef = useRef(false);
+  const zoomRef = useRef(1);
+  const uRef = useRef(1);                         // screen pixels per map unit
+  const facBoxes = useRef([]);                    // where the depot name tags are, in screen pixels
+
+  // The area that matters (depots, stops, trips). Padding is in screen pixels, so name tags fit on any screen size.
+  const fitPoints = useMemo(() => {
+    const pts = [];
+    const busy = new Set();                                          // places that active trips start or end at
+    tankers.filter((t) => t.status === 'OnTrip').forEach((t) => [t.from?.lngLat, t.to?.lngLat].forEach((ll) => ll && busy.add(ll.join(','))));
+    // opt = nice to include, but on small screens we skip it and let people pan there
+    facilities.forEach((f) => pts.push({ p: project(...f.lngLat), l: 20, r: 185, rN: 70, t: 55, b: 20, opt: !busy.has(f.lngLat.join(',')) }));
+    activeStops.forEach((st) => pts.push({ p: project(...st.lngLat), l: 20, r: 20, t: 40, b: 15 }));
+    tankers.forEach((t) => [t.from?.lngLat, t.to?.lngLat].filter(Boolean).forEach((ll) => pts.push({ p: project(...ll), l: 40, r: 40, t: 55, b: 30, opt: t.status !== 'OnTrip' })));
+    return pts;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const fitRef = useRef(null);
+  const fittedRef = useRef(false);
+  const view = useRef({ x: 0, y: 0, w: MAP_CONFIG.W, h: MAP_CONFIG.H });
+
+  const [initialViewBox] = useState(`0 0 ${MAP_CONFIG.W} ${MAP_CONFIG.H}`);
+  const [zoom, setZoom] = useState(1);
+  const [u, setU] = useState(1);
+  const [narrow, setNarrow] = useState(false);
+  const [theme, toggleTheme] = useMapTheme(themeProp);
+  const [selectedTruckId, setSelectedTruckId] = useState(regOf(tankers[0]));
+  const [selectedStop, setSelectedStop] = useState(null);
+  const [selectedFacility, setSelectedFacility] = useState(null);
+  const [card, setCard] = useState(null);             // 'truck' | 'stop' | null
+  const [hud, setHud] = useState({});
+  const [liveGps, setLiveGps] = useState(false);
+  const routes = useMemo(() => Object.fromEntries(tankers.map((t) => {
+    const from = t.from?.lngLat || [24.7712, -28.7033], to = t.to?.lngLat || [24.7319, -28.7183];
+    // parked tankers never drive, so they do not need a road route
+    return [regOf(t), t.status === 'OnTrip' ? resolveRoute(regOf(t), from, to) : straightPath(from, to)];
+  })),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [tankerKey]);
+
+  zoomRef.current = zoom;
+  selectedRef.current = selectedTruckId;
+  cardRef.current = card;
+
+  /* ---------- real GPS over SignalR (your existing connection) ---------- */
+  useEffect(() => {
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${API_BASE_URL}/hubs/trucks`, {
+        skipNegotiation: false,
+        transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,
+      })
+      .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.Warning)
+      .build();
+
+    connection.on('LocationUpdated', (p) => {
+      if (p?.registrationNumber) {
+        positionsRef.current[p.registrationNumber] = {
+          lat: p.latitude, lng: p.longitude, heading: p.heading ?? null, speedKmh: p.speedKmh || 0, t: Date.now(),
+        };
+      }
+    });
+    connection.start().then(() => setLiveGps(true)).catch((err) => {
+      console.warn('SignalR hub unavailable, map is running in simulated mode.', err);
+    });
+    return () => { connection.stop(); };
+  }, []);
+
+  /* ---------- zoom, pan and pinch ---------- */
+  // The viewBox always has the same shape as the container, so what you see is exactly what the maths says.
+  const clampView = (v) => {
+    v.x = clamp(v.x, -PAD, MAP_CONFIG.W - v.w + PAD);
+    v.y = clamp(v.y, -PAD, MAP_CONFIG.H - v.h + PAD);
+  };
+  const writeView = useCallback(() => {
+    const v = view.current;
+    svgRef.current?.setAttribute('viewBox', `${v.x.toFixed(2)} ${v.y.toFixed(2)} ${v.w.toFixed(2)} ${v.h.toFixed(2)}`);
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect || !rect.width) return;
+    uRef.current = rect.width / v.w;
+    zoomRef.current = MAP_CONFIG.W / v.w;
+    setU(Math.round(uRef.current * 1000) / 1000);
+    setZoom(zoomRef.current);
+    setNarrow(rect.width < 560);
+  }, []);
+
+  const fitToContent = useCallback(() => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect || !rect.width) return;
+    const A = rect.width / rect.height;
+    let w = MAP_CONFIG.W, bb;
+    for (let i = 0; i < 4; i++) {                                   // padding depends on scale, so settle it in a few passes
+      const u = rect.width / w;
+      bb = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+      fitPoints.forEach(({ p: [x, y], l, r: r0, rN, t, b, opt }) => {
+        let r = r0;
+        if (opt && rect.width < 560) return;
+        if (rN && rect.width < 560) r = rN;
+        bb.minX = Math.min(bb.minX, x - l / u); bb.maxX = Math.max(bb.maxX, x + r / u);
+        bb.minY = Math.min(bb.minY, y - t / u); bb.maxY = Math.max(bb.maxY, y + b / u);
+      });
+      bb.maxX += 56 / u; bb.minY -= 52 / u;                         // room for the control buttons and the summary bar
+      w = clamp(Math.max(bb.maxX - bb.minX, (bb.maxY - bb.minY) * A), MAP_CONFIG.W / 3, MAP_CONFIG.W);
+    }
+    const v = view.current;
+    v.w = w; v.h = w / A;
+    v.x = (bb.minX + bb.maxX) / 2 - v.w / 2;
+    v.y = (bb.minY + bb.maxY) / 2 - v.h / 2;
+    clampView(v);
+    fittedRef.current = true;
+    writeView();
+  }, [fitPoints, writeView]);
+  fitRef.current = fitToContent;
+
+  const zoomAt = useCallback((nextZoom, clientX, clientY) => {
+    const v = view.current;
+    const rect = svgRef.current.getBoundingClientRect();
+    const rx = clientX == null ? 0.5 : (clientX - rect.left) / rect.width;
+    const ry = clientY == null ? 0.5 : (clientY - rect.top) / rect.height;
+    const fx = v.x + rx * v.w, fy = v.y + ry * v.h;               // the map point under the finger stays put
+    const z = clamp(nextZoom, 1, MAX_ZOOM);
+    v.w = MAP_CONFIG.W / z; v.h = v.w * (rect.height / rect.width);
+    v.x = fx - rx * v.w; v.y = fy - ry * v.h;
+    clampView(v);
+    writeView();
+  }, [writeView]);
+
+  const resetView = () => fitRef.current?.();
+
+  const onPointerDown = (e) => {
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    e.currentTarget.setPointerCapture(e.pointerId);
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      pinch.current = { d: Math.hypot(a.x - b.x, a.y - b.y), z: zoomRef.current };
+    }
+  };
+  const onPointerMove = (e) => {
+    const prev = pointers.current.get(e.pointerId);
+    if (!prev) return;
+    const cur = { x: e.clientX, y: e.clientY };
+    pointers.current.set(e.pointerId, cur);
+    if (pointers.current.size === 2 && pinch.current) {
+      const [a, b] = [...pointers.current.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      zoomAt((pinch.current.z * d) / pinch.current.d, (a.x + b.x) / 2, (a.y + b.y) / 2);
+    } else if (pointers.current.size === 1) {
+      const v = view.current;
+      v.x -= (cur.x - prev.x) / uRef.current;
+      v.y -= (cur.y - prev.y) / uRef.current;
+      clampView(v);
+      writeView();
+    }
+  };
+  const onPointerUp = (e) => {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size < 2) pinch.current = null;
+  };
+
+  useLayoutEffect(() => {
+    const onResize = () => {
+      const rect = svgRef.current.getBoundingClientRect();
+      if (!rect.width) return;
+      if (!fittedRef.current) { fitRef.current(); return; }       // first time we have a real size
+      const v = view.current;                                      // later: keep the centre, match the new shape
+      const cy = v.y + v.h / 2;
+      v.h = v.w * (rect.height / rect.width);
+      v.y = cy - v.h / 2;
+      clampView(v);
+      writeView();
+    };
+    onResize();
+    const ro = new ResizeObserver(onResize);
+    ro.observe(svgRef.current);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [writeView]);
+
+  /* ---------- measure each route once it is drawn ---------- */
+  const routeSig = tankerKey + '#' + Object.values(routes).map((d) => d.length).join(',');
+  useLayoutEffect(() => {
+    tankers.forEach((t) => {
+      const reg = regOf(t);
+      const e = elRef.current[reg];
+      if (!e?.trail) return;
+      const len = e.trail.getTotalLength();
+      const samples = Array.from({ length: 201 }, (_, i) => e.trail.getPointAtLength((i / 200) * len));
+      const prev = simRef.current[reg];
+      simRef.current[reg] = { len, samples, p: prev ? prev.p : (t.start ?? 0.2), hold: prev?.hold || 0, heading: prev?.heading || 0, label: '', h0: null };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeSig]);
+
+  /* ---------- animation: trucks drive along their road routes ---------- */
+  useEffect(() => {
+    pausedRef.current = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    let raf = 0, last = performance.now(), hudAcc = 0;
+
+    const headingAt = (trail, at, len) => {
+      const a = trail.getPointAtLength(at), b = trail.getPointAtLength(Math.min(len, at + 3));
+      return (Math.atan2(b.x - a.x, -(b.y - a.y)) * 180) / Math.PI;
+    };
+
+    const tick = (now) => {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      const ms = Math.pow(zoomRef.current, 0.2) / uRef.current;     // keeps the truck a steady size on screen
+      const hudNext = {};
+      const where = {};
+
+      for (const t of tankers) {
+        const reg = regOf(t);
+        const s = simRef.current[reg], e = elRef.current[reg];
+        if (!s || !e?.trail || !s.len) continue;
+
+        const live = positionsRef.current[reg];
+        const liveOk = live && live.lat && live.lng && Date.now() - live.t < 30000;
+        const onTrip = t.status === 'OnTrip';
+        let x, y, speed = 0;
+
+        if (liveOk) {
+          [x, y] = project(live.lng, live.lat);
+          let best = 0, bestD = Infinity;
+          s.samples.forEach((pt, i) => { const d = (pt.x - x) ** 2 + (pt.y - y) ** 2; if (d < bestD) { bestD = d; best = i; } });
+          s.p = best / 200;
+          if (live.heading != null) s.heading = live.heading;
+          speed = live.speedKmh;
+        } else if (!onTrip) {
+          s.p = 0;                                                    // parked at its depot
+          const a = e.trail.getPointAtLength(0);
+          x = a.x; y = a.y + 30 / uRef.current;                         // wait just below the depot icon
+          if (s.h0 == null) s.h0 = headingAt(e.trail, 0, s.len);
+          s.heading = s.h0;
+        } else {
+          if (!pausedRef.current) {
+            if (s.p >= 1) { s.hold += dt; if (s.hold > 3) { s.p = 0; s.hold = 0; } }
+            else s.p = Math.min(1, s.p + dt / (t.secs || 50));
+          }
+          const at = s.p * s.len;
+          const a = e.trail.getPointAtLength(at);
+          x = a.x; y = a.y;
+          if (s.p < 0.995) s.heading = headingAt(e.trail, at, s.len);
+          speed = t.speedKmh || 0;
+        }
+
+        where[reg] = [x, y];
+        e.g?.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${ms})`);
+        e.rot?.setAttribute('transform', `rotate(${s.heading.toFixed(1)})`);
+        const dash = `${(s.p * s.len).toFixed(1)} ${s.len.toFixed(1)}`;
+        e.done?.setAttribute('stroke-dasharray', dash);
+        e.doneCase?.setAttribute('stroke-dasharray', dash);
+
+        const left = Math.max(0, Math.ceil((1 - s.p) * (t.minutes || 0)));
+        const arrived = onTrip && !liveOk && s.p >= 1;
+        const status = liveOk ? `${Math.round(speed)} km/h` : !onTrip ? 'Standby' : arrived ? 'Arrived' : `${left} min`;
+        const label = selectedRef.current === reg ? `${reg} \u00b7 ${status}` : reg;
+        if (e.text && label !== s.label) {
+          s.label = label;
+          e.text.textContent = label;
+          e.rect?.setAttribute('width', e.text.getComputedTextLength() + 16);
+          e.rect?.setAttribute('x', -(e.text.getComputedTextLength() + 16) / 2);
+        }
+        hudNext[reg] = { p: s.p, left, arrived, speed, status };
+      }
+
+      // Name tags: the selected truck always shows its tag; others hide if they would sit on a depot label or another tag.
+      const zk = Math.pow(zoomRef.current, 0.2), uu = uRef.current;
+      const taken = [...facBoxes.current];
+      const byPriority = [...tankers].sort((a, b) => (regOf(b) === selectedRef.current) - (regOf(a) === selectedRef.current));
+      for (const t of byPriority) {
+        const reg = regOf(t), e = elRef.current[reg], at = where[reg];
+        if (!e?.chip || !at) continue;
+        const w = (Number(e.rect?.getAttribute('width')) || 70) * zk, h = 22 * zk;
+        const box = { x: at[0] * uu - w / 2, y: at[1] * uu - 25 * zk - h / 2, w, h };
+        const clash = regOf(t) !== selectedRef.current && taken.some((o) => hit(o, box));
+        const display = clash ? 'none' : '';
+        if (e.chip.style.display !== display) e.chip.style.display = display;
+        if (!clash) taken.push(box);
+      }
+
+      hudAcc += dt;
+      if (hudAcc > 0.25 && cardRef.current === 'truck') { hudAcc = 0; setHud(hudNext); }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tankerKey]);
+
+  /* ---------- derived values for the drawing ---------- */
+  const scale = Math.pow(zoom, 0.2) / u;                           // marker size in map units
+  const zf = Math.pow(zoom, 0.55);                                 // roads get a little wider as you zoom in
+
+  const labelsShown = useMemo(() => {
+    const obstacles = [];
+    facilities.forEach((f) => {
+      const [x, y] = project(...f.lngLat);
+      const w = textWidth(narrow ? `${f.level ?? ''}%` : `${f.name} ${f.level ?? ''}%`, UI_FONT) + 34;
+      obstacles.push({ x: x * u - 14, y: y * u - 14, w: w + 28, h: 28 });
+    });
+    facBoxes.current = obstacles.slice(0, facilities.length);
+    activeStops.forEach((s) => {
+      const [x, y] = project(...s.lngLat);
+      obstacles.push({ x: x * u - 12, y: y * u - 28, w: 24, h: 32 });
+    });
+    return layoutLabels(mapData.places || [], u, obstacles);
+  }, [u, narrow, facilities, activeStops]);
+
+  const orderedTankers = useMemo(
+    () => [...tankers].sort((a, b) => (regOf(a) === selectedTruckId) - (regOf(b) === selectedTruckId)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tankerKey, selectedTruckId],
+  );
+
+  const pickTruck = (t) => {
+    setSelectedTruckId(regOf(t));
+    setSelectedStop(null);
+    setCard('truck');
+    onTruckSelect?.(t);
+  };
+  const pickFacility = (f) => {
+    setSelectedFacility(f);
+    setCard('facility');
+  };
+  const pickStop = (stop) => {
+    setSelectedStop(stop);
+    setCard('stop');
+    onStopSelect?.(stop);
+  };
+
+  const sel = tankers.find((t) => regOf(t) === selectedTruckId) || tankers[0];
+  const selHud = hud[regOf(sel)];
+  const isDark = theme === 'dark';
+  const tonePending = 'lm-tag lm-tag-pending';
+
+  return (
+    <div
+      ref={rootRef}
+      className="lm"
+      data-theme={theme}
+      style={{ height, '--zf': zf }}
+    >
+      <style>{CSS}</style>
+
+      <svg
+        ref={svgRef}
+        className="lm-svg"
+        viewBox={initialViewBox}
+        preserveAspectRatio="xMidYMid meet"
+        role="group"
+        aria-label="Map of water tankers and delivery stops in Kimberley"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onDoubleClick={(e) => zoomAt(zoomRef.current * 1.6, e.clientX, e.clientY)}
+      >
+        <defs>
+          <linearGradient id="lm-tank" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#1d70b8" />
+            <stop offset="50%" stopColor="#152e52" />
+            <stop offset="100%" stopColor="#1d70b8" />
+          </linearGradient>
+        </defs>
+
+        <BaseMap />
+
+        {(mapData.places || []).map((p) => labelsShown.has(p.name) && (
+          <text key={p.name} className="lm-place" textAnchor="middle" transform={`translate(${p.x} ${p.y + 4 / u}) scale(${1 / u})`}>
+            {p.name}
+          </text>
+        ))}
+
+        {tankers.map((t) => {
+          const reg = regOf(t);
+          const visible = t.status === 'OnTrip';
+          return (
+            <g key={`trail-${reg}`} style={{ display: visible ? 'inline' : 'none' }}>
+              <path ref={(n) => { (elRef.current[reg] ||= {}).trail = n; }} d={routes[reg]} className="lm-trail"
+                style={{ strokeWidth: 3 / u, strokeDasharray: `${0.1 / u} ${7 / u}` }} />
+              <path ref={(n) => { (elRef.current[reg] ||= {}).doneCase = n; }} d={routes[reg]} className="lm-done-case" style={{ strokeWidth: 7.5 / u }} />
+              <path ref={(n) => { (elRef.current[reg] ||= {}).done = n; }} d={routes[reg]} className="lm-done" style={{ strokeWidth: 4.5 / u }} />
+            </g>
+          );
+        })}
+
+        {facilities.map((f) => {
+          const [x, y] = project(...f.lngLat);
+          return <FacilityMarker key={f.id} f={f} x={x} y={y} scale={scale} compact={narrow} onPick={pickFacility} />;
+        })}
+
+        {activeStops.map((stop) => {
+          const [x, y] = project(...stop.lngLat);
+          return <StopPin key={stop.id} stop={stop} x={x} y={y} scale={scale} onPick={pickStop} />;
+        })}
+
+        {orderedTankers.map((t) => {
+          const reg = regOf(t);
+          const isSel = selectedTruckId === reg;
+          return (
+            <g
+              key={reg}
+              ref={(n) => { (elRef.current[reg] ||= {}).g = n; }}
+              className={`lm-tk${isSel ? ' sel' : ''}`}
+              tabIndex={0}
+              role="button"
+              aria-label={`Tanker ${reg}, ${t.status === 'OnTrip' ? 'on a delivery trip' : 'on standby'}`}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); pickTruck(t); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickTruck(t); } }}
+            >
+              {isSel && <circle className="lm-pulse" r="15" />}
+              <g ref={(n) => { (elRef.current[reg] ||= {}).rot = n; }}><TruckIcon /></g>
+              <g ref={(n) => { (elRef.current[reg] ||= {}).chip = n; }} transform="translate(0 -25)" className="lm-tchip">
+                <rect ref={(n) => { (elRef.current[reg] ||= {}).rect = n; }} x="-40" y="-10" width="80" height="20" rx="4" />
+                <text ref={(n) => { (elRef.current[reg] ||= {}).text = n; }} textAnchor="middle" y="3.8" />
+              </g>
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* top-left summary */}
+      <div className="lm-panel lm-top">
+        <span className="lm-top-item lm-strong"><Truck size={15} className="lm-blue" /> {tankers.length} Active Tankers</span>
+        <span className="lm-sep" />
+        <span className="lm-top-item lm-green"><MapPin size={14} /> {activeStops.length} Water Stops</span>
+        <span className={liveGps ? 'lm-badge lm-badge-live' : 'lm-badge'}>{liveGps ? 'Live GPS' : 'Simulated'}</span>
+      </div>
+
+      {/* top-right controls */}
+      <div className="lm-panel lm-controls">
+        <button type="button" title="Zoom in" aria-label="Zoom in" onClick={() => zoomAt(zoomRef.current * 1.5)}><ZoomIn size={16} /></button>
+        <button type="button" title="Zoom out" aria-label="Zoom out" onClick={() => zoomAt(zoomRef.current / 1.5)}><ZoomOut size={16} /></button>
+        <button type="button" title="Reset view" aria-label="Reset view" onClick={resetView}><RotateCcw size={16} /></button>
+        {!themeProp && (
+          <button type="button" title={isDark ? 'Switch to light map' : 'Switch to dark map'} aria-label={isDark ? 'Switch to light map' : 'Switch to dark map'}
+            aria-pressed={isDark} onClick={toggleTheme}>
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+        )}
+      </div>
+
+      {/* info card */}
+      {card === 'truck' && (
+        <div className="lm-panel lm-card" role="dialog" aria-label={`Tanker ${regOf(sel)} details`}>
+          <div className="lm-card-top">
+            <span className="lm-eyebrow"><Truck size={13} /> Tanker</span>
+            <button type="button" className="lm-x" aria-label="Close" onClick={() => setCard(null)}><X size={15} /></button>
+          </div>
+          <h4 className="lm-card-title lm-mono">{regOf(sel)}</h4>
+          <div className="lm-tags">
+            <span className={sel.status === 'OnTrip' ? 'lm-tag lm-tag-blue' : tonePending}>{sel.status === 'OnTrip' ? 'On trip' : 'Standby'}</span>
+            {selHud && <span className="lm-eta">{selHud.status}</span>}
+          </div>
+          <dl className="lm-dl">
+            <div><dt>Driver</dt><dd>{sel.driverName || 'Not assigned'}</dd></div>
+            {sel.capacityLitres && <div><dt>Capacity</dt><dd>{Number(sel.capacityLitres).toLocaleString('en-ZA')} L</dd></div>}
+            {sel.status === 'OnTrip' && <div><dt>Route</dt><dd>{sel.from?.name} to {sel.to?.name}</dd></div>}
+          </dl>
+          {sel.status === 'OnTrip' && selHud && (
+            <div className="lm-prog" aria-label={`${Math.round(selHud.p * 100)} percent of route completed`}>
+              <span style={{ width: `${(selHud.p * 100).toFixed(1)}%` }} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {card === 'stop' && selectedStop && (
+        <div className="lm-panel lm-card" role="dialog" aria-label={`${selectedStop.name} details`}>
+          <div className="lm-card-top">
+            <span className="lm-eyebrow"><MapPin size={13} /> Stop {selectedStop.sequence} &middot; {selectedStop.area}</span>
+            <button type="button" className="lm-x" aria-label="Close" onClick={() => { setCard(null); setSelectedStop(null); }}><X size={15} /></button>
+          </div>
+          <h4 className="lm-card-title">{selectedStop.name}</h4>
+          <div className="lm-row">
+            <span className="lm-muted">Volume <strong className="lm-mono">{selectedStop.volume}</strong></span>
+            <span className={selectedStop.status === 'Completed' ? 'lm-tag lm-tag-green' : selectedStop.status === 'In Delivery' ? 'lm-tag lm-tag-blue' : tonePending}>
+              {selectedStop.status}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {card === 'facility' && selectedFacility && (
+        <div className="lm-panel lm-card" role="dialog" aria-label={`${selectedFacility.name} details`}>
+          <div className="lm-card-top">
+            <span className="lm-eyebrow"><Droplet size={13} /> {selectedFacility.kind === 'depot' ? 'Depot' : 'Reservoir'}</span>
+            <button type="button" className="lm-x" aria-label="Close" onClick={() => { setCard(null); setSelectedFacility(null); }}><X size={15} /></button>
+          </div>
+          <h4 className="lm-card-title">{selectedFacility.name}</h4>
+          <dl className="lm-dl">
+            {selectedFacility.level != null && <div><dt>Storage level</dt><dd>{selectedFacility.level}%</dd></div>}
+            {selectedFacility.capacity && <div><dt>Capacity</dt><dd>{selectedFacility.capacity}</dd></div>}
+          </dl>
+          {selectedFacility.level != null && (
+            <div className="lm-prog" aria-label={`${selectedFacility.level} percent full`}><span style={{ width: `${selectedFacility.level}%` }} /></div>
+          )}
+        </div>
+      )}
+
+      {/* legend */}
+      <div className="lm-panel lm-legend">
+        <span><i className="lm-dot lm-dot-truck" />Tanker</span>
+        <span><i className="lm-dot" style={{ background: '#2e7d32' }} />Completed stop</span>
+        <span><i className="lm-dot" style={{ background: '#1d70b8' }} />In delivery</span>
+        <span><i className="lm-dot lm-dot-pending" />Pending</span>
+      </div>
+
+      <div className="lm-credit">{mapData.attribution || '\u00a9 OpenStreetMap contributors'}</div>
+    </div>
+  );
+}
+
+export default LiveMap;
+
+/* ------------------------------------------------------------------ */
+/*  Styles (light and dark). Brand colours are the same in both.       */
+/* ------------------------------------------------------------------ */
+const CSS = `
+.lm{
+  --navy:#152e52;--blue:#1d70b8;--green:#2e7d32;
+  --land:#eef0ed;--built:#e6e8e6;--parks:#d9e8d0;--water:#b9d5e8;--waterway:#8ab4f8;
+  --minor-edge:#d3d9de;--minor:#ffffff;--medium-edge:#c0c7d0;--medium:#ffffff;--major-edge:#dcbf82;--major:#f5dca6;
+  --label:#556070;--halo:#eef0ed;
+  --panel:rgba(255,255,255,.96);--panel-border:#e2e8f0;--text:#152e52;--muted:#64748b;--hover:#f1f5f9;
+  --chip-bg:#ffffff;--chip-border:#bcd6ea;--chip-text:#152e52;--chip-level:#1d70b8;
+  --done-case:#ffffff;--trail:#152e52;--border:#e2e8f0;
+  --tag-green-bg:#f2f9f3;--tag-green-text:#2e7d32;--tag-green-border:#b8e3bd;
+  --tag-blue-bg:#e8f1fa;--tag-blue-text:#1d70b8;--tag-blue-border:#b6d3ee;
+  --tag-grey-bg:#f1f5f9;--tag-grey-text:#475569;--tag-grey-border:#e2e8f0;
+}
+.lm[data-theme="dark"]{
+  --land:#141c27;--built:#1a2433;--parks:#17291f;--water:#1b3a57;--waterway:#2f6da3;
+  --minor-edge:#0d141c;--minor:#2b394b;--medium-edge:#0d141c;--medium:#37495f;--major-edge:#43361a;--major:#8a6d36;
+  --label:#9fb2c8;--halo:#141c27;
+  --panel:rgba(21,46,82,.96);--panel-border:#2b4a7a;--text:#ffffff;--muted:#aebfd8;--hover:#1d3d6b;
+  --chip-bg:#152e52;--chip-border:#2f568c;--chip-text:#ffffff;--chip-level:#7fbbf0;
+  --done-case:#0d141c;--trail:#9fc4ea;--border:#27406a;
+  --tag-green-bg:rgba(46,125,50,.22);--tag-green-text:#8fd694;--tag-green-border:#2e7d32;
+  --tag-blue-bg:rgba(29,112,184,.25);--tag-blue-text:#8cc3f2;--tag-blue-border:#1d70b8;
+  --tag-grey-bg:rgba(255,255,255,.08);--tag-grey-text:#c9d6e8;--tag-grey-border:#3a5883;
+}
+.lm{position:relative;width:100%;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--land);user-select:none;font-family:inherit;color:var(--text)}
+.lm *{box-sizing:border-box}
+.lm-svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.lm-svg:active{cursor:grabbing}
+
+/* base map */
+.lm-land{fill:var(--land)}.lm-built{fill:var(--built)}.lm-parks{fill:var(--parks)}.lm-water{fill:var(--water)}
+.lm-waterway{stroke:var(--waterway);stroke-width:calc(3px * var(--zf))}
+.lm-minor-edge{stroke:var(--minor-edge);stroke-width:calc(3.2px * var(--zf))}
+.lm-minor{stroke:var(--minor);stroke-width:calc(2px * var(--zf))}
+.lm-medium-edge{stroke:var(--medium-edge);stroke-width:calc(5.2px * var(--zf))}
+.lm-medium{stroke:var(--medium);stroke-width:calc(3.6px * var(--zf))}
+.lm-major-edge{stroke:var(--major-edge);stroke-width:calc(7.6px * var(--zf))}
+.lm-major{stroke:var(--major);stroke-width:calc(5.6px * var(--zf))}
+.lm-place{font-family:var(--font-serif,Lora,Georgia,'Times New Roman',serif);font-style:italic;font-weight:500;font-size:11px;fill:var(--label);paint-order:stroke;stroke:var(--halo);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
+
+/* routes */
+.lm-trail{fill:none;stroke:var(--trail);stroke-opacity:.5;stroke-linecap:round}
+.lm-done-case{fill:none;stroke:var(--done-case);stroke-opacity:.9;stroke-linecap:round;stroke-linejoin:round}
+.lm-done{fill:none;stroke:#1d70b8;stroke-linecap:round;stroke-linejoin:round}
+
+/* markers */
+.lm-fac{fill:#152e52;stroke:#fff;stroke-width:2}
+.lm-chip-bg{fill:var(--chip-bg);stroke:var(--chip-border);stroke-width:1}
+.lm-chip-text{font:600 11px system-ui,-apple-system,'Segoe UI',sans-serif;fill:var(--chip-text);pointer-events:none}
+.lm-chip-level{fill:var(--chip-level);font-weight:700}
+.lm-stop,.lm-fac-g{cursor:pointer;outline:none}
+.lm-fac-g:focus-visible .lm-fac{stroke:#b86e00}
+.lm-stop-num{font:700 9.5px system-ui,sans-serif;fill:#fff;pointer-events:none}
+.lm-stop:focus-visible path{stroke:#b86e00;stroke-width:2.6}
+.lm-tk{cursor:pointer;outline:none}
+.lm-chev{fill:#1d70b8}
+.lm-tk.sel .lm-chev{fill:#2e7d32}
+.lm-tk:focus-visible .lm-pulse{stroke:#b86e00}
+.lm-pulse{fill:none;stroke:#2e7d32;stroke-width:2;transform-box:fill-box;transform-origin:center;animation:lm-pulse 2.2s ease-out infinite}
+@keyframes lm-pulse{0%{opacity:.8;transform:scale(.75)}100%{opacity:0;transform:scale(1.7)}}
+.lm-tchip rect{fill:var(--chip-bg);stroke:var(--chip-border);stroke-width:1}
+.lm-tchip text{font:700 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;fill:var(--chip-text);pointer-events:none}
+.lm-tk.sel .lm-tchip rect{fill:#152e52;stroke:#2e7d32;stroke-width:1.5}
+.lm-tk.sel .lm-tchip text{fill:#fff}
+
+/* panels */
+.lm-panel{position:absolute;background:var(--panel);border:1px solid var(--panel-border);border-radius:6px;box-shadow:0 1px 2px rgba(15,34,61,.08);color:var(--text);backdrop-filter:blur(2px)}
+.lm-top{top:12px;left:12px;display:flex;align-items:center;gap:10px;padding:7px 12px;font-size:12.5px;max-width:calc(100% - 76px);flex-wrap:wrap}
+.lm-top-item{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.lm-strong{font-weight:700}.lm-blue{color:#1d70b8}.lm-green{color:#2e7d32}
+.lm[data-theme="dark"] .lm-blue{color:#6fb4ee}.lm[data-theme="dark"] .lm-green{color:#7fd187}
+.lm-sep{width:1px;height:16px;background:var(--panel-border)}
+.lm-badge{font-size:10.5px;font-weight:700;letter-spacing:.02em;padding:2px 8px;border-radius:4px;border:1px solid var(--tag-grey-border);background:var(--tag-grey-bg);color:var(--tag-grey-text)}
+.lm-badge-live{background:var(--tag-green-bg);color:var(--tag-green-text);border-color:var(--tag-green-border)}
+.lm-controls{top:12px;right:12px;display:flex;flex-direction:column;overflow:hidden}
+.lm-controls button{all:unset;box-sizing:border-box;width:34px;height:34px;display:grid;place-items:center;cursor:pointer;color:var(--text);border-bottom:1px solid var(--panel-border)}
+.lm-controls button:last-child{border-bottom:0}
+.lm-controls button:hover{background:var(--hover)}
+.lm-controls button:focus-visible,.lm-x:focus-visible{outline:2px solid #b86e00;outline-offset:-2px}
+.lm-legend{left:12px;bottom:12px;display:none;gap:16px;padding:8px 12px;font-size:11.5px;color:var(--muted);align-items:center;flex-wrap:wrap}
+@media(min-width:640px){.lm-legend{display:flex}}
+.lm-legend span{display:inline-flex;align-items:center;gap:6px}
+.lm-dot{display:inline-block;width:10px;height:10px;border-radius:50%}
+.lm-dot-pending{background:#152e52;box-shadow:0 0 0 1.5px rgba(255,255,255,.9)}
+.lm-dot-truck{background:linear-gradient(90deg,#1d70b8,#152e52,#1d70b8);border-radius:3px;width:8px;height:12px;border:1px solid #fff}
+.lm-credit{position:absolute;right:8px;bottom:6px;font-size:10px;color:var(--muted);background:var(--panel);padding:1px 6px;border-radius:3px;pointer-events:none}
+
+/* info card */
+.lm-card{right:12px;bottom:30px;width:300px;max-width:calc(100% - 24px);padding:14px 16px;z-index:5}
+.lm-card-top{display:flex;justify-content:space-between;align-items:center}
+.lm-eyebrow{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#1d70b8}
+.lm[data-theme="dark"] .lm-eyebrow{color:#7fbbf0}
+.lm-x{all:unset;box-sizing:border-box;cursor:pointer;padding:3px;border-radius:4px;color:var(--muted);display:grid;place-items:center}
+.lm-x:hover{background:var(--hover)}
+.lm-card-title{margin:6px 0 8px;font-family:var(--font-serif,Lora,Georgia,serif);font-size:16px;font-weight:700;line-height:1.25;color:var(--text)}
+.lm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.lm-tags{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.lm-eta{font-size:12.5px;font-weight:700;color:var(--text)}
+.lm-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid}
+.lm-tag-green{background:var(--tag-green-bg);color:var(--tag-green-text);border-color:var(--tag-green-border)}
+.lm-tag-blue{background:var(--tag-blue-bg);color:var(--tag-blue-text);border-color:var(--tag-blue-border)}
+.lm-tag-pending{background:var(--tag-grey-bg);color:var(--tag-grey-text);border-color:var(--tag-grey-border)}
+.lm-dl{margin:0;display:grid;gap:6px;font-size:12.5px}
+.lm-dl div{display:flex;justify-content:space-between;gap:12px}
+.lm-dl dt{color:var(--muted)}.lm-dl dd{margin:0;font-weight:600;text-align:right}
+.lm-prog{height:5px;border-radius:3px;background:var(--panel-border);overflow:hidden;margin-top:12px}
+.lm-prog span{display:block;height:100%;background:#1d70b8}
+.lm-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;padding-top:4px}
+.lm-muted{color:var(--muted)}.lm-muted strong{color:var(--text)}
+
+@media(prefers-reduced-motion:reduce){.lm-pulse{animation:none;opacity:.5}}
+`;
