@@ -119,7 +119,7 @@ export function LandingPage() {
               <span className="hidden sm:inline text-slate-200 truncate font-normal">{t('kimberleyOperations')}</span>
             </div>
 
-            <div className="flex items-center gap-3 text-[11px]">
+            <div className="flex items-center gap-3 text-xs">
               <a
                 href="tel:0538306100"
                 className="flex items-center gap-1.5 font-medium text-amber-300 hover:text-amber-200 transition-colors"

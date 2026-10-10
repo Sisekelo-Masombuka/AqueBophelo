@@ -27,7 +27,7 @@ export function Footer() {
 
           {/* Col 2: Navigation Links */}
           <div className="space-y-3">
-            <h4 className="font-serif font-bold text-sm text-white tracking-wide border-b border-slate-700/60 pb-1.5">
+            <h4 className="font-sans font-bold text-sm text-white border-b border-slate-700/60 pb-1.5">
               Navigation
             </h4>
             <ul className="space-y-2 text-xs text-slate-300 font-normal">
@@ -66,7 +66,7 @@ export function Footer() {
 
           {/* Col 3: Municipal Emergency Hotlines */}
           <div className="space-y-3">
-            <h4 className="font-serif font-bold text-sm text-white tracking-wide border-b border-slate-700/60 pb-1.5">
+            <h4 className="font-sans font-bold text-sm text-white border-b border-slate-700/60 pb-1.5">
               {t('emergencyHotlines')}
             </h4>
             <ul className="space-y-2.5 text-xs text-slate-300 font-normal">
@@ -96,7 +96,7 @@ export function Footer() {
 
           {/* Col 4: Civic Office Location */}
           <div className="space-y-3">
-            <h4 className="font-serif font-bold text-sm text-white tracking-wide border-b border-slate-700/60 pb-1.5">
+            <h4 className="font-sans font-bold text-sm text-white border-b border-slate-700/60 pb-1.5">
               Civic Centre Location
             </h4>
             <div className="text-xs text-slate-300 space-y-1 font-normal leading-relaxed">
@@ -109,7 +109,7 @@ export function Footer() {
               <p>Northern Cape, South Africa</p>
             </div>
             <div className="pt-2">
-              <span className="inline-block text-[11px] bg-[#2e7d32] text-white px-2.5 py-1 rounded-md font-medium">
+              <span className="inline-block text-xs bg-[#f2f9f3] text-[#2e7d32] border border-[#b8e3bd] px-2.5 py-1 rounded-md font-medium">
                 SANS 241 Water Quality Compliant
               </span>
             </div>

@@ -53,11 +53,14 @@
   --color-brand-green: #2e7d32;
   --color-brand-green-dark: #1b6326;
   --color-brand-droplet: #1d70b8;
-  --color-brand-blue: #152e52;
+  --color-brand-blue: #1d70b8;
   --color-brand-accent: #1d70b8;
   
   --color-surface-blue: #f4f8fb;
+  --color-surface-blue-tint: #eaf4fb;
+  --color-surface-blue-border: #bcd6ea;
   --color-surface-green: #f2f9f3;
+  --color-surface-green-border: #b8e3bd;
   --color-background: #ffffff;
   --color-background-soft: #f8fafc;
   

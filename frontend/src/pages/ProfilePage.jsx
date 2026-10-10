@@ -265,7 +265,7 @@ export function ProfilePage() {
             <div className="bg-[#f8fafc] border border-slate-200 rounded-lg p-5 space-y-4">
               <h3 className="font-serif font-bold text-base text-[#152e52] flex items-center space-x-2 border-b border-slate-200 pb-2">
                 <Truck className="w-4 h-4 text-[#2e7d32]" />
-                <span>Driver Employment &amp; Performance Summary (Section 2.6)</span>
+                <span>Driver Employment &amp; Performance Summary</span>
               </h3>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
@@ -312,13 +312,13 @@ export function ProfilePage() {
             <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-xs space-y-5">
               <h3 className="font-serif font-bold text-base text-[#152e52] flex items-center space-x-2 border-b border-slate-200 pb-2">
                 <Lock className="w-4 h-4 text-[#1d70b8]" />
-                <span>Admin Security, 2FA &amp; Active Sessions (Section 3.8)</span>
+                <span>Admin Security, 2FA &amp; Active Sessions</span>
               </h3>
 
-              {/* 3.8.1 & 3.8.2: Account Metadata */}
+              {/* Account Metadata */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                 <div className="bg-[#f8fafc] p-3 rounded-md border border-slate-200">
-                  <span className="text-slate-500 block text-[11px]">3.8.1 Last Login:</span>
+                  <span className="text-slate-500 block text-xs">Last Login:</span>
                   <span className="font-semibold text-[#152e52] flex items-center gap-1 mt-0.5">
                     <Clock className="w-3 h-3 text-slate-400" />
                     <span>Today, 08:30 (CAT)</span>
@@ -326,7 +326,7 @@ export function ProfilePage() {
                 </div>
 
                 <div className="bg-[#f8fafc] p-3 rounded-md border border-slate-200">
-                  <span className="text-slate-500 block text-[11px]">3.8.2 Account Created:</span>
+                  <span className="text-slate-500 block text-xs">Account Created:</span>
                   <span className="font-semibold text-slate-800 mt-0.5 block">15 January 2026</span>
                 </div>
 
@@ -447,37 +447,37 @@ export function ProfilePage() {
                 </form>
               </div>
 
-              {/* 3.8.5: Active Sessions */}
+              {/* Active Sessions */}
               <div className="space-y-2 text-xs">
-                <h4 className="font-serif font-bold text-xs text-[#152e52] uppercase tracking-wider">
-                  3.8.5 Active Browser Sessions
+                <h4 className="font-sans font-bold text-xs text-[#152e52]">
+                  Active Browser Sessions
                 </h4>
                 <div className="space-y-2">
                   <div className="p-3 bg-[#f8fafc] border border-slate-200 rounded-md flex items-center justify-between">
                     <div>
                       <p className="font-bold text-[#152e52]">Chrome on Windows 11 (Current Session)</p>
-                      <p className="text-[11px] text-slate-500 font-mono">IP: 197.229.41.10 · Sol Plaatje Municipal Network</p>
+                      <p className="text-xs text-slate-500 font-mono">IP: 197.229.41.10 · Sol Plaatje Municipal Network</p>
                     </div>
-                    <span className="text-[11px] font-bold text-[#2e7d32] bg-[#f2f9f3] px-2 py-0.5 rounded border border-[#b8e3bd]">ACTIVE</span>
+                    <StatusBadge status="Active" />
                   </div>
                   <div className="p-3 bg-[#f8fafc] border border-slate-200 rounded-md flex items-center justify-between">
                     <div>
                       <p className="font-bold text-slate-700">Mobile Safari on iOS (Control Desk Tablet)</p>
-                      <p className="text-[11px] text-slate-500 font-mono">IP: 197.229.41.18 · Last active 2 hours ago</p>
+                      <p className="text-xs text-slate-500 font-mono">IP: 197.229.41.18 · Last active 2 hours ago</p>
                     </div>
-                    <button className="text-[11px] text-red-600 hover:underline cursor-pointer font-medium">Revoke</button>
+                    <button className="text-xs text-red-600 hover:underline cursor-pointer font-medium">Revoke</button>
                   </div>
                 </div>
               </div>
 
-              {/* 3.8.6 & 3.8.7: Security Audit History & Alerts */}
+              {/* Security Audit History & Alerts */}
               <div className="space-y-2 text-xs">
-                <h4 className="font-serif font-bold text-xs text-[#152e52] uppercase tracking-wider">
-                  3.8.6 &amp; 3.8.7 Login History &amp; Security Alerts
+                <h4 className="font-sans font-bold text-xs text-[#152e52]">
+                  Login History &amp; Security Alerts
                 </h4>
                 <div className="border border-slate-200 rounded-md overflow-hidden">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#f8fafc] text-slate-600 text-[10px] uppercase font-semibold border-b">
+                    <thead className="bg-[#f8fafc] text-slate-600 text-xs font-semibold border-b">
                       <tr>
                         <th className="py-2 px-3">Event / Action</th>
                         <th className="py-2 px-3">Timestamp (CAT)</th>
@@ -485,7 +485,7 @@ export function ProfilePage() {
                         <th className="py-2 px-3">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 text-[11px]">
+                    <tbody className="divide-y divide-slate-200 text-xs">
                       <tr>
                         <td className="py-2 px-3 font-semibold text-[#152e52]">Admin Login (Password + OTP)</td>
                         <td className="py-2 px-3 text-slate-500">2026-09-29 08:30 CAT</td>
@@ -505,11 +505,11 @@ export function ProfilePage() {
             </div>
           )}
 
-          {/* ITEM 1.7: PRIVACY SETTINGS PANEL */}
+          {/* PRIVACY SETTINGS PANEL */}
           <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-xs space-y-4">
             <h3 className="font-serif font-bold text-base text-[#152e52] flex items-center space-x-2 border-b border-slate-200 pb-2">
               <ShieldCheck className="w-4 h-4 text-[#2e7d32]" />
-              <span>Privacy &amp; Notification Settings (Item 1.7)</span>
+              <span>Privacy &amp; Notification Settings</span>
             </h3>
 
             {privacySuccess && (
@@ -640,7 +640,7 @@ export function ProfilePage() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 space-y-3">
             <h3 className="font-serif font-bold text-base text-red-800 flex items-center space-x-2">
               <Trash2 className="w-4 h-4 text-red-600" />
-              <span>Delete Own Account (Item 1.5)</span>
+              <span>Delete Own Account</span>
             </h3>
             <p className="text-xs text-red-700 leading-relaxed font-normal">
               Permanently remove your account and personal details from Sol Plaatje Municipal database. Requires confirmation and a real email OTP verification code.

@@ -93,7 +93,7 @@ export function DriverActivityPage() {
           <span>Driver Activity & Delivery Log</span>
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          Section 2.5 Historical Log of Completed Trips, Deliveries, and Reported Incidents
+          Historical Log of Completed Trips, Deliveries, and Reported Incidents
         </p>
       </div>
 

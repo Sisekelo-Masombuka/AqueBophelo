@@ -163,7 +163,7 @@ export function ManageUsers() {
         <div>
           <div className="flex items-center space-x-2 text-xs font-semibold text-[#1d70b8] mb-1">
             <Users className="w-3.5 h-3.5 text-[#1d70b8]" />
-            <span>Section 3.7 Municipal System Management</span>
+            <span>Municipal System Management</span>
           </div>
           <h2 className="font-serif text-2xl md:text-3xl font-bold text-[#152e52]">
             System Administration &amp; Access Control
@@ -184,7 +184,7 @@ export function ManageUsers() {
         )}
       </div>
 
-      {/* Main Section Navigation Tabs (3.7.1 - 3.7.6) */}
+      {/* Main Section Navigation Tabs */}
       <div className="flex border-b border-slate-200">
         <button
           onClick={() => setActiveMainTab('users')}
@@ -195,7 +195,7 @@ export function ManageUsers() {
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>3.7.1 Users, Roles &amp; Permissions</span>
+          <span>Users, Roles &amp; Permissions</span>
         </button>
 
         <button
@@ -207,7 +207,7 @@ export function ManageUsers() {
           }`}
         >
           <Settings className="w-4 h-4" />
-          <span>3.7.4 System &amp; Notifications Config</span>
+          <span>System &amp; Notifications Config</span>
         </button>
 
         <button
@@ -219,7 +219,7 @@ export function ManageUsers() {
           }`}
         >
           <Activity className="w-4 h-4" />
-          <span>3.7.6 Audit &amp; Activity Logs</span>
+          <span>Audit &amp; Activity Logs</span>
         </button>
       </div>
 
@@ -341,53 +341,53 @@ export function ManageUsers() {
           )}
 
           <div className="grid md:grid-cols-2 gap-6 text-xs">
-            {/* 3.7.5: Notifications Config */}
+            {/* Notifications Config */}
             <div className="bg-[#f8fafc] border border-slate-200 rounded-lg p-5 space-y-4">
               <h4 className="font-serif font-bold text-sm text-[#152e52] flex items-center gap-2">
                 <Bell className="w-4 h-4 text-[#2e7d32]" />
-                <span>3.7.5 Notifications Configuration</span>
+                <span>Notifications Configuration</span>
               </h4>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-md">
                   <div>
-                    <p className="font-bold text-[#152e52]">SendGrid Email Dispatch Service</p>
-                    <p className="text-slate-500 text-[11px]">Primary email delivery gateway for OTPs and water alerts.</p>
+                    <p className="font-bold text-[#152e52]">Email Dispatch Service</p>
+                    <p className="text-slate-500 text-xs">Delivers automated emails for login verification codes and water alerts.</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setEmailNotificationsEnabled(!emailNotificationsEnabled)}
-                    className={`px-3 py-1 rounded-md text-xs font-bold cursor-pointer transition-colors ${
-                      emailNotificationsEnabled ? 'bg-[#2e7d32] text-white' : 'bg-slate-200 text-slate-700'
+                    className={`px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                      emailNotificationsEnabled ? 'bg-[#f2f9f3] text-[#2e7d32] border border-[#b8e3bd]' : 'bg-slate-100 text-slate-700 border border-slate-200'
                     }`}
                   >
-                    {emailNotificationsEnabled ? 'ACTIVE' : 'INACTIVE'}
+                    {emailNotificationsEnabled ? 'Active' : 'Inactive'}
                   </button>
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-md">
                   <div>
-                    <p className="font-bold text-[#152e52]">Notification Dry-Run / Console Mode</p>
-                    <p className="text-slate-500 text-[11px]">Bypass external SMTP and output email logs to server console.</p>
+                    <p className="font-bold text-[#152e52]">Test Mode (Console Output)</p>
+                    <p className="text-slate-500 text-xs">Logs notification messages to the server console instead of sending real emails.</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setDryRunModeEnabled(!dryRunModeEnabled)}
-                    className={`px-3 py-1 rounded-md text-xs font-bold cursor-pointer transition-colors ${
-                      dryRunModeEnabled ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-700'
+                    className={`px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                      dryRunModeEnabled ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-700 border border-slate-200'
                     }`}
                   >
-                    {dryRunModeEnabled ? 'DRY-RUN ON' : 'LIVE DISPATCH'}
+                    {dryRunModeEnabled ? 'Test mode' : 'Live mode'}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* 3.7.4: System Settings */}
+            {/* System Settings */}
             <div className="bg-[#f8fafc] border border-slate-200 rounded-lg p-5 space-y-4">
               <h4 className="font-serif font-bold text-sm text-[#152e52] flex items-center gap-2">
                 <Server className="w-4 h-4 text-[#1d70b8]" />
-                <span>3.7.4 System &amp; Server Settings</span>
+                <span>System &amp; Server Settings</span>
               </h4>
 
               <div className="space-y-3">

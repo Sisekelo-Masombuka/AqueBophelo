@@ -357,12 +357,12 @@ export function DriverTripScreen() {
       {/* SECTION 2.1.3 - 2.1.7: TARGET NEXT DESTINATION & 3-STEP PER-STOP WORKFLOW */}
       {activeTrip?.status === 'Active' && currentPendingStop ? (
         <div className="bg-white border-2 border-[#1d70b8] rounded-lg p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between text-xs text-[#1d70b8] font-bold uppercase tracking-wider">
+          <div className="flex items-center justify-between text-xs text-[#1d70b8] font-bold">
             <span className="flex items-center space-x-1.5">
               <Navigation className="w-4 h-4" />
-              <span>Next Destination (Section 2.1.4)</span>
+              <span>Next Destination</span>
             </span>
-            <span className="bg-[#152e52] text-white px-2 py-0.5 rounded text-[11px]">
+            <span className="bg-[#152e52] text-white px-2 py-0.5 rounded text-xs">
               Stop #{currentPendingStop.sequence}
             </span>
           </div>
@@ -377,10 +377,10 @@ export function DriverTripScreen() {
             </p>
           </div>
 
-          {/* Section 2.1.7: 3-Step Per-Stop Flow (Arrived -> Start Delivery -> Delivery Completed) */}
+          {/* 3-Step Per-Stop Flow (Arrived -> Start Delivery -> Delivery Completed) */}
           <div className="bg-[#f8fafc] p-4 rounded-md border border-slate-200 space-y-3">
-            <span className="text-xs font-bold text-slate-700 block uppercase tracking-wider">
-              Per-Stop Execution Step (Section 2.1.7)
+            <span className="text-xs font-bold text-slate-700 block">
+              Per-Stop Execution Step
             </span>
 
             <div className="grid grid-cols-3 gap-2">
@@ -454,7 +454,7 @@ export function DriverTripScreen() {
           className="w-full border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 font-semibold text-xs rounded-md flex items-center justify-center space-x-2 transition-colors cursor-pointer"
         >
           <AlertTriangle className="w-4 h-4 text-amber-600" />
-          <span>Report Problem (Section 2.2)</span>
+          <span>Report Problem</span>
         </button>
 
         {activeTrip?.status === 'Active' && (
@@ -475,11 +475,11 @@ export function DriverTripScreen() {
           onClick={toggleSimulation}
           className="text-xs text-slate-500 hover:text-[#1d70b8] font-medium underline cursor-pointer"
         >
-          {isSimulating ? '🚗 Simulated Kimberley Driving Active (Click to Stop)' : '🧪 Click to Simulate Live Driving for Demo'}
+          {isSimulating ? 'Simulated Kimberley Driving Active (Click to Stop)' : 'Click to Simulate Live Driving for Demo'}
         </button>
       </div>
 
-      {/* SECTION 2.1.8: DELIVERY COMPLETION MODAL */}
+      {/* DELIVERY COMPLETION MODAL */}
       {isDeliveryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
           <div className="bg-white border border-slate-200 rounded-lg p-6 w-full max-w-md shadow-xl text-slate-800 relative space-y-4">
@@ -494,7 +494,7 @@ export function DriverTripScreen() {
               <CheckCircle2 className="w-6 h-6 shrink-0" />
               <div>
                 <h3 className="font-serif text-lg font-bold text-[#152e52]">Record Delivery Completion</h3>
-                <p className="text-xs text-slate-500">Section 2.1.8 Delivery Metrics</p>
+                <p className="text-xs text-slate-500">Delivery Metrics</p>
               </div>
             </div>
 
@@ -552,7 +552,7 @@ export function DriverTripScreen() {
         </div>
       )}
 
-      {/* SECTION 2.2: REPORT PROBLEM MODAL WITH 5 CATEGORIES */}
+      {/* REPORT PROBLEM MODAL WITH 5 CATEGORIES */}
       {isReportProblemModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
           <div className="bg-white border border-slate-200 rounded-lg p-6 w-full max-w-md shadow-xl text-slate-800 relative space-y-4">
@@ -567,13 +567,13 @@ export function DriverTripScreen() {
               <AlertTriangle className="w-6 h-6 shrink-0" />
               <div>
                 <h3 className="font-serif text-lg font-bold text-[#152e52]">Report Driver Problem</h3>
-                <p className="text-xs text-slate-500 font-normal">Section 2.2 Incident Dispatch Logging</p>
+                <p className="text-xs text-slate-500 font-normal">Incident Dispatch Logging</p>
               </div>
             </div>
 
             <form onSubmit={handleReportProblem} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Problem Category (Section 2.2.2)</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Problem Category</label>
                 <select
                   value={problemCategory}
                   onChange={(e) => setProblemCategory(e.target.value)}

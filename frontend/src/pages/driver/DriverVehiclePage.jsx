@@ -108,7 +108,7 @@ export function DriverDriverVehiclePage() {
             <span>Assigned Vehicle & Pre-Trip Inspection</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Section 2.3 Municipal Fleet Vehicle Operational Status & Checklist
+            Municipal Fleet Vehicle Operational Status & Checklist
           </p>
         </div>
 

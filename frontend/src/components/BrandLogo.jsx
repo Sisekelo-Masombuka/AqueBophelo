@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../lib/utils';
 
-export function BrandLogo({ className, variant = 'full', size = 'md', showText = true, textTheme = 'dark' }) {
+export function BrandLogo({ className, size = 'md', showText = true, textTheme = 'dark' }) {
   const logoSrc = '/AquaBophelo_logo.svg';
 
   const logoHeight = size === 'lg'
@@ -15,12 +15,6 @@ export function BrandLogo({ className, variant = 'full', size = 'md', showText =
     : size === 'sm'
     ? 'text-sm md:text-base'
     : 'text-base md:text-lg';
-
-  const subSize = size === 'lg'
-    ? 'text-[11px]'
-    : size === 'sm'
-    ? 'text-[9px]'
-    : 'text-[10px]';
 
   const titleColor = textTheme === 'light' ? 'text-white' : 'text-[#152e52]';
   const subColor = textTheme === 'light' ? 'text-slate-300' : 'text-slate-500';
@@ -37,8 +31,8 @@ export function BrandLogo({ className, variant = 'full', size = 'md', showText =
           <span className={cn('font-serif font-bold tracking-tight', titleSize, titleColor)}>
             AquaBophelo
           </span>
-          <span className={cn('font-medium tracking-wide uppercase pt-1', subSize, subColor)}>
-            Sol Plaatje Water
+          <span className={cn('font-medium text-xs pt-0.5', subColor)}>
+            Sol Plaatje Water Portal
           </span>
         </div>
       )}

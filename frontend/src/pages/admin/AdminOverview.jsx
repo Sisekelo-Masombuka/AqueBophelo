@@ -442,7 +442,7 @@ export function AdminOverview() {
             <div>
               <h3 className="font-serif font-bold text-base text-[#152e52] flex items-center space-x-2">
                 <FileText className="w-5 h-5 text-[#1d70b8]" />
-                <span>Resident Water Fault Reports (Section 3.4.1)</span>
+                <span>Resident Water Fault Reports</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Review submitted resident tickets and update operational status. Updates automatically send email notifications to the resident.

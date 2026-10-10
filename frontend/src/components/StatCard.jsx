@@ -1,14 +1,14 @@
 import React from 'react';
 
-export function StatCard({ title, value, subtitle, icon: Icon, accentColor = '#152e52' }) {
+export function StatCard({ title, value, subtitle, icon: Icon }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs transition-colors hover:border-slate-300 flex flex-col justify-between">
+    <div className="rounded-md border border-slate-200 bg-white p-5 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between gap-2 mb-2">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{title}</p>
-          {Icon && <Icon className="h-4 h-4 shrink-0 text-[#152e52]" aria-hidden="true" />}
+          <p className="text-xs font-medium text-slate-500">{title}</p>
+          {Icon && <Icon className="w-4 h-4 shrink-0 text-[#152e52]" aria-hidden="true" />}
         </div>
-        <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#152e52]">{value}</h2>
+        <div className="text-2xl sm:text-3xl font-sans font-bold text-[#152e52]">{value}</div>
       </div>
       {subtitle && <p className="text-xs text-slate-500 font-normal mt-2 pt-2 border-t border-slate-100">{subtitle}</p>}
     </div>

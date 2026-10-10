@@ -174,30 +174,30 @@ export function ResidentDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs space-y-1">
           <span className="text-xs font-medium text-slate-500">Grid Storage Average</span>
-          <p className="text-2xl font-serif font-bold text-[#152e52]">74.5%</p>
+          <p className="text-2xl font-sans font-bold text-[#152e52]">74.5%</p>
           <p className="text-xs text-slate-500">Newton (62.5%) &amp; Riverton (82.0%)</p>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs space-y-1">
           <span className="text-xs font-medium text-slate-500">Active Tanker Fleet</span>
-          <p className="text-2xl font-serif font-bold text-[#2e7d32]">2 En Route</p>
+          <p className="text-2xl font-sans font-bold text-[#152e52]">2 En Route</p>
           <p className="text-xs text-slate-500">1 Standby in Roodepan Depot</p>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs space-y-1">
           <span className="text-xs font-medium text-slate-500">Municipal Grid Status</span>
-          <p className="text-2xl font-serif font-bold text-amber-700">Watch State</p>
+          <p className="text-2xl font-sans font-bold text-[#152e52]">Watch State</p>
           <p className="text-xs text-slate-500">Night pressure limits 21:00-04:00</p>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs space-y-1">
           <span className="text-xs font-medium text-slate-500">Your Suburb Area</span>
-          <p className="text-2xl font-serif font-bold text-[#152e52]">{user?.area || 'Galeshewe'}</p>
+          <p className="text-2xl font-sans font-bold text-[#152e52]">{user?.area || 'Galeshewe'}</p>
           <p className="text-xs text-slate-500">Tanker 542-KM NC active nearby</p>
         </div>
       </div>
 
-      {/* ITEM 1.4: View Status of Submitted Issues Updated by Admin */}
+      {/* View Status of Submitted Issues Updated by Admin */}
       <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div>
