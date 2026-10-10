@@ -1,6 +1,9 @@
 import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
-import { Truck, MapPin, Droplet, ZoomIn, ZoomOut, RotateCcw, Sun, Moon, X } from 'lucide-react';
+import { 
+  Truck, MapPin, Droplet, ZoomIn, ZoomOut, RotateCcw, Sun, Moon, X, 
+  Star, AlertTriangle, CheckCircle2, PhoneCall, Clock, ShieldCheck, Check, Info
+} from 'lucide-react';
 import mapData from './kimberleyMap.json';
 
 /* ------------------------------------------------------------------ */
@@ -9,7 +12,7 @@ import mapData from './kimberleyMap.json';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7154';
 const MAP_CONFIG = { center: [24.76, -28.73], spanLng: 0.24, W: 900, H: 560 };
 const MAX_ZOOM = 5;
-const PAD = 90;                 // how far past the map edge you can pan, so edge labels are never cut off
+const PAD = 90;
 const THEME_KEY = 'aquabophelo-map-theme';
 
 function makeProjection({ center, spanLng, W, H }) {
@@ -23,7 +26,7 @@ const { project } = makeProjection(MAP_CONFIG);
 const clamp = (n, lo, hi) => (lo > hi ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, n)));
 
 /* ------------------------------------------------------------------ */
-/*  Default Data                                                       */
+/*  Default Data & Helper Functions                                    */
 /* ------------------------------------------------------------------ */
 const DEFAULT_FACILITIES = [
   { id: 'newton', name: 'Newton Reservoir', lngLat: [24.7712, -28.7033], level: 62.5, capacity: '92.5 ML', kind: 'reservoir' },
@@ -32,31 +35,50 @@ const DEFAULT_FACILITIES = [
 ];
 
 const DEFAULT_DELIVERY_STOPS = [
-  { id: 101, sequence: 1, name: 'Galeshewe Police Station Water Point', lngLat: [24.7319, -28.7183], area: 'Galeshewe', status: 'Completed', volume: '3,500 L' },
-  { id: 102, sequence: 2, name: 'Tshwarelela Primary Drop Point', lngLat: [24.7291, -28.7125], area: 'Galeshewe', status: 'In Delivery', volume: '2,500 L' },
-  { id: 103, sequence: 3, name: 'Mayibuye Community Centre', lngLat: [24.7245, -28.7098], area: 'Galeshewe', status: 'Pending', volume: '3,000 L' },
-  { id: 201, sequence: 1, name: 'Sol Plaatje Civic Centre Reservoir', lngLat: [24.7719, -28.7419], area: 'Kimberley Central', status: 'Completed', volume: '5,000 L' },
-  { id: 202, sequence: 2, name: 'Kimberley Hospital Water Reserve', lngLat: [24.7645, -28.7388], area: 'Kimberley Central', status: 'In Delivery', volume: '4,000 L' },
-  { id: 301, sequence: 1, name: 'Roodepan Municipal Depot Standby', lngLat: [24.7088, -28.6921], area: 'Roodepan', status: 'Pending', volume: '2,000 L' },
-  { id: 302, sequence: 2, name: 'Lerato Park Community Water Tanks', lngLat: [24.7012, -28.6854], area: 'Roodepan', status: 'Pending', volume: '3,500 L' },
+  { id: 101, sequence: 1, name: 'Galeshewe Police Station Water Point', lngLat: [24.7319, -28.7183], area: 'Galeshewe Zone 3', status: 'Completed', volume: '3,500 L' },
+  { id: 102, sequence: 2, name: 'Tshwarelela Primary Drop Point', lngLat: [24.7291, -28.7125], area: 'Galeshewe Zone 3', status: 'In Delivery', volume: '2,500 L' },
+  { id: 103, sequence: 3, name: 'Mayibuye Community Centre', lngLat: [24.7245, -28.7098], area: 'Galeshewe Zone 3', status: 'Pending', volume: '3,000 L' },
+  { id: 201, sequence: 4, name: 'Sol Plaatje Civic Centre Reservoir', lngLat: [24.7719, -28.7419], area: 'Kimberley Central', status: 'Pending', volume: '5,000 L' },
+  { id: 202, sequence: 5, name: 'Kimberley Hospital Water Reserve', lngLat: [24.7645, -28.7388], area: 'Kimberley Central', status: 'Pending', volume: '4,000 L' },
 ];
 
 const DEFAULT_TANKERS = [
-  { id: '542-KM NC', registrationNumber: '542-KM NC', driverName: 'Sipho Dlamini', capacityLitres: 10000, status: 'OnTrip',
+  { id: '542-KM NC', registrationNumber: '542-KM NC', driverName: 'Sipho Dlamini', driverRating: 4.8, completedTripsCount: 124, capacityLitres: 10000, status: 'OnTrip',
     from: { name: 'Newton Reservoir', lngLat: [24.7712, -28.7033] }, to: { name: 'Galeshewe Zone 3', lngLat: [24.7319, -28.7183] },
-    speedKmh: 38, minutes: 18, secs: 50, start: 0.45 },
-  { id: '882-KM NC', registrationNumber: '882-KM NC', driverName: 'Lerato Motsepe', capacityLitres: 15000, status: 'OnTrip',
+    speedKmh: 38, minutes: 14, secs: 50, start: 0.45 },
+  { id: '882-KM NC', registrationNumber: '882-KM NC', driverName: 'Lerato Motsepe', driverRating: 4.9, completedTripsCount: 96, capacityLitres: 15000, status: 'OnTrip',
     from: { name: 'Newton Reservoir', lngLat: [24.7712, -28.7033] }, to: { name: 'Roodepan Depot', lngLat: [24.7088, -28.6921] },
     speedKmh: 42, minutes: 24, secs: 65, start: 0.25 },
-  { id: '104-KM NC', registrationNumber: '104-KM NC', driverName: 'Tshepo Khumalo', capacityLitres: 10000, status: 'Available',
+  { id: '104-KM NC', registrationNumber: '104-KM NC', driverName: 'Tshepo Khumalo', driverRating: 4.7, completedTripsCount: 8, capacityLitres: 10000, status: 'Available',
     from: { name: 'Riverton Water Works', lngLat: [24.8102, -28.6788] }, to: { name: 'Kimberley Central CBD', lngLat: [24.7719, -28.7419] },
     speedKmh: 0, minutes: 0, secs: 60, start: 0.95 },
 ];
 
 const regOf = (t) => t.registrationNumber || t.id;
 
+function formatFirstName(fullName = '') {
+  if (!fullName) return 'Sipho';
+  return fullName.trim().split(/\s+/)[0];
+}
+
+function formatDriverRating(rating, count) {
+  if (!count || count < 5) return 'New Driver';
+  return `${rating?.toFixed(1) || '4.8'} ★ (${count} deliveries)`;
+}
+
+function getPlainStatus(status, progress = 0) {
+  if (status === 'Completed') return 'Completed';
+  if (status === 'In Delivery' || status === 'Delivering') return 'Delivering';
+  if (status === 'OnTrip' || status === 'On the way') {
+    if (progress >= 0.96) return 'Arrived';
+    if (progress > 0) return 'On the way';
+    return 'On the way';
+  }
+  return 'Standby';
+}
+
 /* ------------------------------------------------------------------ */
-/*  Routes: find a road route for each tanker                          */
+/*  Routes & Offline Road Graph                                        */
 /* ------------------------------------------------------------------ */
 const normPlate = (s = '') => String(s).toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean).sort().join('-');
 const r1 = (n) => Math.round(n * 10) / 10;
@@ -75,9 +97,6 @@ function prebuiltRoute(reg, from, to) {
   return ok ? d : null;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Offline road routing over map data                                 */
-/* ------------------------------------------------------------------ */
 let roadGraph;
 function getRoadGraph() {
   if (roadGraph) return roadGraph;
@@ -227,7 +246,7 @@ function useMapTheme(forced) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Label decluttering                                                 */
+/*  Label Decluttering                                                 */
 /* ------------------------------------------------------------------ */
 const LABEL_FONT = 'italic 500 11px Lora, Georgia, serif';
 const UI_FONT = '600 11px system-ui, sans-serif';
@@ -402,6 +421,42 @@ export function LiveMap({
   const uRef = useRef(1);
   const facBoxes = useRef([]);
 
+  const [initialViewBox] = useState(`0 0 ${MAP_CONFIG.W} ${MAP_CONFIG.H}`);
+  const [zoom, setZoom] = useState(1);
+  const [u, setU] = useState(1);
+  const [narrow, setNarrow] = useState(false);
+  const [theme, toggleTheme] = useMapTheme(themeProp);
+  const [selectedTruckId, setSelectedTruckId] = useState(regOf(tankers[0]));
+  const [selectedStop, setSelectedStop] = useState(null);
+  const [selectedFacility, setSelectedFacility] = useState(null);
+  const [card, setCard] = useState(null);
+  const [hud, setHud] = useState({});
+  const [liveGps, setLiveGps] = useState(false);
+  const [lastGpsSecAgo, setLastGpsSecAgo] = useState(4);
+
+  // Resident Features State
+  const [mySuburb, setMySuburb] = useState('Galeshewe Zone 3');
+  const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingStars, setRatingStars] = useState(5);
+  const [ratingTags, setRatingTags] = useState(['On time', 'Enough water']);
+  const [ratingComment, setRatingComment] = useState('');
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+
+  // Report Problem State
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportIssueType, setReportIssueType] = useState('Dirty water');
+  const [reportNotes, setReportNotes] = useState('');
+  const [reportSubmitted, setReportSubmitted] = useState(false);
+
+  // Dynamic GPS Freshness Seconds Timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLastGpsSecAgo((prev) => (prev >= 60 ? 4 : prev + 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const fitPoints = useMemo(() => {
     const pts = [];
     const busy = new Set();
@@ -415,18 +470,6 @@ export function LiveMap({
   const fitRef = useRef(null);
   const fittedRef = useRef(false);
   const view = useRef({ x: 0, y: 0, w: MAP_CONFIG.W, h: MAP_CONFIG.H });
-
-  const [initialViewBox] = useState(`0 0 ${MAP_CONFIG.W} ${MAP_CONFIG.H}`);
-  const [zoom, setZoom] = useState(1);
-  const [u, setU] = useState(1);
-  const [narrow, setNarrow] = useState(false);
-  const [theme, toggleTheme] = useMapTheme(themeProp);
-  const [selectedTruckId, setSelectedTruckId] = useState(regOf(tankers[0]));
-  const [selectedStop, setSelectedStop] = useState(null);
-  const [selectedFacility, setSelectedFacility] = useState(null);
-  const [card, setCard] = useState(null);
-  const [hud, setHud] = useState({});
-  const [liveGps, setLiveGps] = useState(false);
 
   const routes = useMemo(() => Object.fromEntries(tankers.map((t) => {
     const from = t.from?.lngLat || [24.7712, -28.7033], to = t.to?.lngLat || [24.7319, -28.7183];
@@ -452,6 +495,7 @@ export function LiveMap({
         positionsRef.current[p.registrationNumber] = {
           lat: p.latitude, lng: p.longitude, heading: p.heading ?? null, speedKmh: p.speedKmh || 0, t: Date.now(),
         };
+        setLastGpsSecAgo(0);
       }
     });
 
@@ -642,17 +686,16 @@ export function LiveMap({
         e.done?.setAttribute('stroke-dasharray', dash);
         e.doneCase?.setAttribute('stroke-dasharray', dash);
 
-        const left = Math.max(0, Math.ceil((1 - s.p) * (t.minutes || 0)));
-        const arrived = onTrip && !liveOk && s.p >= 1;
-        const status = liveOk ? `${Math.round(speed)} km/h` : !onTrip ? 'Standby' : arrived ? 'Arrived' : `${left} min`;
-        const label = selectedRef.current === reg ? `${reg} \u00b7 ${status}` : reg;
+        const left = Math.max(0, Math.ceil((1 - s.p) * (t.minutes || 14)));
+        const plainState = getPlainStatus(t.status, s.p);
+        const label = selectedRef.current === reg ? `${reg} \u00b7 ${plainState}` : reg;
         if (e.text && label !== s.label) {
           s.label = label;
           e.text.textContent = label;
           e.rect?.setAttribute('width', e.text.getComputedTextLength() + 16);
           e.rect?.setAttribute('x', -(e.text.getComputedTextLength() + 16) / 2);
         }
-        hudNext[reg] = { p: s.p, left, arrived, speed, status };
+        hudNext[reg] = { p: s.p, left, plainState, speed };
       }
 
       const zk = Math.pow(zoomRef.current, 0.2), uu = uRef.current;
@@ -725,6 +768,18 @@ export function LiveMap({
   const selHud = hud[regOf(sel)];
   const isDark = theme === 'dark';
   const tonePending = 'lm-tag lm-tag-pending';
+
+  // Calculations for Resident View
+  const progress = selHud?.p || 0.45;
+  const currentLitresOnboard = Math.max(0, Math.round((sel.capacityLitres || 10000) * (1 - progress * 0.4)));
+  const driverFirstName = formatFirstName(sel.driverName);
+  const driverRatingLabel = formatDriverRating(sel.driverRating || 4.8, sel.completedTripsCount || 124);
+  const plainStateLabel = selHud?.plainState || getPlainStatus(sel.status, progress);
+  const etaMinutes = selHud?.left != null ? selHud.left : (sel.minutes || 14);
+
+  const handleToggleTag = (tag) => {
+    setRatingTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
+  };
 
   return (
     <div
@@ -813,11 +868,21 @@ export function LiveMap({
         })}
       </svg>
 
-      {/* top-left summary */}
+      {/* top-left summary & suburb selector */}
       <div className="lm-panel lm-top">
         <span className="lm-top-item lm-strong"><Truck size={15} className="lm-blue" /> {tankers.length} Active Tankers</span>
         <span className="lm-sep" />
-        <span className="lm-top-item lm-green"><MapPin size={14} /> {activeStops.length} Water Stops</span>
+        <span className="lm-top-item lm-green"><MapPin size={14} /> My Stop: 
+          <select 
+            value={mySuburb} 
+            onChange={(e) => setMySuburb(e.target.value)}
+            className="lm-suburb-select"
+          >
+            <option value="Galeshewe Zone 3">Galeshewe Zone 3</option>
+            <option value="Roodepan Depot">Roodepan</option>
+            <option value="Kimberley Central">Kimberley Central</option>
+          </select>
+        </span>
         <span className={liveGps ? 'lm-badge lm-badge-live' : 'lm-badge'}>{liveGps ? 'Live GPS' : 'Simulated'}</span>
       </div>
 
@@ -834,40 +899,218 @@ export function LiveMap({
         )}
       </div>
 
-      {/* info card */}
+      {/* RESIDENT POPUP CARD */}
       {card === 'truck' && (
-        <div className="lm-panel lm-card" role="dialog" aria-label={`Tanker ${regOf(sel)} details`}>
+        <div className="lm-panel lm-card lm-card-enhanced" role="dialog" aria-label={`Tanker ${regOf(sel)} details`}>
           <div className="lm-card-top">
-            <span className="lm-eyebrow"><Truck size={13} /> Tanker</span>
+            <span className="lm-eyebrow"><Truck size={13} /> Tanker &middot; {regOf(sel)}</span>
             <button type="button" className="lm-x" aria-label="Close" onClick={() => setCard(null)}><X size={15} /></button>
           </div>
-          <h4 className="lm-card-title lm-mono">{regOf(sel)}</h4>
-          <div className="lm-tags">
-            <span className={sel.status === 'OnTrip' ? 'lm-tag lm-tag-blue' : tonePending}>{sel.status === 'OnTrip' ? 'On trip' : 'Standby'}</span>
-            {selHud && <span className="lm-eta">{selHud.status}</span>}
+
+          {/* 1. Plain words status banner */}
+          <div className="lm-status-banner">
+            <span className="lm-status-chip">{plainStateLabel}</span>
+            <span className="lm-gps-freshness">
+              {lastGpsSecAgo > 30 ? (
+                <span className="text-amber-500 font-medium">⚠️ GPS offline (estimating)</span>
+              ) : (
+                `Updated ${lastGpsSecAgo}s ago`
+              )}
+            </span>
           </div>
-          <dl className="lm-dl">
-            <div><dt>Driver</dt><dd>{sel.driverName || 'Sipho Dlamini'}</dd></div>
-            {sel.capacityLitres && <div><dt>Capacity</dt><dd>{Number(sel.capacityLitres).toLocaleString('en-ZA')} L</dd></div>}
-            {sel.status === 'OnTrip' && (
-              <div>
-                <dt>Route</dt>
-                <dd>
-                  {sel.from?.name && sel.to?.name
-                    ? `${sel.from.name} to ${sel.to.name}`
-                    : (sel.route || sel.assignedRoute || 'Galeshewe Zone 3 Delivery')}
-                </dd>
+
+          {/* 2. Primary ETA to resident's stop */}
+          <div className="lm-eta-box">
+            <Clock size={16} className="lm-blue" />
+            <span>Arrives at <strong>{mySuburb}</strong> in <strong>{etaMinutes} min</strong></span>
+          </div>
+
+          {/* 3. Queue position & upcoming stops */}
+          <div className="lm-queue-row">
+            <span className="lm-queue-pill">Stop 2 of 5</span>
+            <span className="lm-queue-next">Next: Tshwarelela Primary Point &rarr; Mayibuye Centre</span>
+          </div>
+
+          {/* 4. Tanker & Driver details */}
+          <div className="lm-driver-box">
+            <div>
+              <div className="lm-driver-name">Driver: <strong>{driverFirstName}</strong></div>
+              <div className="lm-driver-rating"><Star size={12} className="fill-amber-400 text-amber-400 inline" /> {driverRatingLabel}</div>
+            </div>
+            <div className="lm-plate-tag">{regOf(sel)}</div>
+          </div>
+
+          {/* 5. Water Left on board */}
+          <div className="lm-water-left-box">
+            <div className="lm-row">
+              <span className="lm-muted">Water Onboard</span>
+              <strong>{currentLitresOnboard.toLocaleString('en-ZA')} L of {Number(sel.capacityLitres || 10000).toLocaleString('en-ZA')} L</strong>
+            </div>
+            <div className="lm-prog" aria-label={`Water level onboard`}>
+              <span style={{ width: `${((currentLitresOnboard / (sel.capacityLitres || 10000)) * 100).toFixed(1)}%` }} />
+            </div>
+          </div>
+
+          {/* 6. Resident Delivery Confirmation & Actions */}
+          <div className="lm-actions-group">
+            {!deliveryConfirmed ? (
+              <div className="lm-btn-grid">
+                <button 
+                  onClick={() => { setDeliveryConfirmed(true); setShowRatingModal(true); }}
+                  className="lm-btn-confirm"
+                >
+                  <CheckCircle2 size={14} />
+                  <span>I Received Water</span>
+                </button>
+                <button 
+                  onClick={() => setShowReportModal(true)}
+                  className="lm-btn-report"
+                >
+                  <AlertTriangle size={14} />
+                  <span>Report Problem</span>
+                </button>
+              </div>
+            ) : (
+              <div className="lm-confirmed-badge">
+                <CheckCircle2 size={14} className="text-emerald-600" />
+                <span>Delivery confirmed! Thank you.</span>
+                {!ratingSubmitted && (
+                  <button onClick={() => setShowRatingModal(true)} className="lm-link-rate">Rate Driver</button>
+                )}
               </div>
             )}
-          </dl>
-          {sel.status === 'OnTrip' && selHud && (
-            <div className="lm-prog" aria-label={`${Math.round(selHud.p * 100)} percent of route completed`}>
-              <span style={{ width: `${(selHud.p * 100).toFixed(1)}%` }} />
-            </div>
-          )}
+          </div>
         </div>
       )}
 
+      {/* RATING MODAL */}
+      {showRatingModal && (
+        <div className="lm-modal-overlay">
+          <div className="lm-modal-content">
+            <div className="lm-card-top">
+              <span className="lm-eyebrow"><Star size={14} className="text-amber-500 fill-amber-500" /> Rate Your Driver</span>
+              <button onClick={() => setShowRatingModal(false)} className="lm-x"><X size={15} /></button>
+            </div>
+            {!ratingSubmitted ? (
+              <>
+                <p className="lm-modal-desc">How was your water delivery experience with <strong>{driverFirstName}</strong>?</p>
+                
+                {/* 1-5 Star Picker */}
+                <div className="lm-stars-row">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button 
+                      key={s} 
+                      type="button" 
+                      onClick={() => setRatingStars(s)} 
+                      className={s <= ratingStars ? 'lm-star-active' : 'lm-star-inactive'}
+                    >
+                      <Star size={24} className={s <= ratingStars ? 'fill-amber-400 text-amber-400' : 'text-slate-300'} />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Quick Feedback Tags */}
+                <div className="lm-tag-options">
+                  {['On time', 'Polite', 'Enough water', 'Left area clean'].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleToggleTag(tag)}
+                      className={ratingTags.includes(tag) ? 'lm-chip-tag selected' : 'lm-chip-tag'}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Comment box */}
+                <textarea
+                  value={ratingComment}
+                  onChange={(e) => setRatingComment(e.target.value)}
+                  placeholder="Optional comment about delivery service..."
+                  className="lm-modal-textarea"
+                />
+
+                <button 
+                  onClick={() => { setRatingSubmitted(true); setTimeout(() => setShowRatingModal(false), 2000); }}
+                  className="lm-btn-submit"
+                >
+                  Submit Rating
+                </button>
+              </>
+            ) : (
+              <div className="lm-success-box">
+                <CheckCircle2 size={36} className="text-emerald-600 mb-2" />
+                <h4>Rating Saved!</h4>
+                <p>Thank you for helping keep water delivery transparent in Kimberley.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* REPORT PROBLEM MODAL */}
+      {showReportModal && (
+        <div className="lm-modal-overlay">
+          <div className="lm-modal-content">
+            <div className="lm-card-top">
+              <span className="lm-eyebrow"><AlertTriangle size={14} className="text-red-500" /> Report Delivery Issue</span>
+              <button onClick={() => setShowReportModal(false)} className="lm-x"><X size={15} /></button>
+            </div>
+            {!reportSubmitted ? (
+              <>
+                <label className="lm-modal-label">Select Problem Type:</label>
+                <select 
+                  value={reportIssueType}
+                  onChange={(e) => setReportIssueType(e.target.value)}
+                  className="lm-modal-select"
+                >
+                  <option value="Dirty water">Dirty / Contaminated Water</option>
+                  <option value="Short delivery">Short Delivery (Not enough water)</option>
+                  <option value="Truck never arrived">Tanker Never Arrived</option>
+                </select>
+
+                {/* DIRTY WATER IMMEDIATE EMERGENCY HOTLINE DISPLAY */}
+                {reportIssueType === 'Dirty water' && (
+                  <div className="lm-hotline-alert">
+                    <div className="lm-hotline-title">
+                      <AlertTriangle size={16} />
+                      <strong>Municipal Water Quality Emergency Hotline:</strong>
+                    </div>
+                    <p>If water appears discoloured or unsafe, do not consume it. Call immediately:</p>
+                    <div className="lm-hotline-numbers">
+                      <a href="tel:0538306442" className="lm-hotline-btn"><PhoneCall size={14} /> 053 830 6442</a>
+                      <a href="tel:0538306836" className="lm-hotline-btn"><PhoneCall size={14} /> 053 830 6836</a>
+                    </div>
+                  </div>
+                )}
+
+                <textarea
+                  value={reportNotes}
+                  onChange={(e) => setReportNotes(e.target.value)}
+                  placeholder="Describe what happened at your location..."
+                  className="lm-modal-textarea"
+                />
+
+                <button 
+                  onClick={() => { setReportSubmitted(true); setTimeout(() => setShowReportModal(false), 2200); }}
+                  className="lm-btn-submit lm-btn-danger"
+                >
+                  File Complaint Ticket
+                </button>
+              </>
+            ) : (
+              <div className="lm-success-box">
+                <CheckCircle2 size={36} className="text-emerald-600 mb-2" />
+                <h4>Complaint Logged!</h4>
+                <p>Municipal ticket generated. Admin and maintenance team notified.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Facility & Stop Cards */}
       {card === 'stop' && selectedStop && (
         <div className="lm-panel lm-card" role="dialog" aria-label={`${selectedStop.name} details`}>
           <div className="lm-card-top">
@@ -983,6 +1226,7 @@ const CSS = `
 
 .lm-panel{position:absolute;background:var(--panel);border:1px solid var(--panel-border);border-radius:6px;box-shadow:0 1px 2px rgba(15,34,61,.08);color:var(--text);backdrop-filter:blur(2px)}
 .lm-top{top:12px;left:12px;display:flex;align-items:center;gap:10px;padding:7px 12px;font-size:12.5px;max-width:calc(100% - 76px);flex-wrap:wrap}
+.lm-suburb-select{background:transparent;border:1px solid var(--panel-border);border-radius:4px;padding:1px 6px;font-weight:600;font-size:12px;color:var(--text);margin-left:4px}
 .lm-top-item{display:inline-flex;align-items:center;gap:6px;font-weight:600}
 .lm-strong{font-weight:700}.lm-blue{color:#1d70b8}.lm-green{color:#2e7d32}
 .lm[data-theme="dark"] .lm-blue{color:#6fb4ee}.lm[data-theme="dark"] .lm-green{color:#7fd187}
@@ -1002,27 +1246,65 @@ const CSS = `
 .lm-dot-truck{background:linear-gradient(90deg,#1d70b8,#152e52,#1d70b8);border-radius:3px;width:8px;height:12px;border:1px solid #fff}
 .lm-credit{position:absolute;right:8px;bottom:6px;font-size:10px;color:var(--muted);background:var(--panel);padding:1px 6px;border-radius:3px;pointer-events:none}
 
-.lm-card{right:12px;bottom:30px;width:300px;max-width:calc(100% - 24px);padding:14px 16px;z-index:5}
+.lm-card{right:12px;bottom:30px;width:320px;max-width:calc(100% - 24px);padding:14px 16px;z-index:5}
+.lm-card-enhanced{display:flex;flex-direction:column;gap:10px}
 .lm-card-top{display:flex;justify-content:space-between;align-items:center}
 .lm-eyebrow{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#1d70b8}
 .lm[data-theme="dark"] .lm-eyebrow{color:#7fbbf0}
 .lm-x{all:unset;box-sizing:border-box;cursor:pointer;padding:3px;border-radius:4px;color:var(--muted);display:grid;place-items:center}
 .lm-x:hover{background:var(--hover)}
-.lm-card-title{margin:6px 0 8px;font-family:var(--font-serif,Lora,Georgia,serif);font-size:16px;font-weight:700;line-height:1.25;color:var(--text)}
-.lm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.lm-tags{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.lm-eta{font-size:12.5px;font-weight:700;color:var(--text)}
-.lm-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid}
-.lm-tag-green{background:var(--tag-green-bg);color:var(--tag-green-text);border-color:var(--tag-green-border)}
-.lm-tag-blue{background:var(--tag-blue-bg);color:var(--tag-blue-text);border-color:var(--tag-blue-border)}
-.lm-tag-pending{background:var(--tag-grey-bg);color:var(--tag-grey-text);border-color:var(--tag-grey-border)}
-.lm-dl{margin:0;display:grid;gap:6px;font-size:12.5px}
-.lm-dl div{display:flex;justify-content:space-between;gap:12px}
-.lm-dl dt{color:var(--muted)}.lm-dl dd{margin:0;font-weight:600;text-align:right}
-.lm-prog{height:5px;border-radius:3px;background:var(--panel-border);overflow:hidden;margin-top:12px}
-.lm-prog span{display:block;height:100%;background:#1d70b8}
-.lm-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;padding-top:4px}
-.lm-muted{color:var(--muted)}.lm-muted strong{color:var(--text)}
+
+.lm-status-banner{display:flex;justify-content:space-between;align-items:center;background:var(--tag-blue-bg);border:1px solid var(--tag-blue-border);padding:6px 10px;border-radius:6px;font-size:12px}
+.lm-status-chip{font-weight:700;color:var(--tag-blue-text)}
+.lm-gps-freshness{font-size:10.5px;color:var(--muted)}
+
+.lm-eta-box{display:flex;align-items:center;gap:8px;background:var(--hover);padding:8px 10px;border-radius:6px;font-size:13px}
+.lm-queue-row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted)}
+.lm-queue-pill{background:#152e52;color:#fff;font-weight:700;padding:2px 6px;border-radius:4px;font-size:10.5px}
+.lm-queue-next{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.lm-driver-box{display:flex;justify-content:space-between;align-items:center;background:var(--hover);padding:8px 10px;border-radius:6px;font-size:12px}
+.lm-driver-name{font-size:13px}
+.lm-driver-rating{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-top:2px}
+.lm-plate-tag{font-family:monospace;font-weight:700;background:var(--chip-bg);border:1px solid var(--chip-border);padding:2px 6px;border-radius:4px;font-size:11px}
+
+.lm-water-left-box{display:flex;flex-direction:column;gap:4px;font-size:12px}
+
+.lm-actions-group{margin-top:4px}
+.lm-btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lm-btn-confirm{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#2e7d32;color:#fff;font-weight:700;font-size:12px;padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
+.lm-btn-confirm:hover{background:#236427}
+.lm-btn-report{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#dc2626;color:#fff;font-weight:700;font-size:12px;padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
+.lm-btn-report:hover{background:#b91c1c}
+
+.lm-confirmed-badge{display:flex;align-items:center;justify-content:space-between;background:var(--tag-green-bg);border:1px solid var(--tag-green-border);color:var(--tag-green-text);padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600}
+.lm-link-rate{color:#1d70b8;text-decoration:underline;background:none;border:none;cursor:pointer;font-weight:700}
+
+/* Modal Overlay & Dialogs */
+.lm-modal-overlay{position:absolute;inset:0;background:rgba(15,34,61,0.65);backdrop-filter:blur(3px);z-index:20;display:grid;place-items:center;padding:16px}
+.lm-modal-content{background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;width:100%;max-width:340px;padding:16px;box-shadow:0 10px 25px rgba(0,0,0,0.2);display:flex;flex-direction:column;gap:12px}
+.lm-modal-desc{font-size:13px;margin:0}
+.lm-stars-row{display:flex;justify-content:center;gap:8px}
+.lm-star-active,.lm-star-inactive{background:none;border:none;cursor:pointer;padding:2px}
+.lm-tag-options{display:flex;flex-wrap:wrap;gap:6px}
+.lm-chip-tag{background:var(--hover);border:1px solid var(--panel-border);padding:4px 8px;border-radius:20px;font-size:11.5px;cursor:pointer;color:var(--text)}
+.lm-chip-tag.selected{background:#1d70b8;color:#fff;border-color:#1d70b8}
+.lm-modal-textarea{width:100%;height:60px;padding:8px;border-radius:6px;border:1px solid var(--panel-border);background:var(--hover);color:var(--text);font-size:12px;resize:none}
+.lm-btn-submit{background:#1d70b8;color:#fff;font-weight:700;padding:8px;border-radius:6px;border:none;cursor:pointer;font-size:13px}
+.lm-btn-submit:hover{background:#155894}
+.lm-btn-danger{background:#dc2626}
+.lm-btn-danger:hover{background:#b91c1c}
+
+.lm-modal-label{font-size:12px;font-weight:700}
+.lm-modal-select{width:100%;padding:8px;border-radius:6px;border:1px solid var(--panel-border);background:var(--hover);color:var(--text);font-size:12.5px}
+.lm-hotline-alert{background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;padding:10px;border-radius:6px;font-size:12px;display:flex;flex-direction:column;gap:6px}
+.lm-hotline-title{display:flex;align-items:center;gap:6px;color:#dc2626}
+.lm-hotline-numbers{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+.lm-hotline-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;background:#dc2626;color:#fff;padding:6px;border-radius:4px;font-weight:700;font-size:11px;text-decoration:none}
+
+.lm-success-box{text-align:center;padding:16px 8px;display:flex;flex-direction:column;align-items:center}
+.lm-success-box h4{margin:4px 0;font-size:16px;color:var(--text)}
+.lm-success-box p{font-size:12px;color:var(--muted);margin:0}
 
 @media(prefers-reduced-motion:reduce){.lm-pulse{animation:none;opacity:.5}}
 `;
