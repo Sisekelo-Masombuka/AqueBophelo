@@ -9,7 +9,7 @@ public interface IAuthService
     Task<UserProfileDto?> GetProfileAsync(string userId);
     Task<bool> ForgotPasswordAsync(string email);
     Task<bool> ResetPasswordAsync(string email, string token, string newPassword);
-    Task<bool> SendEmailOtpAsync(string email, string purpose = "EmailVerification");
+    Task<string> SendEmailOtpAsync(string email, string purpose = "EmailVerification");
     Task<bool> VerifyEmailOtpAsync(string email, string code, string purpose = "EmailVerification");
     Task<bool> ConfirmEmailAsync(string email, string token);
     Task<bool> SoftDeleteAccountAsync(string userId);

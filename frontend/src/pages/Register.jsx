@@ -90,7 +90,10 @@ export function Register() {
     setOtpCode('');
 
     try {
-      await api.post('/api/v1/auth/send-otp', { email, purpose: 'EmailVerification' });
+      const res = await api.post('/api/v1/auth/send-otp', { email, purpose: 'EmailVerification' });
+      if (res.data?.demoCode) {
+        setGeneratedOtp(res.data.demoCode);
+      }
     } catch (err) {
       console.warn('Backend OTP email dispatch notice:', err);
     }

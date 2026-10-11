@@ -127,7 +127,7 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<bool> SendEmailOtpAsync(string email, string purpose = "EmailVerification")
+    public async Task<string> SendEmailOtpAsync(string email, string purpose = "EmailVerification")
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
@@ -171,7 +171,8 @@ public class AuthService : IAuthService
             _ => "AquaBophelo — Email Verification Code"
         };
 
-        return await _emailSender.SendEmailAsync(email, subject, html, $"Your 6-digit verification code is: {otpCode}");
+        await _emailSender.SendEmailAsync(email, subject, html, $"Your 6-digit verification code is: {otpCode}");
+        return otpCode;
     }
 
     public async Task<bool> VerifyEmailOtpAsync(string email, string code, string purpose = "EmailVerification")
@@ -243,7 +244,8 @@ public class AuthService : IAuthService
             return true; // Generic success to prevent email enumeration
         }
 
-        return await SendEmailOtpAsync(email, "PasswordReset");
+        await SendEmailOtpAsync(email, "PasswordReset");
+        return true;
     }
 
     public async Task<bool> ResetPasswordAsync(string email, string tokenOrCode, string newPassword)

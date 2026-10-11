@@ -125,8 +125,12 @@ public class AuthController : ControllerBase
 
         try
         {
-            await _authService.SendEmailOtpAsync(request.Email, string.IsNullOrWhiteSpace(request.Purpose) ? "EmailVerification" : request.Purpose);
-            return Ok(new { message = $"Verification code successfully dispatched to {request.Email} via Brevo." });
+            var code = await _authService.SendEmailOtpAsync(request.Email, string.IsNullOrWhiteSpace(request.Purpose) ? "EmailVerification" : request.Purpose);
+            return Ok(new
+            {
+                message = $"Verification code successfully dispatched to {request.Email}.",
+                demoCode = code
+            });
         }
         catch (BadHttpRequestException ex)
         {
