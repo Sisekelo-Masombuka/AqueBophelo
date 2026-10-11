@@ -64,7 +64,7 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
           {onClose && (
             <button
               onClick={onClose}
-              className="md:hidden p-1.5 rounded-md text-slate-500 hover:text-[#152e52] hover:bg-slate-100 transition-colors cursor-pointer"
+              className="md:hidden p-1.5 rounded-md text-slate-500 hover:text-navy hover:bg-slate-100 transition-colors cursor-pointer"
               aria-label="Close Drawer"
             >
               <X className="w-5 h-5" />
@@ -84,14 +84,14 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
                 className={({ isActive }) =>
                   `w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-md text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-[#152e52] text-white font-semibold shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-[#152e52]'
+                      ? 'bg-navy text-white font-semibold shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-navy'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#1d70b8]'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-blue'}`} />
                     <span>{link.label}</span>
                   </>
                 )}
@@ -110,34 +110,34 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
 
         <Link
           to="/"
-          className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium text-slate-600 hover:text-[#152e52] hover:bg-slate-100 transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium text-slate-600 hover:text-navy hover:bg-slate-100 transition-colors"
         >
           <span className="flex items-center space-x-2">
-            <Globe className="w-3.5 h-3.5 text-[#1d70b8]" />
+            <Globe className="w-3.5 h-3.5 text-blue" />
             <span>{t('publicPortal')}</span>
           </span>
-          <span className="text-[10px] bg-[#eaf4fb] text-[#1d70b8] border border-[#bcd6ea] px-1.5 py-0.5 rounded-md font-semibold">
+          <span className="text-xs bg-info-bg text-blue border border-info-border px-1.5 py-0.5 rounded-md font-semibold">
             {t('view')}
           </span>
         </Link>
 
         <Link
           to="/privacy"
-          className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium text-slate-600 hover:text-[#152e52] hover:bg-slate-100 transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium text-slate-600 hover:text-navy hover:bg-slate-100 transition-colors"
         >
           <span className="flex items-center space-x-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#2e7d32]" />
+            <ShieldCheck className="w-3.5 h-3.5 text-success" />
             <span>{t('privacy')}</span>
           </span>
         </Link>
 
-        <div className="bg-[#f8fafc] p-3 rounded-md border border-slate-200 flex items-center justify-between">
+        <div className="bg-surface-muted p-3 rounded-md border border-slate-200 flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-[#152e52] flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#2e7d32]" />
+            <p className="text-xs font-bold text-navy flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-success" />
               <span>{t('role')}: {currentRole === 'Admin' ? t('admin') : currentRole === 'Driver' ? t('driver') : t('resident')}</span>
             </p>
-            <p className="text-[11px] text-slate-500 mt-0.5">Sol Plaatje Municipality</p>
+            <p className="text-xs text-slate-500 mt-0.5">Sol Plaatje Municipality</p>
           </div>
         </div>
       </div>

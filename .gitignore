@@ -11,4 +11,13 @@ obj/
 node_modules/
 dist/
 *.log
+.env
+.env.local
+.env.development
+.env.production
 .env*.local
+
+## Secrets & Local Config
+secrets.json
+appsettings.Development.json
+*.user.config

@@ -53,11 +53,11 @@ export function AlertSubscriptionsModal({ isOpen, onClose }) {
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-slate-200 mb-5">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-md bg-[#eaf4fb] border border-[#bcd6ea] text-[#1d70b8]">
+            <div className="p-2.5 rounded-md bg-info-bg border border-info-border text-blue">
               <Bell className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-serif text-lg font-bold text-[#152e52]">Municipal Email Alert Preferences</h2>
+              <h2 className="font-serif text-lg font-bold text-navy">Municipal Email Alert Preferences</h2>
               <p className="text-xs text-slate-500 font-normal">
                 Get real-time email notices &amp; delivery updates for your neighborhood
               </p>
@@ -81,7 +81,7 @@ export function AlertSubscriptionsModal({ isOpen, onClose }) {
         )}
 
         {successMessage && (
-          <div className="mb-4 p-3 bg-[#f2f9f3] border border-[#b8e3bd] rounded-md text-xs text-[#2e7d32] flex items-center gap-2 font-medium">
+          <div className="mb-4 p-3 bg-success-bg border border-success-border rounded-md text-xs text-success flex items-center gap-2 font-medium">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{successMessage}</span>
           </div>
@@ -96,7 +96,7 @@ export function AlertSubscriptionsModal({ isOpen, onClose }) {
             <select
               value={area}
               onChange={(e) => setArea(e.target.value)}
-              className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
+              className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue"
             >
               <option value="Galeshewe">Galeshewe (Zones 1-4)</option>
               <option value="Kimberley Central">Kimberley Central</option>
@@ -115,9 +115,9 @@ export function AlertSubscriptionsModal({ isOpen, onClose }) {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="resident@example.co.za"
               required
-              className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
+              className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue"
             />
-            <p className="text-[11px] text-slate-500 mt-1">Direct email notifications for water tanker dispatches and drought advisories</p>
+            <p className="text-xs text-slate-500 mt-1">Direct email notifications for water tanker dispatches and drought advisories</p>
           </div>
 
           {/* Alert Trigger Topics */}
@@ -126,42 +126,42 @@ export function AlertSubscriptionsModal({ isOpen, onClose }) {
               Email Alert Topics
             </label>
             <div className="space-y-2">
-              <label className="flex items-center space-x-3 p-3 rounded-md bg-[#f8fafc] border border-slate-200 cursor-pointer text-xs text-slate-800">
+              <label className="flex items-center space-x-3 p-3 rounded-md bg-surface-muted border border-slate-200 cursor-pointer text-xs text-slate-800">
                 <input
                   type="checkbox"
                   checked={lowDamAlerts}
                   onChange={(e) => setLowDamAlerts(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#152e52] focus:ring-0"
+                  className="w-4 h-4 rounded text-navy focus:ring-0"
                 />
                 <div>
-                  <span className="font-semibold text-[#152e52]">Dam Storage Warnings</span>
-                  <p className="text-[11px] text-slate-500 font-normal">Notify when Newton or Riverton storage drops below 50%</p>
+                  <span className="font-semibold text-navy">Dam Storage Warnings</span>
+                  <p className="text-xs text-slate-500 font-normal">Notify when Newton or Riverton storage drops below 50%</p>
                 </div>
               </label>
 
-              <label className="flex items-center space-x-3 p-3 rounded-md bg-[#f8fafc] border border-slate-200 cursor-pointer text-xs text-slate-800">
+              <label className="flex items-center space-x-3 p-3 rounded-md bg-surface-muted border border-slate-200 cursor-pointer text-xs text-slate-800">
                 <input
                   type="checkbox"
                   checked={truckArrivalAlerts}
                   onChange={(e) => setTruckArrivalAlerts(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#152e52] focus:ring-0"
+                  className="w-4 h-4 rounded text-navy focus:ring-0"
                 />
                 <div>
-                  <span className="font-semibold text-[#152e52]">Water Tanker Dispatched to {area}</span>
-                  <p className="text-[11px] text-slate-500 font-normal">Get notified when a truck departs for your zone</p>
+                  <span className="font-semibold text-navy">Water Tanker Dispatched to {area}</span>
+                  <p className="text-xs text-slate-500 font-normal">Get notified when a truck departs for your zone</p>
                 </div>
               </label>
 
-              <label className="flex items-center space-x-3 p-3 rounded-md bg-[#f8fafc] border border-slate-200 cursor-pointer text-xs text-slate-800">
+              <label className="flex items-center space-x-3 p-3 rounded-md bg-surface-muted border border-slate-200 cursor-pointer text-xs text-slate-800">
                 <input
                   type="checkbox"
                   checked={emergencyAlerts}
                   onChange={(e) => setEmergencyAlerts(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#152e52] focus:ring-0"
+                  className="w-4 h-4 rounded text-navy focus:ring-0"
                 />
                 <div>
-                  <span className="font-semibold text-[#152e52]">Emergency Municipal Announcements</span>
-                  <p className="text-[11px] text-slate-500 font-normal">Urgent pipe repairs, maintenance, or boil notices</p>
+                  <span className="font-semibold text-navy">Emergency Municipal Announcements</span>
+                  <p className="text-xs text-slate-500 font-normal">Urgent pipe repairs, maintenance, or boil notices</p>
                 </div>
               </label>
             </div>
@@ -179,7 +179,7 @@ export function AlertSubscriptionsModal({ isOpen, onClose }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs transition-colors cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 rounded-md bg-navy hover:bg-navy-dark text-white font-medium text-xs transition-colors cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? 'Saving...' : 'Save Email Subscriptions'}
             </button>

@@ -89,9 +89,9 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
       <div className="relative w-full max-w-lg rounded-lg border border-slate-200 bg-white p-6 shadow-xl text-slate-800">
         <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-4">
           <div className="flex items-center space-x-3">
-            <AlertCircle className="h-6 w-6 text-[#152e52] shrink-0" />
+            <AlertCircle className="h-6 w-6 text-navy shrink-0" />
             <div>
-              <h3 className="font-serif text-lg font-bold text-[#152e52]">Report Water Issue</h3>
+              <h3 className="font-serif text-lg font-bold text-navy">Report Water Issue</h3>
               <p className="text-xs text-slate-500 font-normal">Sol Plaatje Municipal Fault Logging</p>
             </div>
           </div>
@@ -105,9 +105,9 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
 
         {/* Success Feedback */}
         {successMessage ? (
-          <div className="p-5 bg-[#f2f9f3] border border-[#b8e3bd] rounded-md text-center space-y-2 my-4">
-            <CheckCircle2 className="w-10 h-10 text-[#2e7d32] mx-auto" />
-            <p className="text-sm font-medium text-[#152e52]">{successMessage}</p>
+          <div className="p-5 bg-success-bg border border-success-border rounded-md text-center space-y-2 my-4">
+            <CheckCircle2 className="w-10 h-10 text-success mx-auto" />
+            <p className="text-sm font-medium text-navy">{successMessage}</p>
             <p className="text-xs text-slate-500">Ticket Ref: <strong>{ticketId}</strong></p>
           </div>
         ) : (
@@ -126,7 +126,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
               <select
                 value={issueType}
                 onChange={(e) => setIssueType(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue"
               >
                 <option value="No Supply">No Water Supply (Interruption)</option>
                 <option value="Low Pressure">Low Water Pressure</option>
@@ -144,7 +144,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
               <select
                 value={area}
                 onChange={(e) => setArea(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue"
               >
                 <option value="Galeshewe">Galeshewe</option>
                 <option value="Kimberley Central">Kimberley Central</option>
@@ -160,7 +160,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
                 value={streetAddress}
                 onChange={(e) => setStreetAddress(e.target.value)}
                 required
-                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue"
               />
             </div>
 
@@ -173,7 +173,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe the issue (e.g. water stopped running at 08:00 AM)..."
-                className="w-full p-3 bg-white border border-slate-300 rounded-md text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8]"
+                className="w-full p-3 bg-white border border-slate-300 rounded-md text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue"
                 required
               />
             </div>
@@ -185,7 +185,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
               </label>
               <div className="flex items-center space-x-3">
                 <label className="flex items-center space-x-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md text-xs font-medium text-slate-700 cursor-pointer transition-colors">
-                  <Upload className="w-3.5 h-3.5 text-[#152e52]" />
+                  <Upload className="w-3.5 h-3.5 text-navy" />
                   <span>Choose Photo</span>
                   <input
                     type="file"
@@ -211,7 +211,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
                     </button>
                   </div>
                 ) : (
-                  <span className="text-[11px] text-slate-400 italic">No image chosen (optional)</span>
+                  <span className="text-xs text-slate-400 italic">No image chosen (optional)</span>
                 )}
               </div>
             </div>
@@ -227,7 +227,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-[#152e52] hover:bg-[#0f223d] text-white rounded-md text-xs font-medium flex items-center space-x-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 bg-navy hover:bg-navy-dark text-white rounded-md text-xs font-medium flex items-center space-x-1.5 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>{isSubmitting ? 'Submitting...' : 'Submit Fault Report'}</span>

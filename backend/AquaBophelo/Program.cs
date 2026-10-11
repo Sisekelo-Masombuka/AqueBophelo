@@ -10,11 +10,15 @@ using AquaBophelo.Models;
 using AquaBophelo.Services;
 using AquaBophelo.Services.Interfaces;
 using AquaBophelo.Services.Notifications;
+using AquaBophelo.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Configure Brevo Email Service options
+builder.Services.Configure<BrevoOptions>(builder.Configuration.GetSection(BrevoOptions.Position));
 
 // Configure AppDbContext with SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -77,7 +81,9 @@ builder.Services.AddAuthentication(options =>
 // Register Domain Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<DryRunNotificationService>();
-builder.Services.AddScoped<INotificationService, SendGridEmailService>();
+builder.Services.AddHttpClient<BrevoEmailSender>();
+builder.Services.AddScoped<IEmailSender, BrevoEmailSender>();
+builder.Services.AddScoped<INotificationService, BrevoEmailSender>();
 builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IAlertEvaluator, AlertEvaluator>();

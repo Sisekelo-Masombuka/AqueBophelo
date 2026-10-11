@@ -11,7 +11,6 @@ public class ApplicationUser : IdentityUser
 
     // Privacy & Notification Preferences
     public bool OptInEmailAlerts { get; set; } = true;
-    public bool OptInSmsAlerts { get; set; } = true;
     public bool ShareLocationForTankers { get; set; } = true;
     public bool PublicProfile { get; set; } = false;
 

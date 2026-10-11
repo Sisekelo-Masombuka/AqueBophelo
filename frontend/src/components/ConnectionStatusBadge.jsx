@@ -6,23 +6,23 @@ export function ConnectionStatusBadge({ status = 'Connected', lastTime }) {
     switch (status) {
       case 'Connected':
         return {
-          bg: 'bg-[#22C55E]/15 border-[#22C55E]/40 text-[#22C55E]',
-          dot: 'bg-[#22C55E] animate-pulse',
+          bg: 'bg-success-bg border-success-border text-success',
+          dot: 'bg-success animate-pulse',
           icon: Wifi,
-          label: 'SignalR Live',
+          label: 'SignalR live',
         };
       case 'Demo':
         return {
-          bg: 'bg-[#22D3EE]/15 border-[#22D3EE]/40 text-[#22D3EE]',
-          dot: 'bg-[#22D3EE] animate-pulse',
+          bg: 'bg-info-bg border-info-border text-blue',
+          dot: 'bg-blue animate-pulse',
           icon: Radio,
-          label: 'Live Telemetry',
+          label: 'Live telemetry',
         };
       case 'Reconnecting':
       case 'Connecting':
         return {
-          bg: 'bg-[#F59E0B]/15 border-[#F59E0B]/40 text-[#F59E0B]',
-          dot: 'bg-[#F59E0B]',
+          bg: 'bg-amber-50 border-amber-200 text-amber-800',
+          dot: 'bg-amber-500',
           icon: RefreshCw,
           label: 'Reconnecting...',
           spin: true,
@@ -30,10 +30,10 @@ export function ConnectionStatusBadge({ status = 'Connected', lastTime }) {
       case 'Disconnected':
       default:
         return {
-          bg: 'bg-[#EF4444]/15 border-[#EF4444]/40 text-[#EF4444]',
-          dot: 'bg-[#EF4444]',
+          bg: 'bg-red-50 border-red-200 text-red-700',
+          dot: 'bg-red-500',
           icon: WifiOff,
-          label: 'Offline (Retrying)',
+          label: 'Offline (retrying)',
         };
     }
   };
@@ -49,7 +49,7 @@ export function ConnectionStatusBadge({ status = 'Connected', lastTime }) {
       <Icon className={`w-3.5 h-3.5 ${spin ? 'animate-spin' : ''}`} />
       <span>{label}</span>
       {lastTime && (
-        <span className="hidden lg:inline text-[10px] opacity-75 border-l border-current pl-1.5 ml-1">
+        <span className="hidden lg:inline text-xs opacity-75 border-l border-current pl-1.5 ml-1">
           {lastTime}
         </span>
       )}

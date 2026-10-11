@@ -53,21 +53,19 @@ export function DamsPage() {
           value={`${overallPercentage}%`}
           subtitle={`${totalVolume.toFixed(1)} ML of ${totalCapacity.toFixed(1)} ML`}
           icon={Droplet}
-          accentColor="#1d70b8"
         />
         <StatCard
           title="Monitored Reservoirs"
           value="2 Active"
           subtitle="Newton & Riverton Systems"
           icon={HardDrive}
-          accentColor="#2e7d32"
         />
         <StatCard
           title="Municipal Supply Alert"
           value="Healthy"
           subtitle="Above 50% safety buffer"
           icon={ShieldAlert}
-          accentColor="#2e7d32"
+          status="Healthy"
         />
       </div>
 

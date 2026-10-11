@@ -280,28 +280,24 @@ export function AdminOverview() {
           value={`${avgDamLevel}% Avg`}
           subtitle="Newton (62.5%) & Riverton (82%)"
           icon={Droplet}
-          accentColor="#1d70b8"
         />
         <StatCard
           title="Active Tankers Deployed"
           value={`${onTripCount} Tankers`}
           subtitle="Delivering to Galeshewe & Central"
           icon={Truck}
-          accentColor="#2e7d32"
         />
         <StatCard
           title="Fleet at Depot Standby"
           value={`${availableCount} Available`}
           subtitle="Roodepan Support Center"
           icon={ShieldCheck}
-          accentColor="#1d70b8"
         />
         <StatCard
           title="Live GPS Telemetry Stream"
           value={signalrConnected ? 'Connected' : 'Live Sync'}
           subtitle="SignalR /hubs/trucks active"
           icon={Radio}
-          accentColor="#d97706"
         />
       </div>
 
@@ -486,13 +482,7 @@ export function AdminOverview() {
                       <p className="text-[11px] text-slate-500">{issue.streetAddress}</p>
                     </td>
                     <td className="py-3 px-3">
-                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
-                        issue.status === 'Resolved' ? 'bg-[#f2f9f3] text-[#2e7d32] border border-[#b8e3bd]' :
-                        issue.status === 'In Progress' ? 'bg-[#eaf4fb] text-[#1d70b8] border border-[#bcd6ea]' :
-                        'bg-amber-50 text-amber-800 border border-amber-200'
-                      }`}>
-                        {issue.status}
-                      </span>
+                      <StatusBadge status={issue.status} />
                     </td>
                     <td className="py-3 px-3 text-right">
                       <button
@@ -514,7 +504,7 @@ export function AdminOverview() {
           <div className="border-b border-slate-200 pb-3">
             <h3 className="font-serif font-bold text-base text-[#152e52] flex items-center space-x-2">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
-              <span>Driver Incident Inbox (3.4.5)</span>
+              <span>Driver Incident Inbox</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Live reports filed by tanker drivers on duty.

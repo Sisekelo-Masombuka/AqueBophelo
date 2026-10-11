@@ -112,7 +112,7 @@ export function TrendChart({ damName = 'Newton Reservoir', currentLevel = 62.5 }
       {/* Header and Timeframe Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h3 className="font-serif font-bold text-lg text-[#152e52] flex items-center gap-2">
+          <h3 className="font-serif font-bold text-lg text-navy flex items-center gap-2">
             <span>Historical Storage Trend</span>
             <span className="text-xs font-normal text-slate-500 font-sans">({damName})</span>
           </h3>
@@ -133,8 +133,8 @@ export function TrendChart({ damName = 'Newton Reservoir', currentLevel = 62.5 }
               onClick={() => setTimeframe(item.id)}
               className={`px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                 timeframe === item.id
-                  ? 'bg-[#152e52] text-white font-semibold shadow-xs'
-                  : 'text-slate-600 hover:text-[#152e52]'
+                  ? 'bg-navy text-white font-semibold shadow-xs'
+                  : 'text-slate-600 hover:text-navy'
               }`}
             >
               {item.label}
@@ -154,7 +154,7 @@ export function TrendChart({ damName = 'Newton Reservoir', currentLevel = 62.5 }
           <TrendingDown className="w-4 h-4 text-amber-600" />
           <span>Storage down ~5.7% over 7 days</span>
         </div>
-        <span className="text-[11px] text-slate-400">Source: Sol Plaatje Municipal Water Division</span>
+        <span className="text-xs text-slate-400">Source: Sol Plaatje Municipal Water Division</span>
       </div>
     </div>
   );

@@ -121,11 +121,11 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
     <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs space-y-4 font-sans">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <div className="flex items-center space-x-2 text-xs font-semibold text-[#152e52] uppercase tracking-wider mb-1">
-            <Calendar className="w-4 h-4 text-[#152e52]" />
-            <span>Official Sol Plaatje Municipal Water Schedule</span>
+          <div className="flex items-center space-x-2 text-xs font-semibold text-navy mb-1">
+            <Calendar className="w-4 h-4 text-navy" />
+            <span>Official Sol Plaatje municipal water schedule</span>
           </div>
-          <h3 className="font-serif font-bold text-xl text-[#152e52]">
+          <h3 className="font-serif font-bold text-xl text-navy">
             {t('waterInterruptionSchedule')}
           </h3>
           <p className="text-xs text-slate-500 font-normal mt-0.5">
@@ -136,7 +136,7 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
         {isAdmin && (
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-3.5 py-2 bg-[#152e52] hover:bg-[#0f223d] text-white rounded-md text-xs font-medium flex items-center space-x-1.5 transition-colors cursor-pointer self-start sm:self-auto"
+            className="px-3.5 py-2 bg-navy hover:bg-navy-dark text-white rounded-md text-xs font-medium flex items-center space-x-1.5 transition-colors cursor-pointer self-start sm:self-auto"
           >
             <Plus className="w-4 h-4 text-white" />
             <span>Post Scheduled Outage</span>
@@ -148,12 +148,12 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
         {outages.map((item) => (
           <div
             key={item.id}
-            className="bg-[#f8fafc] border border-slate-200 rounded-md p-4 space-y-3 flex flex-col justify-between"
+            className="bg-surface-muted border border-slate-200 rounded-md p-4 space-y-3 flex flex-col justify-between"
           >
             <div className="space-y-2">
               <div className="flex items-start justify-between gap-2">
-                <span className="font-serif font-bold text-sm text-[#152e52] flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-[#152e52] shrink-0" />
+                <span className="font-serif font-bold text-sm text-navy flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-navy shrink-0" />
                   <span>{item.areaName || item.area}</span>
                 </span>
                 <StatusBadge status="Watch" />
@@ -163,17 +163,17 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
 
               <div className="grid grid-cols-2 gap-2 bg-white p-2.5 rounded-md border border-slate-200 text-xs">
                 <div>
-                  <span className="text-[10px] text-red-700 font-bold uppercase block">Water Cut Off:</span>
-                  <span className="font-mono text-slate-900 font-semibold text-[11px]">{formatDate(item.cutOffTime || item.cutTime)}</span>
+                  <span className="text-xs text-red-700 font-bold uppercase block">Water Cut Off:</span>
+                  <span className="font-mono text-slate-900 font-semibold text-xs">{formatDate(item.cutOffTime || item.cutTime)}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-[#2e7d32] font-bold uppercase block">Expected Return:</span>
-                  <span className="font-mono text-slate-900 font-semibold text-[11px]">{formatDate(item.expectedReturnTime || item.restoreTime)}</span>
+                  <span className="text-xs text-success font-bold uppercase block">Expected Return:</span>
+                  <span className="font-mono text-slate-900 font-semibold text-xs">{formatDate(item.expectedReturnTime || item.restoreTime)}</span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-600 font-normal flex items-center gap-1.5">
+            <div className="pt-2 border-t border-slate-200 text-xs text-slate-600 font-normal flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
               <span>{item.description || 'Water tanker support assigned on schedule.'}</span>
             </div>
@@ -192,7 +192,7 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="font-serif text-lg font-bold text-[#152e52] mb-1">
+            <h3 className="font-serif text-lg font-bold text-navy mb-1">
               Post Scheduled Water Interruption
             </h3>
             <p className="text-xs text-slate-500 mb-4 font-normal">
@@ -271,7 +271,7 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-3.5 py-1.5 rounded-md text-xs font-medium bg-[#152e52] text-white hover:bg-[#0f223d] cursor-pointer disabled:opacity-50"
+                  className="px-3.5 py-1.5 rounded-md text-xs font-medium bg-navy text-white hover:bg-navy-dark cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? 'Publishing...' : 'Publish Schedule'}
                 </button>

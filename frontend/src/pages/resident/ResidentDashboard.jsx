@@ -186,7 +186,10 @@ export function ResidentDashboard() {
 
         <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs space-y-1">
           <span className="text-xs font-medium text-slate-500">Municipal Grid Status</span>
-          <p className="text-2xl font-sans font-bold text-[#152e52]">Watch State</p>
+          <div className="flex items-center justify-between">
+            <p className="text-2xl font-sans font-bold text-[#152e52]">Watch State</p>
+            <StatusBadge status="Watch" />
+          </div>
           <p className="text-xs text-slate-500">Night pressure limits 21:00-04:00</p>
         </div>
 

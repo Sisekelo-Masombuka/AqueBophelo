@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Truck, ShieldCheck, AlertTriangle, CheckCircle2, ClipboardCheck, Clock } from 'lucide-react';
 import apiClient from '../../api/client';
+import StatusBadge from '../../components/StatusBadge';
 
 export function DriverDriverVehiclePage() {
   const [vehicle, setVehicle] = useState({
@@ -141,13 +142,7 @@ export function DriverDriverVehiclePage() {
             <span className="text-2xl font-black font-mono text-[#152e52] tracking-wider px-3 py-1 bg-slate-100 rounded-md border border-slate-300">
               {vehicle.registration}
             </span>
-            <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${
-              vehicle.status === 'Available' ? 'bg-[#f2f9f3] text-[#2e7d32] border border-[#b8e3bd]' :
-              vehicle.status === 'OnTrip' ? 'bg-[#eaf4fb] text-[#1d70b8] border border-[#bcd6ea]' :
-              'bg-amber-100 text-amber-800 border border-amber-300'
-            }`}>
-              {vehicle.status}
-            </span>
+            <StatusBadge status={vehicle.status} />
           </div>
 
           <p className="text-sm font-semibold text-slate-800">{vehicle.model}</p>

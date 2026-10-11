@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { User, MapPin, Phone, Lock, ShieldCheck, CheckCircle2, AlertCircle, Upload, Eye, EyeOff, Truck, ShieldAlert, Key, Activity, Clock, Trash2, Mail, RefreshCw, X } from 'lucide-react';
 import apiClient from '../api/client';
 import { useLanguage } from '../context/LanguageContext';
+import { StatusBadge } from '../components/StatusBadge';
 
 export function ProfilePage() {
   const { user, logout } = useAuth();
@@ -17,9 +18,8 @@ export function ProfilePage() {
   const [phoneNumber, setPhoneNumber] = useState('082 123 4567');
   const [avatarSrc, setAvatarSrc] = useState(user?.profilePictureUrl || null);
 
-  // Privacy Settings state (Item 1.7)
+  // Privacy Settings state
   const [optInEmailAlerts, setOptInEmailAlerts] = useState(true);
-  const [optInSmsAlerts, setOptInSmsAlerts] = useState(true);
   const [shareLocationForTankers, setShareLocationForTankers] = useState(true);
   const [publicProfile, setPublicProfile] = useState(false);
   const [privacySuccess, setPrivacySuccess] = useState('');
@@ -80,19 +80,16 @@ export function ProfilePage() {
   const handleTogglePrivacy = async (field, currentValue) => {
     const nextValue = !currentValue;
     let nextEmail = optInEmailAlerts;
-    let nextSms = optInSmsAlerts;
     let nextLoc = shareLocationForTankers;
     let nextPub = publicProfile;
 
     if (field === 'email') { setOptInEmailAlerts(nextValue); nextEmail = nextValue; }
-    if (field === 'sms') { setOptInSmsAlerts(nextValue); nextSms = nextValue; }
     if (field === 'location') { setShareLocationForTankers(nextValue); nextLoc = nextValue; }
     if (field === 'public') { setPublicProfile(nextValue); nextPub = nextValue; }
 
     try {
       await apiClient.put('/api/v1/auth/privacy', {
         optInEmailAlerts: nextEmail,
-        optInSmsAlerts: nextSms,
         shareLocationForTankers: nextLoc,
         publicProfile: nextPub,
       });
@@ -341,9 +338,9 @@ export function ProfilePage() {
                 <div>
                   <p className="font-bold text-[#152e52] text-xs flex items-center gap-1.5">
                     <Key className="w-4 h-4 text-[#2e7d32]" />
-                    <span>3.8.4 Two-Factor Authentication (2FA)</span>
+                    <span>Two-Factor Authentication (2FA)</span>
                   </p>
-                  <p className="text-slate-500 text-[11px] mt-0.5">Require an authenticator code or SMS OTP on every admin login.</p>
+                  <p className="text-slate-500 text-xs mt-0.5">Require an email verification code on admin login.</p>
                 </div>
 
                 <button
@@ -360,7 +357,7 @@ export function ProfilePage() {
               {/* 3.8.3: Change Password Form with Eye Toggles */}
               <div className="border border-slate-200 rounded-md p-4 space-y-3 bg-[#fcfdfe]">
                 <h4 className="font-serif font-bold text-xs text-[#152e52] uppercase tracking-wider">
-                  3.8.3 Change Admin Password
+                  Change Admin Password
                 </h4>
 
                 {passwordError && (
@@ -536,21 +533,7 @@ export function ProfilePage() {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-[#f8fafc] border border-slate-200 rounded-md">
-                <div>
-                  <p className="font-bold text-[#152e52]">SMS / Emergency Mobile Broadcasts</p>
-                  <p className="text-slate-500 font-normal">Allow Sol Plaatje municipal control room to dispatch urgent SMS notices.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleTogglePrivacy('sms', optInSmsAlerts)}
-                  className={`px-3 py-1 rounded-md text-xs font-bold cursor-pointer transition-colors ${
-                    optInSmsAlerts ? 'bg-[#2e7d32] text-white' : 'bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  {optInSmsAlerts ? 'ENABLED' : 'DISABLED'}
-                </button>
-              </div>
+
 
               <div className="flex items-center justify-between p-3 bg-[#f8fafc] border border-slate-200 rounded-md">
                 <div>
@@ -613,7 +596,7 @@ export function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">Phone Number (SMS Alerts)</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">Phone Number (Contact &amp; Verification)</label>
                   <input
                     type="tel"
                     value={phoneNumber}

@@ -8,7 +8,7 @@ export function Footer() {
   const { t } = useLanguage();
 
   return (
-    <footer className="bg-[#152e52] border-t-4 border-[#2e7d32] text-slate-200 font-sans selection:bg-[#1d70b8] selection:text-white mt-auto">
+    <footer className="bg-navy border-t-4 border-success text-slate-200 font-sans selection:bg-blue selection:text-white mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 lg:gap-12">
           {/* Col 1: Brand & Municipal Identity */}
@@ -109,7 +109,7 @@ export function Footer() {
               <p>Northern Cape, South Africa</p>
             </div>
             <div className="pt-2">
-              <span className="inline-block text-xs bg-[#f2f9f3] text-[#2e7d32] border border-[#b8e3bd] px-2.5 py-1 rounded-md font-medium">
+              <span className="inline-block text-xs bg-success-bg text-success border border-success-border px-2.5 py-1 rounded-md font-medium">
                 SANS 241 Water Quality Compliant
               </span>
             </div>

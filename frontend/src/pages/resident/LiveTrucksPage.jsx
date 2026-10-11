@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as signalR from '@microsoft/signalr';
 import LiveMap from '../../components/LiveMap';
 import StatusBadge from '../../components/StatusBadge';
-import { Truck, Radio, Star } from 'lucide-react';
+import { Truck, Radio, Star, Target } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7154';
 
@@ -196,7 +196,14 @@ export function LiveTrucksPage() {
               <div className="pt-2.5 border-t border-slate-200 flex items-center justify-between text-xs">
                 <span className="text-[#1d70b8] font-medium">ETA: {truck.estimatedArrival}</span>
                 <span className="text-slate-500 font-medium">
-                  {isSelected ? '🎯 Selected on Map' : 'Click to Focus →'}
+                  {isSelected ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Target className="w-3.5 h-3.5 text-[#1d70b8] shrink-0" />
+                      <span>Selected on map</span>
+                    </span>
+                  ) : (
+                    'Click to focus'
+                  )}
                 </span>
               </div>
             </div>

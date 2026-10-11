@@ -198,7 +198,6 @@ public class AuthController : ControllerBase
         if (user == null) return NotFound(new { message = "User account not found." });
 
         user.OptInEmailAlerts = dto.OptInEmailAlerts;
-        user.OptInSmsAlerts = dto.OptInSmsAlerts;
         user.ShareLocationForTankers = dto.ShareLocationForTankers;
         user.PublicProfile = dto.PublicProfile;
 
@@ -210,7 +209,6 @@ public class AuthController : ControllerBase
             privacy = new
             {
                 user.OptInEmailAlerts,
-                user.OptInSmsAlerts,
                 user.ShareLocationForTankers,
                 user.PublicProfile
             }
@@ -248,7 +246,6 @@ public class DeleteAccountDto
 public class UpdatePrivacyDto
 {
     public bool OptInEmailAlerts { get; set; } = true;
-    public bool OptInSmsAlerts { get; set; } = true;
     public bool ShareLocationForTankers { get; set; } = true;
     public bool PublicProfile { get; set; } = false;
 }

@@ -17,6 +17,8 @@ import {
   Send,
   Droplet,
   ShieldAlert,
+  Car,
+  FlaskConical,
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import useGeolocationBroadcast from '../../hooks/useGeolocationBroadcast';
@@ -473,9 +475,19 @@ export function DriverTripScreen() {
       <div className="pt-2 text-center">
         <button
           onClick={toggleSimulation}
-          className="text-xs text-slate-500 hover:text-[#1d70b8] font-medium underline cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#1d70b8] font-medium underline cursor-pointer"
         >
-          {isSimulating ? 'Simulated Kimberley Driving Active (Click to Stop)' : 'Click to Simulate Live Driving for Demo'}
+          {isSimulating ? (
+            <>
+              <Car className="w-4 h-4 text-[#1d70b8] shrink-0" />
+              <span>Simulated Kimberley Driving Active (Click to Stop)</span>
+            </>
+          ) : (
+            <>
+              <FlaskConical className="w-4 h-4 text-slate-500 shrink-0" />
+              <span>Click to Simulate Live Driving for Demo</span>
+            </>
+          )}
         </button>
       </div>
 

@@ -269,28 +269,24 @@ export function AdminReportsPage() {
           value={`${(data.totalLitresDelivered || 120000).toLocaleString()} L`}
           subtitle={`${data.completedTrips || 10} completed distribution trips`}
           icon={Droplet}
-          accentColor="#1d70b8"
         />
         <StatCard
           title="Total Stops Serviced"
           value={`${data.totalStopsCompleted || 48} Stops`}
           subtitle="Galeshewe, Central, Roodepan"
           icon={CheckCircle2}
-          accentColor="#2e7d32"
         />
         <StatCard
           title="Fleet Capacity Usage"
           value={`${(data.totalFleetCapacityLitres || 35000).toLocaleString()} L`}
           subtitle={`${data.onTripTrucks || 2} active, ${data.availableTrucks || 1} standby`}
           icon={Truck}
-          accentColor="#1d70b8"
         />
         <StatCard
           title="Average Reservoir Storage"
           value={`${data.averageDamLevelPercent || 72.3}%`}
           subtitle="Newton (62.5%) & Riverton (82.0%)"
           icon={BarChart3}
-          accentColor="#2e7d32"
         />
       </div>
 

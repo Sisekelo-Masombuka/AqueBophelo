@@ -15,7 +15,7 @@ export function DamPanel({ dam, onSelect }) {
   } = dam;
 
   const getBarColor = (level) => {
-    if (level >= 50) return 'bg-[#2e7d32]';
+    if (level >= 50) return 'bg-success';
     if (level >= 30) return 'bg-amber-500';
     return 'bg-red-500';
   };
@@ -26,9 +26,9 @@ export function DamPanel({ dam, onSelect }) {
         {/* Header: Name, Area & Status Badge */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-start space-x-2.5">
-            <Droplet className="w-5 h-5 text-[#152e52] fill-current shrink-0 mt-0.5" />
+            <Droplet className="w-5 h-5 text-navy fill-current shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-serif font-bold text-base text-[#152e52] leading-snug">{name}</h3>
+              <h3 className="font-serif font-bold text-base text-navy leading-snug">{name}</h3>
               <p className="text-xs text-slate-500 font-normal">{areaName}</p>
             </div>
           </div>
@@ -38,11 +38,11 @@ export function DamPanel({ dam, onSelect }) {
         {/* Level Percentage & Capacity */}
         <div className="flex items-baseline justify-between mb-2">
           <div>
-            <span className="text-3xl font-serif font-bold text-[#152e52]">{latestLevel}%</span>
+            <span className="text-3xl font-serif font-bold text-navy">{latestLevel}%</span>
             <span className="text-xs text-slate-500 ml-1.5 font-medium">Capacity Fill</span>
           </div>
           <div className="text-right">
-            <span className="text-sm font-bold text-[#152e52]">{volumeMegaLitres} ML</span>
+            <span className="text-sm font-bold text-navy">{volumeMegaLitres} ML</span>
             <span className="text-xs text-slate-500 block font-normal">of {capacityMegaLitres} ML</span>
           </div>
         </div>
@@ -69,7 +69,7 @@ export function DamPanel({ dam, onSelect }) {
         {onSelect && (
           <button
             onClick={() => onSelect(dam)}
-            className="text-[#152e52] hover:underline font-medium flex items-center gap-0.5 cursor-pointer"
+            className="text-navy hover:underline font-medium flex items-center gap-0.5 cursor-pointer"
           >
             <span>Trends</span>
             <ArrowUpRight className="w-3.5 h-3.5" />

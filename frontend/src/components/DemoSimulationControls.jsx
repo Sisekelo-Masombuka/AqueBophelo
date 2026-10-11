@@ -132,10 +132,10 @@ export function DemoSimulationControls() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/60 pb-3 mb-3">
         <div className="flex items-center space-x-2">
           <Sliders className="w-4 h-4 text-sky-400" />
-          <span className="font-bold text-xs uppercase tracking-wider text-sky-400">
-            Demo Telemetry Control Panel
+          <span className="font-bold text-xs text-sky-400">
+            Demo telemetry control panel
           </span>
-          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
+          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/30">
             Dev Mode
           </span>
         </div>
@@ -177,7 +177,7 @@ export function DemoSimulationControls() {
             <button
               key={multiplier}
               onClick={() => setSpeedMultiplier(multiplier)}
-              className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer ${
                 speedMultiplier === multiplier
                   ? 'bg-sky-500 text-slate-950 font-black shadow-sky-500/30 shadow-sm'
                   : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'

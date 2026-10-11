@@ -45,11 +45,11 @@ export function ForgotPasswordModal({ isOpen, onClose }) {
       <div className="bg-white border border-slate-200 rounded-lg w-full max-w-md p-6 shadow-xl relative text-slate-800">
         <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-md bg-[#eaf4fb] border border-[#bcd6ea] flex items-center justify-center text-[#1d70b8] shrink-0">
+            <div className="w-9 h-9 rounded-md bg-info-bg border border-info-border flex items-center justify-center text-blue shrink-0">
               <KeyRound className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-serif font-bold text-lg text-[#152e52]">Reset Password</h3>
+              <h3 className="font-serif font-bold text-lg text-navy">Reset Password</h3>
               <p className="text-xs text-slate-500">Sol Plaatje Municipal Account Security</p>
             </div>
           </div>
@@ -62,14 +62,14 @@ export function ForgotPasswordModal({ isOpen, onClose }) {
         </div>
 
         {successMessage ? (
-          <div className="p-5 bg-[#f2f9f3] border border-[#b8e3bd] rounded-md text-center space-y-3 my-2">
-            <CheckCircle2 className="w-10 h-10 text-[#2e7d32] mx-auto" />
-            <p className="text-sm font-medium text-[#152e52]">{successMessage}</p>
+          <div className="p-5 bg-success-bg border border-success-border rounded-md text-center space-y-3 my-2">
+            <CheckCircle2 className="w-10 h-10 text-success mx-auto" />
+            <p className="text-sm font-medium text-navy">{successMessage}</p>
             <div className="pt-2 flex flex-col space-y-2">
               <Link
                 to={`/reset-password?email=${encodeURIComponent(email)}`}
                 onClick={handleClose}
-                className="w-full py-2 bg-[#152e52] hover:bg-[#0f223d] text-white text-xs font-medium rounded-md flex items-center justify-center space-x-2 transition-colors cursor-pointer"
+                className="w-full py-2 bg-navy hover:bg-navy-dark text-white text-xs font-medium rounded-md flex items-center justify-center space-x-2 transition-colors cursor-pointer"
               >
                 <span>Enter Reset Code / Token</span>
                 <ArrowRight className="w-4 h-4" />
@@ -106,7 +106,7 @@ export function ForgotPasswordModal({ isOpen, onClose }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue focus:ring-1 focus:ring-blue"
               />
             </div>
 
@@ -121,7 +121,7 @@ export function ForgotPasswordModal({ isOpen, onClose }) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-[#152e52] hover:bg-[#0f223d] text-white rounded-md text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 bg-navy hover:bg-navy-dark text-white rounded-md text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? 'Sending...' : 'Send reset token'}
               </button>

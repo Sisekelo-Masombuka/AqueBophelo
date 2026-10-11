@@ -21,6 +21,8 @@ import {
   AlertCircle,
   Building2,
 } from 'lucide-react';
+import kimberleyReservoirImg from '../assets/kimberley_reservoir.jpg';
+import pipeLeakImg from '../assets/pipe_leak.jpg';
 
 export function LandingPage() {
   const { user } = useAuth();
@@ -268,7 +270,7 @@ export function LandingPage() {
               <div className="lg:col-span-6">
                 <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-xs">
                   <img
-                    src="/images/kimberley_reservoir.jpg"
+                    src={kimberleyReservoirImg}
                     alt="Kimberley Water Landscape"
                     className="w-full h-64 sm:h-80 object-cover"
                   />
@@ -503,7 +505,7 @@ export function LandingPage() {
 
               <div className="lg:col-span-6 h-64 sm:h-96">
                 <img
-                  src="/pipe_leak.jpg"
+                  src={pipeLeakImg}
                   alt="Sol Plaatje Municipal Pipe Leak Repair"
                   className="w-full h-full object-cover"
                 />

@@ -272,7 +272,7 @@ export function ManageUsers() {
                   <tr>
                     <th className="py-3 px-4">Personnel Details</th>
                     <th className="py-3 px-4">Role</th>
-                    <th className="py-3 px-4">Phone (SMS)</th>
+                    <th className="py-3 px-4">Phone Number</th>
                     <th className="py-3 px-4">Assigned Vehicle</th>
                     <th className="py-3 px-4">Municipal Suburb</th>
                     <th className="py-3 px-4">Status</th>
@@ -326,7 +326,7 @@ export function ManageUsers() {
           <div className="border-b border-slate-200 pb-3">
             <h3 className="font-serif font-bold text-lg text-[#152e52] flex items-center gap-2">
               <Settings className="w-5 h-5 text-[#1d70b8]" />
-              <span>Municipal System &amp; Notification Configuration (3.7.4 &amp; 3.7.5)</span>
+              <span>Municipal System &amp; Notification Configuration</span>
             </h3>
             <p className="text-xs text-slate-500 mt-1">
               Configure environment variables, email notification services, dry-run modes, and timezone standards.
@@ -357,11 +357,9 @@ export function ManageUsers() {
                   <button
                     type="button"
                     onClick={() => setEmailNotificationsEnabled(!emailNotificationsEnabled)}
-                    className={`px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
-                      emailNotificationsEnabled ? 'bg-[#f2f9f3] text-[#2e7d32] border border-[#b8e3bd]' : 'bg-slate-100 text-slate-700 border border-slate-200'
-                    }`}
+                    className="cursor-pointer"
                   >
-                    {emailNotificationsEnabled ? 'Active' : 'Inactive'}
+                    <StatusBadge status={emailNotificationsEnabled ? 'Active' : 'Inactive'} />
                   </button>
                 </div>
 
@@ -373,11 +371,9 @@ export function ManageUsers() {
                   <button
                     type="button"
                     onClick={() => setDryRunModeEnabled(!dryRunModeEnabled)}
-                    className={`px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
-                      dryRunModeEnabled ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-700 border border-slate-200'
-                    }`}
+                    className="cursor-pointer"
                   >
-                    {dryRunModeEnabled ? 'Test mode' : 'Live mode'}
+                    <StatusBadge status={dryRunModeEnabled ? 'Watch' : 'Healthy'} />
                   </button>
                 </div>
               </div>
@@ -409,7 +405,7 @@ export function ManageUsers() {
                     value={systemTimezone}
                     className="w-full bg-slate-100 border border-slate-300 rounded-md px-3 py-2 text-xs font-bold text-[#1d70b8]"
                   />
-                  <p className="text-[11px] text-slate-500 mt-1">Enforced system-wide (CAT / UTC+2) per requirement 0.4.</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Enforced system-wide (CAT / UTC+2).</p>
                 </div>
               </div>
             </div>
@@ -436,7 +432,7 @@ export function ManageUsers() {
             <div>
               <h3 className="font-serif font-bold text-lg text-[#152e52] flex items-center gap-2">
                 <Activity className="w-5 h-5 text-[#2e7d32]" />
-                <span>3.7.6 System Audit &amp; Activity Logs</span>
+                <span>System Audit &amp; Activity Logs</span>
               </h3>
               <p className="text-xs text-slate-500 mt-1">
                 Immutable security and operational audit trail for Sol Plaatje Municipal Water System.
@@ -532,7 +528,7 @@ export function ManageUsers() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">Phone Number (SMS &amp; Telemetry)</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">Phone Number (Telemetry)</label>
                 <input
                   type="tel"
                   placeholder="082 999 1122"

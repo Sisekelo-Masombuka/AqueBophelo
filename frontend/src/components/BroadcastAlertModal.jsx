@@ -8,7 +8,6 @@ export function BroadcastAlertModal({ isOpen, onClose, onAlertSent }) {
   const [severity, setSeverity] = useState('Warning');
   const [type, setType] = useState('Announcement');
   const [areaId, setAreaId] = useState('');
-  const [sendSms, setSendSms] = useState(true);
   const [sendEmail, setSendEmail] = useState(true);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -33,7 +32,7 @@ export function BroadcastAlertModal({ isOpen, onClose, onAlertSent }) {
     try {
       setLoading(true);
       await apiClient.post('/api/v1/alerts', payload);
-      setFeedback({ type: 'success', text: 'Alert dispatched to all subscribed residents via SMS & Email!' });
+      setFeedback({ type: 'success', text: 'Alert dispatched to all subscribed residents via Email!' });
       if (onAlertSent) onAlertSent(payload);
       setTimeout(() => {
         onClose();
@@ -68,7 +67,7 @@ export function BroadcastAlertModal({ isOpen, onClose, onAlertSent }) {
             <AlertTriangle className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-serif text-lg font-bold text-[#152e52]">
+            <h3 className="font-serif text-lg font-bold text-navy">
               Broadcast Emergency Alert
             </h3>
             <p className="text-xs text-slate-500 font-normal">
@@ -82,7 +81,7 @@ export function BroadcastAlertModal({ isOpen, onClose, onAlertSent }) {
           <div
             className={`p-3 rounded-md mb-4 text-xs font-medium flex items-center space-x-2 ${
               feedback.type === 'success'
-                ? 'bg-[#f2f9f3] border border-[#b8e3bd] text-[#2e7d32]'
+                ? 'bg-success-bg border border-success-border text-success'
                 : 'bg-red-50 border border-red-200 text-red-700'
             }`}
           >
@@ -103,7 +102,7 @@ export function BroadcastAlertModal({ isOpen, onClose, onAlertSent }) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
+              className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue"
             />
           </div>
 
@@ -116,7 +115,7 @@ export function BroadcastAlertModal({ isOpen, onClose, onAlertSent }) {
               <select
                 value={severity}
                 onChange={(e) => setSeverity(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs md:text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs md:text-sm text-slate-900 focus:outline-none focus:border-blue"
               >
                 <option value="Critical">Critical (Immediate Outage)</option>
                 <option value="Warning">Warning (Low Pressure / Watch)</option>
@@ -131,7 +130,7 @@ export function BroadcastAlertModal({ isOpen, onClose, onAlertSent }) {
               <select
                 value={areaId}
                 onChange={(e) => setAreaId(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs md:text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs md:text-sm text-slate-900 focus:outline-none focus:border-blue"
               >
                 <option value="">All Sol Plaatje Residents</option>
                 <option value="1">Galeshewe</option>
@@ -152,34 +151,23 @@ export function BroadcastAlertModal({ isOpen, onClose, onAlertSent }) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               required
-              className="w-full bg-white border border-slate-300 rounded-md p-3 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8] resize-none"
+              className="w-full bg-white border border-slate-300 rounded-md p-3 text-sm text-slate-900 focus:outline-none focus:border-blue resize-none"
             />
           </div>
 
           {/* Dispatch Channels */}
-          <div className="bg-[#f8fafc] border border-slate-200 rounded-md p-3 flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-medium">Dispatch Channels:</span>
+          <div className="bg-surface-muted border border-slate-200 rounded-md p-3 flex items-center justify-between">
+            <span className="text-xs text-slate-500 font-medium">Dispatch Channel:</span>
             <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-1.5 text-xs text-slate-700 font-medium cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sendSms}
-                  onChange={(e) => setSendSms(e.target.checked)}
-                  className="rounded text-[#152e52] focus:ring-0"
-                />
-                <span className="flex items-center gap-1">
-                  <MessageSquare className="w-3.5 h-3.5 text-[#1d70b8]" /> SMS
-                </span>
-              </label>
               <label className="flex items-center space-x-1.5 text-xs text-slate-700 font-medium cursor-pointer">
                 <input
                   type="checkbox"
                   checked={sendEmail}
                   onChange={(e) => setSendEmail(e.target.checked)}
-                  className="rounded text-[#152e52] focus:ring-0"
+                  className="rounded text-navy focus:ring-0"
                 />
                 <span className="flex items-center gap-1">
-                  <Mail className="w-3.5 h-3.5 text-[#1d70b8]" /> Email
+                  <Mail className="w-3.5 h-3.5 text-blue" /> Email Notifications
                 </span>
               </label>
             </div>

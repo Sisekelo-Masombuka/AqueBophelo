@@ -2,14 +2,16 @@ import React from 'react';
 import { RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-const DISPLAY_LABEL_MAP = {
+const KNOWN_LABELS = {
   OnTrip: 'On trip',
   ontrip: 'On trip',
   'ON TRIP': 'On trip',
+  ONTRIP: 'On trip',
   InProgress: 'In progress',
   in_progress: 'In progress',
-  'IN_PROGRESS': 'In progress',
+  IN_PROGRESS: 'In progress',
   In_Progress: 'In progress',
+  'In Progress': 'In progress',
   Healthy: 'Healthy',
   HEALTHY: 'Healthy',
   Watch: 'Watch',
@@ -42,7 +44,19 @@ const DISPLAY_LABEL_MAP = {
   ONLINE: 'Online',
   Maintenance: 'In maintenance',
   IN_MAINTENANCE: 'In maintenance',
+  'In Maintenance': 'In maintenance',
 };
+
+export function getStatusLabel(value) {
+  if (!value && value !== 0) return '';
+  const strVal = String(value).trim();
+  if (KNOWN_LABELS[strVal]) return KNOWN_LABELS[strVal];
+
+  // Unknown values: replace underscores with spaces, sentence case
+  const formatted = strVal.replace(/_/g, ' ').trim();
+  if (!formatted) return '';
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1).toLowerCase();
+}
 
 export function StatusBadge({ status, levelPercent, className }) {
   let currentStatus = status;
@@ -53,46 +67,38 @@ export function StatusBadge({ status, levelPercent, className }) {
     else currentStatus = 'Critical';
   }
 
-  const getDisplayLabel = (rawStatus) => {
-    if (!rawStatus) return 'Information';
-    return DISPLAY_LABEL_MAP[rawStatus] || rawStatus;
-  };
+  const label = getStatusLabel(currentStatus) || 'Information';
 
   const getStyle = () => {
-    const s = currentStatus?.toLowerCase() || '';
+    const s = String(currentStatus || '').toLowerCase();
     if (['healthy', 'online', 'available', 'completed', 'active'].includes(s)) {
       return {
-        classes: 'bg-[#f2f9f3] text-[#2e7d32] border border-[#b8e3bd]',
-        label: getDisplayLabel(currentStatus || 'Healthy'),
+        classes: 'bg-success-bg text-success border border-success-border',
       };
     }
     if (['watch', 'warning', 'ontrip', 'in transit', 'en route', 'on trip'].includes(s)) {
       return {
         classes: 'bg-amber-50 text-amber-800 border border-amber-200',
-        label: getDisplayLabel(currentStatus || 'Watch'),
       };
     }
     if (['low', 'critical', 'offline', 'maintenance', 'in_maintenance', 'in maintenance', 'disconnected', 'inactive'].includes(s)) {
       return {
         classes: 'bg-red-50 text-red-700 border border-red-200',
-        label: getDisplayLabel(currentStatus || 'Critical'),
       };
     }
     if (['connecting', 'reconnecting', 'syncing', 'dispatched', 'pending', 'in_progress', 'inprogress', 'in progress'].includes(s)) {
       return {
-        classes: 'bg-[#eaf4fb] text-[#1d70b8] border border-[#bcd6ea]',
+        classes: 'bg-info-bg text-blue border border-info-border',
         icon: ['connecting', 'reconnecting', 'syncing'].includes(s) ? RefreshCw : null,
         animateIcon: ['connecting', 'reconnecting', 'syncing'].includes(s),
-        label: getDisplayLabel(currentStatus || 'Connecting'),
       };
     }
     return {
       classes: 'bg-slate-100 text-slate-700 border border-slate-200',
-      label: getDisplayLabel(currentStatus || 'Information'),
     };
   };
 
-  const { classes, icon: Icon, animateIcon, label } = getStyle();
+  const { classes, icon: Icon, animateIcon } = getStyle();
 
   return (
     <span

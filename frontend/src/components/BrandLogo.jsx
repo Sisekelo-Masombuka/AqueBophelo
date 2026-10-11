@@ -1,8 +1,8 @@
 import React from 'react';
 import { cn } from '../lib/utils';
+import logoSrc from '../assets/AquaBophelo_logo.svg';
 
 export function BrandLogo({ className, size = 'md', showText = true, textTheme = 'dark' }) {
-  const logoSrc = '/AquaBophelo_logo.svg';
 
   const logoHeight = size === 'lg'
     ? 'h-12 md:h-14'
@@ -16,7 +16,7 @@ export function BrandLogo({ className, size = 'md', showText = true, textTheme =
     ? 'text-sm md:text-base'
     : 'text-base md:text-lg';
 
-  const titleColor = textTheme === 'light' ? 'text-white' : 'text-[#152e52]';
+  const titleColor = textTheme === 'light' ? 'text-white' : 'text-navy';
   const subColor = textTheme === 'light' ? 'text-slate-300' : 'text-slate-500';
 
   return (

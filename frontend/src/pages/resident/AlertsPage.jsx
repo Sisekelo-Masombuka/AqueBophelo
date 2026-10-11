@@ -57,7 +57,7 @@ export function AlertsPage() {
             Municipal Water Alerts &amp; Notices
           </h2>
           <p className="text-xs md:text-sm text-slate-500 mt-1 font-normal">
-            Official SMS, email, and portal announcements for Sol Plaatje residents.
+            Official email and portal announcements for Sol Plaatje residents.
           </p>
         </div>
 
@@ -77,21 +77,20 @@ export function AlertsPage() {
           value={`${alerts.length} Published`}
           subtitle="Sol Plaatje Municipality"
           icon={Bell}
-          accentColor="#1d70b8"
         />
         <StatCard
           title="System Water Advisory"
           value="Watch (Advisory)"
           subtitle="Evening conservation active"
           icon={AlertTriangle}
-          accentColor="#d97706"
+          status="Watch"
         />
         <StatCard
           title="Water Quality Index"
           value="SANS 241 Compliant"
           subtitle="Riverton Treatment verified"
           icon={ShieldCheck}
-          accentColor="#2e7d32"
+          status="Healthy"
         />
       </div>
 

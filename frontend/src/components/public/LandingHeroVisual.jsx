@@ -13,10 +13,10 @@ export function LandingHeroVisual() {
       </div>
 
       <div className="ab-hero-scene__photo-slot">
-        <p className="text-[10px] font-heading font-semibold uppercase tracking-wide text-brand-navy-dark">
+        <p className="text-xs font-heading font-semibold text-brand-navy-dark">
           Photograph needed
         </p>
-        <p className="mt-1 text-[11px] leading-snug text-muted">
+        <p className="mt-1 text-xs leading-snug text-muted">
           Kimberley civic landscape — Newton Reservoir, Big Hole rim, or a Sol Plaatje street with a municipal tanker. Landscape, daylight, no staged people.
         </p>
       </div>
