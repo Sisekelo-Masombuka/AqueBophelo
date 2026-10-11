@@ -159,16 +159,26 @@ public class ReportsController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<IssueReport>> CreateIssueReport([FromBody] CreateIssueReportDto dto)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var email = User.FindFirstValue(ClaimTypes.Email) ?? dto.UserEmail ?? "resident@solplaatje.gov.za";
-        var name = User.FindFirstValue(ClaimTypes.Name) ?? dto.FullName ?? "Kimberley Resident";
+        var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var rawEmail = User.FindFirstValue(ClaimTypes.Email);
+        var rawName = User.FindFirstValue(ClaimTypes.Name);
+
+        bool isAnonymous = dto.IsAnonymous || string.IsNullOrEmpty(rawUserId);
+
+        string? reportUserId = isAnonymous ? null : rawUserId;
+        string email = isAnonymous
+            ? (!string.IsNullOrWhiteSpace(dto.UserEmail) && dto.UserEmail.Contains("@") ? dto.UserEmail : "anonymous@solplaatje.gov.za")
+            : (rawEmail ?? dto.UserEmail ?? "resident@solplaatje.gov.za");
+        string name = isAnonymous
+            ? "Anonymous Resident"
+            : (rawName ?? dto.FullName ?? "Kimberley Resident");
 
         var ticketId = $"#SPM-2026-{Random.Shared.Next(1000, 9999)}";
 
         var issue = new IssueReport
         {
             TicketId = ticketId,
-            UserId = userId,
+            UserId = reportUserId,
             UserEmail = email,
             FullName = name,
             IssueType = dto.IssueType ?? "General Water Issue",
@@ -182,40 +192,50 @@ public class ReportsController : ControllerBase
 
         _context.IssueReports.Add(issue);
 
-        // Also log notification for user
-        _context.NotificationLogs.Add(new NotificationLog
+        // Only log InApp notification for authenticated non-anonymous users to avoid FK violation!
+        if (!string.IsNullOrEmpty(reportUserId))
         {
-            UserId = userId ?? "anonymous",
-            Title = $"Fault Logged: {ticketId}",
-            Message = $"Your report for '{issue.IssueType}' in {issue.Area} has been submitted to Sol Plaatje Municipal Dispatch.",
-            Type = "ReportUpdate",
-            IsRead = false,
-            SentAt = DateTime.UtcNow
-        });
+            _context.NotificationLogs.Add(new NotificationLog
+            {
+                UserId = reportUserId,
+                Title = $"Fault Logged: {ticketId}",
+                Message = $"Your report for '{issue.IssueType}' in {issue.Area} has been submitted to Sol Plaatje Municipal Dispatch.",
+                Type = "ReportUpdate",
+                IsRead = false,
+                SentAt = DateTime.UtcNow
+            });
+        }
 
         await _context.SaveChangesAsync();
 
         await _auditLogger.LogAsync(
             action: "ISSUE_REPORT_CREATED",
             category: "Reports",
-            details: $"Fault ticket '{ticketId}' created for '{issue.IssueType}' at '{issue.StreetAddress}, {issue.Area}'. Photo URL: {issue.ImageUrl ?? "None"}",
-            userId: userId,
+            details: $"Fault ticket '{ticketId}' created for '{issue.IssueType}' at '{issue.StreetAddress}, {issue.Area}'. Anonymous: {isAnonymous}. Photo URL: {issue.ImageUrl ?? "None"}",
+            userId: reportUserId,
             userEmail: email,
             entityName: "IssueReport",
             entityId: issue.Id.ToString()
         );
 
-        // Send confirmation email
-        if (!string.IsNullOrEmpty(email))
+        // Send confirmation email only if valid non-anonymous recipient email is provided
+        if (!string.IsNullOrEmpty(email) && !email.Equals("anonymous@solplaatje.gov.za", StringComparison.OrdinalIgnoreCase) && email.Contains("@"))
         {
-            await _notificationService.SendEmailAsync(
-                email,
-                $"Sol Plaatje Water Fault Receipt [{ticketId}]",
-                $"<div style='font-family:sans-serif;'><h2>Fault Ticket Received</h2><p>Thank you <strong>{name}</strong> for reporting this issue.</p><p><strong>Ticket ID:</strong> {ticketId}</p><p><strong>Type:</strong> {issue.IssueType}</p><p><strong>Area:</strong> {issue.Area}</p><p><strong>Status:</strong> Pending Dispatch Review</p><hr/><p><em>Sol Plaatje Municipality Engineering Dept</em></p></div>"
-            );
+            try
+            {
+                await _notificationService.SendEmailAsync(
+                    email,
+                    $"Sol Plaatje Water Fault Receipt [{ticketId}]",
+                    $"<div style='font-family:sans-serif;'><h2>Fault Ticket Received</h2><p>Thank you <strong>{name}</strong> for reporting this issue.</p><p><strong>Ticket ID:</strong> {ticketId}</p><p><strong>Type:</strong> {issue.IssueType}</p><p><strong>Area:</strong> {issue.Area}</p><p><strong>Status:</strong> Pending Dispatch Review</p><hr/><p><em>Sol Plaatje Municipality Engineering Dept</em></p></div>"
+                );
+            }
+            catch (Exception emailEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"Confirmation email notice: {emailEx.Message}");
+            }
         }
 
-        return CreatedAtAction(nameof(GetMyIssues), new { id = issue.Id }, issue);
+        return Ok(issue);
     }
 
     /// <summary>
@@ -328,6 +348,42 @@ public class ReportsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// POST: api/v1/reports/upload-photo
+    /// Directly streams and uploads photo to Cloudflare R2 from backend to avoid browser CORS issues.
+    /// </summary>
+    [HttpPost("upload-photo")]
+    [AllowAnonymous]
+    public async Task<IActionResult> UploadPhoto(
+        [FromServices] IR2StorageService r2Service,
+        IFormFile? file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { message = "No image file provided." });
+        }
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var (fileUrl, objectKey) = await r2Service.UploadFileAsync(stream, file.FileName, file.ContentType);
+            return Ok(new
+            {
+                fileUrl,
+                objectKey,
+                message = "Photo uploaded successfully to Cloudflare R2 bucket."
+            });
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = $"Cloudflare R2 storage error: {ex.Message}" });
+        }
+    }
 }
 
 public class PresignedUrlRequestDto
@@ -345,6 +401,7 @@ public class CreateIssueReportDto
     public string? ImageUrl { get; set; }
     public string? UserEmail { get; set; }
     public string? FullName { get; set; }
+    public bool IsAnonymous { get; set; } = false;
 }
 
 public class UpdateIssueStatusDto

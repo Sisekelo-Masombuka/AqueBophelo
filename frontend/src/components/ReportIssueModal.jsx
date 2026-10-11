@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { X, AlertCircle, CheckCircle2, Send, MapPin, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, AlertCircle, CheckCircle2, Send, MapPin, Upload, Image as ImageIcon, ShieldAlert, User, ShieldCheck } from 'lucide-react';
 import apiClient from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 
 export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIssueReported }) {
+  const { user } = useAuth();
   const [issueType, setIssueType] = useState('No Supply');
   const [area, setArea] = useState(userArea || 'Galeshewe');
   const [description, setDescription] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isAnonymous, setIsAnonymous] = useState(!user);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [ticketId, setTicketId] = useState('');
@@ -45,27 +48,46 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
 
       if (selectedFile) {
         try {
-          const presignedRes = await apiClient.post('/api/v1/reports/presigned-url', {
-            fileName: selectedFile.name,
-            contentType: selectedFile.type || 'image/jpeg'
+          // Direct backend upload to Cloudflare R2 bucket (bypasses browser CORS restrictions)
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+
+          const uploadRes = await apiClient.post('/api/v1/reports/upload-photo', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
           });
 
-          const { presignedUrl, fileUrl } = presignedRes.data;
-
-          if (presignedUrl && presignedUrl !== 'http://localhost/mock-upload') {
-            await fetch(presignedUrl, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': selectedFile.type || 'image/jpeg'
-              },
-              body: selectedFile
-            });
-            finalImageUrl = fileUrl;
+          if (uploadRes.data?.fileUrl) {
+            finalImageUrl = uploadRes.data.fileUrl;
           }
-        } catch (r2Err) {
-          console.warn('R2 Upload presigned notice, using fallback image URL:', r2Err);
+        } catch (uploadErr) {
+          console.warn('Direct R2 upload notice, attempting presigned fallback:', uploadErr);
+          try {
+            const presignedRes = await apiClient.post('/api/v1/reports/presigned-url', {
+              fileName: selectedFile.name,
+              contentType: selectedFile.type || 'image/jpeg'
+            });
+
+            const { presignedUrl, fileUrl } = presignedRes.data;
+
+            if (presignedUrl && presignedUrl !== 'http://localhost/mock-upload') {
+              await fetch(presignedUrl, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': selectedFile.type || 'image/jpeg'
+                },
+                body: selectedFile
+              });
+              finalImageUrl = fileUrl;
+            }
+          } catch (r2Err) {
+            console.warn('R2 Upload presigned fallback notice:', r2Err);
+          }
         }
       }
+
+      const isAnon = !user || isAnonymous;
 
       const response = await apiClient.post('/api/v1/reports/issues', {
         issueType,
@@ -73,6 +95,9 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
         streetAddress,
         description,
         imageUrl: finalImageUrl,
+        isAnonymous: isAnon,
+        fullName: isAnon ? 'Anonymous Resident' : (user?.fullName || 'Kimberley Resident'),
+        userEmail: isAnon ? 'anonymous@solplaatje.gov.za' : (user?.email || 'resident@solplaatje.gov.za'),
       });
 
       const createdReport = response.data;
@@ -95,6 +120,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
       setTicketId(generatedTicket);
       setSuccessMessage('Water issue logged successfully. Sol Plaatje Municipal Dispatch has been notified.');
 
+      const isAnon = !user || isAnonymous;
       const fallbackReport = {
         id: Date.now(),
         ticketId: generatedTicket,
@@ -102,7 +128,9 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
         area,
         streetAddress,
         description,
-        image: imagePreview || '/pipe_leak.jpg',
+        imageUrl: imagePreview || '/pipe_leak.jpg',
+        fullName: isAnon ? 'Anonymous Resident' : (user?.fullName || 'Kimberley Resident'),
+        userEmail: isAnon ? 'anonymous@solplaatje.gov.za' : (user?.email || 'resident@solplaatje.gov.za'),
         status: 'Pending',
         timestamp: 'Just now (CAT)',
       };
@@ -113,6 +141,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
         setDescription('');
         setStreetAddress('');
         setImagePreview(null);
+        setSelectedFile(null);
         onClose();
       }, 2500);
     } finally {
@@ -151,6 +180,37 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-xs">
                 {error}
+              </div>
+            )}
+
+            {/* User Identity / Anonymous Reporting Banner */}
+            {!user ? (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-xs text-blue-900 flex items-start space-x-2.5">
+                <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-[#1d70b8]" />
+                <div>
+                  <span className="font-semibold text-[#152e52]">Anonymous Public Report</span>
+                  <p className="mt-0.5 text-slate-600 leading-relaxed">
+                    You are submitting as a guest. Your report will be logged anonymously on the municipal board without attaching your personal identity.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center space-x-2">
+                  <User className="w-4 h-4 text-[#152e52] shrink-0" />
+                  <span>
+                    Reporting as: <strong className="text-[#152e52]">{user.fullName || user.email}</strong>
+                  </span>
+                </div>
+                <label className="flex items-center space-x-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isAnonymous}
+                    onChange={(e) => setIsAnonymous(e.target.checked)}
+                    className="rounded border-slate-300 text-[#152e52] focus:ring-[#1d70b8]"
+                  />
+                  <span className="text-xs font-medium text-slate-600">Submit anonymously</span>
+                </label>
               </div>
             )}
 

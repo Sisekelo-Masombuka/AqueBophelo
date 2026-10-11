@@ -228,5 +228,43 @@ public static class DbSeeder
             await context.Trucks.AddRangeAsync(trucks);
             await context.SaveChangesAsync();
         }
+
+        // 9. Seed Sample Fault Reports for Sol Plaatje Municipal Operations
+        if (!await context.IssueReports.AnyAsync())
+        {
+            var initialIssues = new List<IssueReport>
+            {
+                new IssueReport
+                {
+                    TicketId = "#SPM-2026-9812",
+                    FullName = "Nomcebo Nkosi",
+                    UserEmail = "resident@solplaatje.gov.za",
+                    IssueType = "Pipe Leak",
+                    Area = "Galeshewe",
+                    StreetAddress = "142 Main Road",
+                    Description = "Major water pipe leak near street curb.",
+                    ImageUrl = "/pipe_leak.jpg",
+                    Status = "Pending",
+                    CreatedAt = DateTime.UtcNow.AddHours(-3)
+                },
+                new IssueReport
+                {
+                    TicketId = "#SPM-2026-4410",
+                    FullName = "David Van Wyk",
+                    UserEmail = "david@kimberley.co.za",
+                    IssueType = "Low Water Pressure",
+                    Area = "Roodepan",
+                    StreetAddress = "88 Diamond Street",
+                    Description = "Water pressure dropped severely since morning.",
+                    ImageUrl = "/pipe_leak.jpg",
+                    Status = "In Progress",
+                    AdminNotes = "Maintenance team dispatched.",
+                    CreatedAt = DateTime.UtcNow.AddDays(-1)
+                }
+            };
+
+            await context.IssueReports.AddRangeAsync(initialIssues);
+            await context.SaveChangesAsync();
+        }
     }
 }
