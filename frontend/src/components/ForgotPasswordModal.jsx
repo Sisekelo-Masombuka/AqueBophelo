@@ -23,7 +23,7 @@ export function ForgotPasswordModal({ isOpen, onClose }) {
 
     setIsSubmitting(true);
     try {
-      const response = await api.post('/auth/forgot-password', { email });
+      const response = await api.post('/api/v1/auth/forgot-password', { email });
       setSuccessMessage(response.data?.message || `If an account exists with ${email}, password reset instructions have been sent.`);
     } catch (err) {
       const errMsg = err.response?.data?.message || 'Failed to request password reset. Please try again.';

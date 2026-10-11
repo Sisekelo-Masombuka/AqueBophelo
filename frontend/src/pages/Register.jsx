@@ -90,7 +90,7 @@ export function Register() {
     setOtpCode('');
 
     try {
-      await api.post('/auth/send-otp', { email, purpose: 'EmailVerification' });
+      await api.post('/api/v1/auth/send-otp', { email, purpose: 'EmailVerification' });
     } catch (err) {
       console.warn('Backend OTP email dispatch notice:', err);
     }
@@ -112,7 +112,7 @@ export function Register() {
 
     setIsSubmitting(true);
     try {
-      await api.post('/auth/verify-otp', { email, code: otpCode.trim(), purpose: 'EmailVerification' });
+      await api.post('/api/v1/auth/verify-otp', { email, code: otpCode.trim(), purpose: 'EmailVerification' });
       await register({ email, password, fullName, area, phoneNumber, turnstileToken });
       navigate('/dashboard', { replace: true });
     } catch (err) {
