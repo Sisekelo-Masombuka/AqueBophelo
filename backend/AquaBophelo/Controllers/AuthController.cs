@@ -222,11 +222,11 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// DELETE: api/v1/auth/delete-account
-    /// Verifies the email OTP code and permanently deletes the user account from the database.
+    /// Verifies OTP code if provided and soft-deletes user account with 30-day grace period.
     /// </summary>
     [HttpDelete("delete-account")]
     [Authorize]
-    public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountDto dto)
+    public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountDto? dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var user = await _userManager.FindByIdAsync(userId!);
@@ -235,23 +235,26 @@ public class AuthController : ControllerBase
             return NotFound(new { message = "User account not found." });
         }
 
-        if (string.IsNullOrWhiteSpace(dto.OtpCode) || user.DeleteOtpCode != dto.OtpCode.Trim())
+        if (dto != null && !string.IsNullOrWhiteSpace(dto.OtpCode))
         {
-            return BadRequest(new { message = "Invalid email OTP code. Please check your inbox and try again." });
+            if (user.DeleteOtpCode != dto.OtpCode.Trim())
+            {
+                return BadRequest(new { message = "Invalid email OTP code. Please check your inbox and try again." });
+            }
+
+            if (user.DeleteOtpExpiry.HasValue && user.DeleteOtpExpiry.Value < DateTime.UtcNow)
+            {
+                return BadRequest(new { message = "OTP code has expired. Please request a new code." });
+            }
         }
 
-        if (user.DeleteOtpExpiry.HasValue && user.DeleteOtpExpiry.Value < DateTime.UtcNow)
-        {
-            return BadRequest(new { message = "OTP code has expired. Please request a new code." });
-        }
+        var success = await _authService.SoftDeleteAccountAsync(user.Id);
+        if (!success) return BadRequest(new { message = "Failed to process account deletion." });
 
-        var result = await _userManager.DeleteAsync(user);
-        if (!result.Succeeded)
+        return Ok(new
         {
-            return BadRequest(new { message = "Failed to delete user account." });
-        }
-
-        return Ok(new { message = "Your account has been permanently deleted from Sol Plaatje Municipal database." });
+            message = "Your account has been soft-deleted with a 30-day grace period. All records remain safely archived in the municipal database per record-keeping policies."
+        });
     }
 
     /// <summary>

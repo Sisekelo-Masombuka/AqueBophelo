@@ -28,6 +28,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<VehicleInspectionCheck> VehicleInspectionChecks => Set<VehicleInspectionCheck>();
     public DbSet<EmailOtp> EmailOtps => Set<EmailOtp>();
     public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
+    public DbSet<SystemAuditLog> AuditLogs => Set<SystemAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -117,5 +118,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             .WithMany()
             .HasForeignKey(a => a.AreaId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure Global Soft Delete Query Filters
+        builder.Entity<ApplicationUser>().HasQueryFilter(u => !u.IsDeleted);
+        builder.Entity<IssueReport>().HasQueryFilter(i => !i.IsDeleted);
     }
 }

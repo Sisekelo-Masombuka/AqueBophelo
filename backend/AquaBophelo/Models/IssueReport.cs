@@ -31,6 +31,10 @@ public class IssueReport
 
     public string? AdminNotes { get; set; }
 
+    // Soft Delete & Record Keeping
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 }

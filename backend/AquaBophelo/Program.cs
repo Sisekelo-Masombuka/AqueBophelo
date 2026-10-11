@@ -143,6 +143,7 @@ builder.Services.AddScoped<IEmailSender, BrevoEmailSender>();
 builder.Services.AddScoped<INotificationService, BrevoEmailSender>();
 builder.Services.AddSingleton<IR2StorageService, R2StorageService>();
 builder.Services.AddSingleton<IPushNotificationService, FirebasePushNotificationService>();
+builder.Services.AddSingleton<IAuditLogger, AuditLogger>();
 builder.Services.AddHttpClient<ITurnstileService, TurnstileService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();

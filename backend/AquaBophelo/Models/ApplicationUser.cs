@@ -19,5 +19,10 @@ public class ApplicationUser : IdentityUser
     public string? DeleteOtpCode { get; set; }
     public DateTime? DeleteOtpExpiry { get; set; }
 
+    // Soft Delete & Audit Record Keeping
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+    public DateTime? ScheduledPermanentDeletionAt { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

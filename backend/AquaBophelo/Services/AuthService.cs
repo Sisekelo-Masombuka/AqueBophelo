@@ -20,19 +20,22 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _context;
     private readonly IEmailSender _emailSender;
+    private readonly IAuditLogger _auditLogger;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
         IConfiguration configuration,
         AppDbContext context,
-        IEmailSender emailSender)
+        IEmailSender emailSender,
+        IAuditLogger auditLogger)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
         _context = context;
         _emailSender = emailSender;
+        _auditLogger = auditLogger;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -334,5 +337,29 @@ public class AuthService : IAuthService
             ExpiresAt = expiresAt,
             Message = "Authentication successful"
         };
+    }
+
+    public async Task<bool> SoftDeleteAccountAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return false;
+
+        user.IsDeleted = true;
+        user.DeletedAt = DateTime.UtcNow;
+        user.ScheduledPermanentDeletionAt = DateTime.UtcNow.AddDays(30);
+
+        await _userManager.UpdateAsync(user);
+
+        await _auditLogger.LogAsync(
+            action: "ACCOUNT_SOFT_DELETED",
+            category: "Auth",
+            details: $"User account for {user.Email} soft-deleted. Scheduled for permanent deletion on {user.ScheduledPermanentDeletionAt:dd MMM yyyy} (30-day grace period).",
+            userId: user.Id,
+            userEmail: user.Email,
+            entityName: "ApplicationUser",
+            entityId: user.Id
+        );
+
+        return true;
     }
 }

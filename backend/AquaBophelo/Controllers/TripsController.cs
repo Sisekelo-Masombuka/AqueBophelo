@@ -14,12 +14,18 @@ public class TripsController : ControllerBase
     private readonly AppDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly Services.Interfaces.IPushNotificationService _pushService;
+    private readonly Services.Interfaces.IAuditLogger _auditLogger;
 
-    public TripsController(AppDbContext context, UserManager<ApplicationUser> userManager, Services.Interfaces.IPushNotificationService pushService)
+    public TripsController(
+        AppDbContext context,
+        UserManager<ApplicationUser> userManager,
+        Services.Interfaces.IPushNotificationService pushService,
+        Services.Interfaces.IAuditLogger auditLogger)
     {
         _context = context;
         _userManager = userManager;
         _pushService = pushService;
+        _auditLogger = auditLogger;
     }
 
     /// <summary>
@@ -167,6 +173,16 @@ public class TripsController : ControllerBase
         _context.Trips.Add(trip);
         await _context.SaveChangesAsync();
 
+        await _auditLogger.LogAsync(
+            action: "TRIP_STARTED",
+            category: "Trips",
+            details: $"Water delivery trip #{trip.Id} started by Driver '{driver.FullName}' ({driver.Email}) using Truck '{truck.RegistrationNumber}' on Route '{route.Name}'.",
+            userId: driver.Id,
+            userEmail: driver.Email,
+            entityName: "Trip",
+            entityId: trip.Id.ToString()
+        );
+
         // Reload relationships for DTO response
         await _context.Entry(trip).Reference(t => t.Truck).LoadAsync();
         await _context.Entry(trip).Reference(t => t.Driver).LoadAsync();
@@ -200,6 +216,14 @@ public class TripsController : ControllerBase
         await _context.SaveChangesAsync();
 
         string stopName = tripStop.RouteStop?.Name ?? $"Stop #{stopId}";
+        await _auditLogger.LogAsync(
+            action: "TRIP_STOP_COMPLETED",
+            category: "Trips",
+            details: $"Water delivery stop '{stopName}' completed for Trip #{id}.",
+            entityName: "TripStop",
+            entityId: stopId.ToString()
+        );
+
         await _pushService.SendPushNotificationToAllAsync(
             title: "🚚 Water Tanker Arrived!",
             body: $"Sol Plaatje municipal water tanker has arrived at {stopName}.",
@@ -255,6 +279,16 @@ public class TripsController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+
+        await _auditLogger.LogAsync(
+            action: "TRIP_ENDED",
+            category: "Trips",
+            details: $"Water delivery trip #{trip.Id} completed by Driver '{trip.Driver?.FullName ?? trip.DriverId}' on Route '{trip.Route?.Name}'. Truck '{trip.Truck?.RegistrationNumber}' reset to Available.",
+            userId: trip.DriverId,
+            userEmail: trip.Driver?.Email,
+            entityName: "Trip",
+            entityId: trip.Id.ToString()
+        );
 
         return Ok(MapToDto(trip));
     }

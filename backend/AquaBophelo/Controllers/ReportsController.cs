@@ -16,11 +16,13 @@ public class ReportsController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly INotificationService _notificationService;
+    private readonly IAuditLogger _auditLogger;
 
-    public ReportsController(AppDbContext context, INotificationService notificationService)
+    public ReportsController(AppDbContext context, INotificationService notificationService, IAuditLogger auditLogger)
     {
         _context = context;
         _notificationService = notificationService;
+        _auditLogger = auditLogger;
     }
 
     /// <summary>
@@ -192,6 +194,16 @@ public class ReportsController : ControllerBase
         });
 
         await _context.SaveChangesAsync();
+
+        await _auditLogger.LogAsync(
+            action: "ISSUE_REPORT_CREATED",
+            category: "Reports",
+            details: $"Fault ticket '{ticketId}' created for '{issue.IssueType}' at '{issue.StreetAddress}, {issue.Area}'. Photo URL: {issue.ImageUrl ?? "None"}",
+            userId: userId,
+            userEmail: email,
+            entityName: "IssueReport",
+            entityId: issue.Id.ToString()
+        );
 
         // Send confirmation email
         if (!string.IsNullOrEmpty(email))
