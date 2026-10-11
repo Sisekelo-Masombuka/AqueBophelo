@@ -27,6 +27,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<DriverProblemReport> DriverProblems => Set<DriverProblemReport>();
     public DbSet<VehicleInspectionCheck> VehicleInspectionChecks => Set<VehicleInspectionCheck>();
     public DbSet<EmailOtp> EmailOtps => Set<EmailOtp>();
+    public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

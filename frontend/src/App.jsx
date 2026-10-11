@@ -28,6 +28,8 @@ import ManageUsers from './pages/admin/ManageUsers';
 import BroadcastAlertPage from './pages/admin/BroadcastAlertPage';
 import AdminReportsPage from './pages/admin/AdminReportsPage';
 
+import PushNotificationPrompt from './components/PushNotificationPrompt';
+
 function RootRedirect() {
   const { isAuthenticated, user, isLoading } = useAuth();
 
@@ -135,6 +137,7 @@ export function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
+        <PushNotificationPrompt />
       </BrowserRouter>
     </AuthProvider>
   );

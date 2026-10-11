@@ -13,11 +13,13 @@ public class TripsController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly Services.Interfaces.IPushNotificationService _pushService;
 
-    public TripsController(AppDbContext context, UserManager<ApplicationUser> userManager)
+    public TripsController(AppDbContext context, UserManager<ApplicationUser> userManager, Services.Interfaces.IPushNotificationService pushService)
     {
         _context = context;
         _userManager = userManager;
+        _pushService = pushService;
     }
 
     /// <summary>
@@ -196,6 +198,18 @@ public class TripsController : ControllerBase
         tripStop.ArrivedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        string stopName = tripStop.RouteStop?.Name ?? $"Stop #{stopId}";
+        await _pushService.SendPushNotificationToAllAsync(
+            title: "🚚 Water Tanker Arrived!",
+            body: $"Sol Plaatje municipal water tanker has arrived at {stopName}.",
+            data: new Dictionary<string, string>
+            {
+                { "tripId", id.ToString() },
+                { "stopId", stopId.ToString() },
+                { "type", "TruckArrived" }
+            }
+        );
 
         return Ok(new
         {

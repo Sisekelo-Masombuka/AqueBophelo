@@ -20,4 +20,5 @@ dist/
 ## Secrets & Local Config
 secrets.json
 appsettings.Development.json
+firebase-service-account.json
 *.user.config

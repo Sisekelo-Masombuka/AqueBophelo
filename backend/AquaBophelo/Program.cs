@@ -142,6 +142,7 @@ builder.Services.AddHttpClient<BrevoEmailSender>();
 builder.Services.AddScoped<IEmailSender, BrevoEmailSender>();
 builder.Services.AddScoped<INotificationService, BrevoEmailSender>();
 builder.Services.AddSingleton<IR2StorageService, R2StorageService>();
+builder.Services.AddSingleton<IPushNotificationService, FirebasePushNotificationService>();
 builder.Services.AddHttpClient<ITurnstileService, TurnstileService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();

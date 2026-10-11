@@ -10,15 +10,18 @@ public class AlertEvaluator : IAlertEvaluator
 {
     private readonly IAlertService _alertService;
     private readonly AppDbContext _context;
+    private readonly IPushNotificationService _pushService;
     private readonly ILogger<AlertEvaluator> _logger;
 
     public AlertEvaluator(
         IAlertService alertService,
         AppDbContext context,
+        IPushNotificationService pushService,
         ILogger<AlertEvaluator> logger)
     {
         _alertService = alertService;
         _context = context;
+        _pushService = pushService;
         _logger = logger;
     }
 
@@ -98,6 +101,21 @@ public class AlertEvaluator : IAlertEvaluator
         };
 
         await _alertService.CreateAlertAsync(createDto, createdByUserId: null);
+
+        // WEB PUSH RULE: Free extra channel ONLY for Red (Critical) alerts!
+        if (currentStateCategory == "Critical")
+        {
+            _logger.LogInformation("[ALERT EVALUATOR] Dispatching Web Push Notification for Critical Dam Alert on {DamName}", dam.Name);
+            await _pushService.SendPushNotificationToAllAsync(
+                title: $"🚨 {title}",
+                body: message,
+                data: new Dictionary<string, string>
+                {
+                    { "damId", dam.Id.ToString() },
+                    { "type", "RedAlert" }
+                }
+            );
+        }
     }
 
     private static string GetDamStateCategory(double levelPercent)
