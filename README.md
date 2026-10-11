@@ -133,44 +133,109 @@ Open http://localhost:5173. The **System Check** page should show **API: Online*
 
 ---
 
-## Configuration and secrets
+## Production Integrations & Security Architecture
 
-- **Never commit secrets** (API keys, JWT signing key, SMS/email credentials, passwords).
-- Backend secrets go in .NET user-secrets locally (`dotnet user-secrets set "Jwt:Key" "..."` from `backend/AquaBophelo`) and in Azure App Settings in production.
-- Frontend variables live in `.env.development` (safe, non-secret values only). See `.env.example`.
-- Each developer uses their own local database (SQL Server LocalDB). The schema is shared through EF Core migrations, and the sample data through code-based seeding. Database files are never committed.
+AquaBophelo integrates six core external services to deliver enterprise-grade performance, bot protection, telemetry, and reliable citizen communications:
 
----
-
-## Working together
-
-- **`main` must always run.** Don't push half-finished work straight to it.
-- Work on short-lived branches named by area, for example `backend/dam-model`, `backend/trip-endpoints`, `frontend/live-map`, `frontend/admin-layout`, and open a pull request into `main`.
-- Commit messages: `feat:`, `fix:`, `docs:`, `chore:` followed by a short description.
-- **Backend:** pull `main` *before* adding an EF Core migration, and tell the other backend dev when you add one. Two people creating migrations at the same time cause conflicts in the model snapshot.
-- **Frontend:** build against the endpoint list in the documentation and the live Scalar page. If a backend change alters a route or DTO, say so in the group chat straight away.
-- Keep changes to `Program.cs` and `AppDbContext.cs` small and merge them quickly, since everyone touches them.
-
----
-
-## Roadmap
-
-| Step | Focus |
-|---|---|
-| 0 | Repo structure, tooling, frontend ↔ backend connection, GitHub *(bootstrap, current step)* |
-| 1 | Data model from the ER diagram, database, migrations, seed data |
-| 2 | Authentication, roles and role-based navigation |
-| 3 | Dams and readings: CRUD, status colours, trend charts |
-| 4 | Trucks, drivers, routes and trips |
-| 5 | Live truck tracking with SignalR and the Leaflet map |
-| 6 | Alerts and Email notifications & Email OTP verification (SMS scratched) |
-| 7 | Deployment (Azure + Vercel/Netlify), demo data, presentation |
+```
+                                  +---------------------------------------+
+                                  |           Cloudflare R2               |
+                                  |    (Direct Presigned Photo Uploads)   |
+                                  +---------------------------------------+
+                                                      ^
+                                                      | Presigned PUT
++-----------------------+   HTTP / Web   +---------------------------------------+   HTTP API   +-----------------------+
+|  React SPA Frontend   | -------------> |     ASP.NET Core Web API Backend      | -------------> |   Brevo Transactional |
+| (Vite + MapLibre + GA)|                | (Identity + EF Core + Rate Limiter)   |                |     Email Service     |
++-----------------------+                +---------------------------------------+                +-----------------------+
+        |                                       |                         |
+        | Sentry SDK                            | Sentry SDK              | FCM Admin SDK
+        v                                       v                         v
++-----------------------+               +-------------------+   +-----------------------+
+|   Sentry UI Telemetry |               |  Sentry API Error |   | Firebase Cloud        |
+|   & Session Replay    |               |  Telemetry Logs   |   | Messaging (Web Push)  |
++-----------------------+               +-------------------+   +-----------------------+
+```
 
 ---
 
+## Master Environment Variables & Secrets Reference
+
+### 1. Backend Secrets (`dotnet user-secrets` in Dev / Azure App Settings in Prod)
+
+| Variable Name | Description | Example Value / Source |
+|---|---|---|
+| `ConnectionStrings__DefaultConnection` | SQL Server / Azure SQL Connection String | `Server=...;Database=AquaBopheloDb;...` |
+| `Jwt__Key` | Secret key used to sign JWT Tokens | 64-character hex string |
+| `Jwt__Issuer` | JWT Token Issuer | `AquaBopheloApi` |
+| `Jwt__Audience` | JWT Token Audience | `AquaBopheloClient` |
+| `Brevo__ApiKey` | Brevo Transactional Email HTTP API Key | `xkeysib-123456...` |
+| `Brevo__SenderEmail` | Verified Municipal Sender Email Address | `notifications@solplaatje.gov.za` |
+| `Brevo__SenderName` | Sender Display Name | `Sol Plaatje Water Care` |
+| `R2__AccountId` | Cloudflare R2 Account ID | `32-character hex ID` |
+| `R2__AccessKeyId` | Cloudflare R2 API Access Key ID | R2 Access Key |
+| `R2__SecretAccessKey` | Cloudflare R2 API Secret Access Key | R2 Secret Key |
+| `R2__BucketName` | Cloudflare R2 Bucket Name | `aquabophelo-uploads` |
+| `Turnstile__SecretKey` | Cloudflare Turnstile Bot Protection Secret Key | `0x4AAAAAA...` |
+| `Sentry__Dsn` | Sentry ASP.NET Core Project DSN | `https://...@...ingest.sentry.io/...` |
+| `Firebase__ServiceAccountPath` | Relative path to Firebase Admin Private Key JSON | `firebase-service-account.json` |
+
+### 2. Frontend Configuration (`frontend/.env`)
+
+| Variable Name | Description | Example Value / Source |
+|---|---|---|
+| `VITE_API_BASE_URL` | Backend API Base Endpoint | `https://localhost:7153` |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile CAPTCHA Public Site Key | `0x4AAAAAA...` |
+| `VITE_SENTRY_DSN` | Sentry React Project DSN | `https://...@...ingest.sentry.io/...` |
+| `VITE_FIREBASE_API_KEY` | Firebase Web Project API Key | `AIzaSy...` |
+| `VITE_FIREBASE_PROJECT_ID` | Firebase Project ID | `aquabophelo-notifications` |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase Sender ID | `1234567890` |
+| `VITE_FIREBASE_APP_ID` | Firebase Web App ID | `1:1234567890:web:1234567890` |
+| `VITE_FIREBASE_VAPID_KEY` | FCM Web Push Certificate Public VAPID Key | `B...` |
+| `VITE_GA_MEASUREMENT_ID` | Google Analytics Measurement ID | `G-XXXXXXXXXX` |
+
+---
+
+## Step-by-Step Integration Setup Guide
+
+### 📧 1. Brevo Transactional Email Service
+1. Create a free account at [brevo.com](https://www.brevo.com).
+2. Verify your municipal sender email address under **Senders & IP**.
+3. Generate an API Key under **SMTP & API** -> **API Keys**.
+4. Configure `Brevo:ApiKey`, `Brevo:SenderEmail`, and `Brevo:SenderName` in backend secrets.
+
+### ☁️ 2. Cloudflare R2 Object Storage
+1. Log in to [dash.cloudflare.com](https://dash.cloudflare.com) and navigate to **R2**.
+2. Create a bucket named `aquabophelo-uploads`.
+3. Go to **Manage R2 API Tokens** -> **Create API Token** (Permissions: *Object Read & Write*).
+4. Configure CORS on the bucket for your frontend origin (`http://localhost:5173`).
+5. Configure `R2:AccountId`, `R2:AccessKeyId`, `R2:SecretAccessKey`, and `R2:BucketName` in backend secrets.
+
+### 🤖 3. Cloudflare Turnstile Bot Protection
+1. In Cloudflare Dashboard, navigate to **Turnstile** -> **Add Site**.
+2. Set Domain to `localhost` (or your production domain).
+3. Copy **Site Key** to `VITE_TURNSTILE_SITE_KEY` in `frontend/.env`.
+4. Copy **Secret Key** to `Turnstile:SecretKey` in backend secrets.
+
+### 📊 4. Sentry Application Monitoring & Telemetry
+1. Create a free account at [sentry.io](https://sentry.io).
+2. Create project `aquabophelo-backend` (ASP.NET Core) -> Copy DSN to `Sentry:Dsn` in backend secrets.
+3. Create project `aquabophelo-frontend` (React) -> Copy DSN to `VITE_SENTRY_DSN` in `frontend/.env`.
+
+### 🔔 5. Firebase Cloud Messaging (Web Push)
+1. Create a project at [console.firebase.google.com](https://console.firebase.google.com).
+2. Add a Web App (`</>`) and copy config values to `frontend/.env`.
+3. Under **Project settings** -> **Cloud Messaging**, click **Generate keypair** under Web Push certificates -> copy VAPID key to `VITE_FIREBASE_VAPID_KEY`.
+4. Under **Service accounts**, click **Generate new private key** -> download JSON file to `backend/AquaBophelo/firebase-service-account.json`.
+
+### 📈 6. Google Analytics (POPIA Compliant)
+1. In Firebase Console or [analytics.google.com](https://analytics.google.com), copy your Web Stream **Measurement ID** (`G-XXXXXXXXXX`).
+2. Add `VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX` to `frontend/.env`.
+3. Google Analytics script is dynamically blocked until the resident clicks *"Accept All"* on the POPIA cookie banner.
 
 ---
 
 ## Academic note
 
 AquaBophelo is a student capstone project developed at Sol Plaatje University. Sol Plaatje Municipality is the client context for the design; this is not an official municipal system.
+
