@@ -47,4 +47,11 @@ public class HealthController : ControllerBase
         bool success = await emailSender.SendEmailAsync(toEmail, subject, html, "Brevo Email Service Successfully Integrated!");
         return Ok(new { success, recipient = toEmail, message = success ? "Email sent via Brevo API!" : "Failed to send email. Check backend logs." });
     }
+
+    [HttpGet("test-sentry")]
+    [AllowAnonymous]
+    public IActionResult TestSentry()
+    {
+        throw new InvalidOperationException("AquaBophelo Backend Sentry Verification Exception - Sol Plaatje Municipal Water Telemetry System");
+    }
 }

@@ -17,6 +17,25 @@ using AquaBophelo.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Sentry Application Monitoring & Crash Telemetry
+builder.WebHost.UseSentry(options =>
+{
+    options.Dsn = builder.Configuration["Sentry:Dsn"];
+    options.SendDefaultPii = false; // Guarantee privacy compliance (POPIA/GDPR)
+    options.TracesSampleRate = 1.0;
+    options.MinimumEventLevel = LogLevel.Error;
+    options.SetBeforeSend((sentryEvent, hint) =>
+    {
+        // PII Scrubbing: Remove sensitive authentication tokens from request headers
+        if (sentryEvent.Request?.Headers != null)
+        {
+            sentryEvent.Request.Headers.Remove("Authorization");
+            sentryEvent.Request.Headers.Remove("api-key");
+        }
+        return sentryEvent;
+    });
+});
+
 // Add services to the container.
 builder.Services.AddControllers();
 

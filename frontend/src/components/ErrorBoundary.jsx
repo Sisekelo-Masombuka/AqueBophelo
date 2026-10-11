@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import * as Sentry from '@sentry/react';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -13,6 +14,9 @@ export class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('AquaBophelo Error Boundary caught an exception:', error, errorInfo);
+    if (import.meta.env.VITE_SENTRY_DSN) {
+      Sentry.captureException(error, { extra: errorInfo });
+    }
   }
 
   render() {
