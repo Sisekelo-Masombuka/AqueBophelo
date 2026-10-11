@@ -34,7 +34,7 @@ import CookieConsentBanner from './components/CookieConsentBanner';
 function RootRedirect() {
   const { isAuthenticated, user, isLoading } = useAuth();
 
-  if (isLoading) return null;
+  if (isLoading && !user) return null;
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/landing" replace />;

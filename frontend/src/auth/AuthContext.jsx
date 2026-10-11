@@ -34,6 +34,7 @@ export function AuthProvider({ children }) {
   const saveAuthSession = (authToken, authUser) => {
     setToken(authToken);
     setUser(authUser);
+    setIsLoading(false);
     localStorage.setItem('aquabophelo_token', authToken);
     localStorage.setItem('aquabophelo_user', JSON.stringify(authUser));
     if (authUser?.preferredLanguage) {
@@ -56,10 +57,13 @@ export function AuthProvider({ children }) {
           area: 'Galeshewe',
         };
         saveAuthSession(response.data.token, loggedUser);
+        setIsLoading(false);
         return { success: true, user: loggedUser };
       }
     } catch (apiError) {
       console.warn('API auth response or network fallback:', apiError);
+    } finally {
+      setIsLoading(false);
     }
 
     // Robust Fallback: Guarantee login works seamlessly for demo/testing
@@ -111,10 +115,13 @@ export function AuthProvider({ children }) {
           area: area || 'Galeshewe',
         };
         saveAuthSession(response.data.token, newUser);
+        setIsLoading(false);
         return { success: true, user: newUser };
       }
     } catch (apiError) {
       console.warn('API registration response fallback:', apiError);
+    } finally {
+      setIsLoading(false);
     }
 
     // Robust Fallback: Complete registration session smoothly
@@ -135,6 +142,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     setToken(null);
+    setIsLoading(false);
     localStorage.removeItem('aquabophelo_token');
     localStorage.removeItem('aquabophelo_user');
   };

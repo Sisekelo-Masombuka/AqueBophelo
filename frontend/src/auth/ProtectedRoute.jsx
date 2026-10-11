@@ -7,7 +7,7 @@ export function ProtectedRoute({ allowedRoles, children }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
+  if (isLoading && !user) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-brand-navy">
         <Loader2 className="mb-3 h-8 w-8 animate-spin text-brand-droplet" />
