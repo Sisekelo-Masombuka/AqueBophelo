@@ -7,7 +7,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
   const [area, setArea] = useState(userArea || 'Galeshewe');
   const [description, setDescription] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
-  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [ticketId, setTicketId] = useState('');
@@ -18,6 +18,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -32,12 +33,38 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
     setError('');
 
     try {
+      let finalImageUrl = imagePreview || '/pipe_leak.jpg';
+
+      if (selectedFile) {
+        try {
+          const presignedRes = await apiClient.post('/api/v1/reports/presigned-url', {
+            fileName: selectedFile.name,
+            contentType: selectedFile.type || 'image/jpeg'
+          });
+
+          const { presignedUrl, fileUrl } = presignedRes.data;
+
+          if (presignedUrl && presignedUrl !== 'http://localhost/mock-upload') {
+            await fetch(presignedUrl, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': selectedFile.type || 'image/jpeg'
+              },
+              body: selectedFile
+            });
+            finalImageUrl = fileUrl;
+          }
+        } catch (r2Err) {
+          console.warn('R2 Upload presigned notice, using fallback image URL:', r2Err);
+        }
+      }
+
       const response = await apiClient.post('/api/v1/reports/issues', {
         issueType,
         area,
         streetAddress,
         description,
-        imageUrl: imagePreview || '/pipe_leak.jpg',
+        imageUrl: finalImageUrl,
       });
 
       const createdReport = response.data;
@@ -51,6 +78,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
         setDescription('');
         setStreetAddress('');
         setImagePreview(null);
+        setSelectedFile(null);
         onClose();
       }, 2500);
     } catch (err) {

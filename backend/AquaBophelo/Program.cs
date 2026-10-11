@@ -10,6 +10,7 @@ using AquaBophelo.Models;
 using AquaBophelo.Services;
 using AquaBophelo.Services.Interfaces;
 using AquaBophelo.Services.Notifications;
+using AquaBophelo.Services.Storage;
 using AquaBophelo.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,8 +18,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
-// Configure Brevo Email Service options
+// Configure Brevo Email & R2 Storage options
 builder.Services.Configure<BrevoOptions>(builder.Configuration.GetSection(BrevoOptions.Position));
+builder.Services.Configure<R2Options>(builder.Configuration.GetSection(R2Options.Position));
 
 // Configure AppDbContext with SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -84,6 +86,7 @@ builder.Services.AddScoped<DryRunNotificationService>();
 builder.Services.AddHttpClient<BrevoEmailSender>();
 builder.Services.AddScoped<IEmailSender, BrevoEmailSender>();
 builder.Services.AddScoped<INotificationService, BrevoEmailSender>();
+builder.Services.AddSingleton<IR2StorageService, R2StorageService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IAlertEvaluator, AlertEvaluator>();

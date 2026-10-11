@@ -284,6 +284,44 @@ public class ReportsController : ControllerBase
 
         return Ok(issue);
     }
+
+    /// <summary>
+    /// POST: api/v1/reports/presigned-url
+    /// Generates a Cloudflare R2 presigned PUT URL for direct photo uploads from the React SPA.
+    /// </summary>
+    [HttpPost("presigned-url")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPresignedUploadUrl(
+        [FromServices] IR2StorageService r2Service,
+        [FromBody] PresignedUrlRequestDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.FileName) || string.IsNullOrWhiteSpace(dto.ContentType))
+        {
+            return BadRequest(new { message = "FileName and ContentType are required." });
+        }
+
+        try
+        {
+            var (presignedUrl, fileUrl, objectKey) = await r2Service.GetPresignedUploadUrlAsync(dto.FileName, dto.ContentType);
+            return Ok(new
+            {
+                presignedUrl,
+                fileUrl,
+                objectKey,
+                message = "Presigned R2 upload URL generated successfully."
+            });
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+}
+
+public class PresignedUrlRequestDto
+{
+    public string FileName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
 }
 
 public class CreateIssueReportDto
