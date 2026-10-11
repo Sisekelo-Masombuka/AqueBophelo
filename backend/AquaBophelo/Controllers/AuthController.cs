@@ -90,8 +90,15 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "Invalid email address." });
         }
 
-        await _authService.ForgotPasswordAsync(request.Email);
-        return Ok(new { message = "If an account exists with that email, a password reset token has been sent to your inbox." });
+        try
+        {
+            await _authService.ForgotPasswordAsync(request.Email);
+            return Ok(new { message = "A password reset verification code has been dispatched to your email." });
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return NotFound(new { message = ex.Message, notFound = true });
+        }
     }
 
     [HttpPost("reset-password")]
@@ -110,6 +117,10 @@ public class AuthController : ControllerBase
         }
         catch (BadHttpRequestException ex)
         {
+            if (ex.Message.Contains("No account"))
+            {
+                return NotFound(new { message = ex.Message, notFound = true });
+            }
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -134,6 +145,10 @@ public class AuthController : ControllerBase
         }
         catch (BadHttpRequestException ex)
         {
+            if (ex.Message.Contains("No account"))
+            {
+                return NotFound(new { message = ex.Message, notFound = true });
+            }
             return BadRequest(new { message = ex.Message });
         }
     }

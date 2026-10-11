@@ -131,6 +131,17 @@ public class AuthService : IAuthService
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
+        // If purpose is PasswordReset, check if user exists.
+        // Prevents wasting email delivery quota on non-existent accounts.
+        if (purpose == "PasswordReset")
+        {
+            var targetUser = await _userManager.FindByEmailAsync(email);
+            if (targetUser == null)
+            {
+                throw new BadHttpRequestException("No account was found with this email address. Please create an account to get started.");
+            }
+        }
+
         // Check 60-second resend cooldown
         var recentOtp = await _context.EmailOtps
             .Where(o => o.Email == normalizedEmail && o.Purpose == purpose)
@@ -241,7 +252,7 @@ public class AuthService : IAuthService
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null)
         {
-            return true; // Generic success to prevent email enumeration
+            throw new BadHttpRequestException("No account was found with this email address. Please create an account to get started.");
         }
 
         await SendEmailOtpAsync(email, "PasswordReset");
@@ -253,7 +264,7 @@ public class AuthService : IAuthService
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null)
         {
-            throw new BadHttpRequestException("Invalid email or reset request.");
+            throw new BadHttpRequestException("No account was found with this email address. Please create an account to get started.");
         }
 
         if (tokenOrCode.Trim().Length == 6 && int.TryParse(tokenOrCode.Trim(), out _))

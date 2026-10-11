@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckCircle2, AlertCircle, KeyRound, ArrowRight } from 'lucide-react';
+import { X, CheckCircle2, AlertCircle, KeyRound, ArrowRight, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
 
@@ -8,12 +8,14 @@ export function ForgotPasswordModal({ isOpen, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
+  const [accountNotFound, setAccountNotFound] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setAccountNotFound(false);
     setSuccessMessage('');
 
     if (!email || !email.includes('@')) {
@@ -24,10 +26,18 @@ export function ForgotPasswordModal({ isOpen, onClose }) {
     setIsSubmitting(true);
     try {
       const response = await api.post('/api/v1/auth/forgot-password', { email });
-      setSuccessMessage(response.data?.message || `If an account exists with ${email}, password reset instructions have been sent.`);
+      setSuccessMessage(response.data?.message || `A password reset code has been sent to ${email}.`);
     } catch (err) {
-      const errMsg = err.response?.data?.message || 'Failed to request password reset. Please try again.';
-      setError(errMsg);
+      if (
+        err.response?.data?.notFound ||
+        err.response?.status === 404 ||
+        err.response?.data?.message?.includes('No account was found')
+      ) {
+        setAccountNotFound(true);
+      } else {
+        const errMsg = err.response?.data?.message || 'Failed to request password reset. Please try again.';
+        setError(errMsg);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -36,6 +46,7 @@ export function ForgotPasswordModal({ isOpen, onClose }) {
   const handleClose = () => {
     setSuccessMessage('');
     setError('');
+    setAccountNotFound(false);
     setEmail('');
     onClose();
   };
@@ -61,7 +72,46 @@ export function ForgotPasswordModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {successMessage ? (
+        {accountNotFound ? (
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-left space-y-3 my-2 animate-in fade-in">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5 text-amber-700">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-semibold text-sm text-amber-950">No Account Found</h4>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  We couldn't find an AquaBophelo account linked to <strong className="text-[#152e52]">{email}</strong>.
+                </p>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  To save unnecessary email dispatches, password reset codes are only sent to existing accounts.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-2">
+              <Link
+                to="/register"
+                onClick={handleClose}
+                className="flex-1 py-2 px-3 bg-[#152e52] hover:bg-[#0f223d] text-white text-xs font-semibold rounded-md flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Create an Account</span>
+                <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setAccountNotFound(false);
+                  setEmail('');
+                }}
+                className="py-2 px-3 border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-md transition-colors cursor-pointer"
+              >
+                Try Another Email
+              </button>
+            </div>
+          </div>
+        ) : successMessage ? (
           <div className="p-5 bg-success-bg border border-success-border rounded-md text-center space-y-3 my-2">
             <CheckCircle2 className="w-10 h-10 text-success mx-auto" />
             <p className="text-sm font-medium text-navy">{successMessage}</p>

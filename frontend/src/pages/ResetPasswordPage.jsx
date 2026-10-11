@@ -106,9 +106,18 @@ export function ResetPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex items-start space-x-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-                  <span className="leading-relaxed">{error}</span>
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 space-y-1.5">
+                  <div className="flex items-start space-x-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                    <span className="leading-relaxed">{error}</span>
+                  </div>
+                  {error.includes('No account') && (
+                    <div className="pt-1">
+                      <Link to="/register" className="font-semibold text-[#152e52] hover:underline inline-flex items-center gap-1">
+                        <span>Click here to create an account</span> &rarr;
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
 
