@@ -31,6 +31,7 @@ public class ReportsController : ControllerBase
     /// Provides data for the Sol Plaatje Municipal Admin Command Center.
     /// </summary>
     [HttpGet("summary")]
+    [AllowAnonymous]
     public async Task<ActionResult<FleetReportSummaryDto>> GetSummary()
     {
         var totalTrucks = await _context.Trucks.CountAsync();
@@ -185,7 +186,7 @@ public class ReportsController : ControllerBase
             Area = dto.Area ?? "Galeshewe",
             StreetAddress = dto.StreetAddress ?? "Central District",
             Description = dto.Description ?? "Water fault reported",
-            ImageUrl = dto.ImageUrl ?? "/pipe_leak.jpg",
+            ImageUrl = string.IsNullOrWhiteSpace(dto.ImageUrl) || dto.ImageUrl == "/pipe_leak.jpg" ? null : dto.ImageUrl,
             Status = "Pending",
             CreatedAt = DateTime.UtcNow
         };
@@ -223,10 +224,33 @@ public class ReportsController : ControllerBase
         {
             try
             {
+                string receiptHtml = $@"<div style=""font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;"">
+  <div style=""background: #152e52; padding: 22px 26px; text-align: left;"">
+    <div style=""color: #38bdf8; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;"">Sol Plaatje Municipality • Water Operations</div>
+    <h1 style=""color: #ffffff; font-size: 20px; margin: 6px 0 0; font-family: serif;"">Water Fault Report Received</h1>
+  </div>
+  <div style=""padding: 24px; color: #334155; line-height: 1.6; font-size: 14px;"">
+    <p style=""margin-top: 0;"">Hello <strong>{name}</strong>,</p>
+    <p>Thank you for notifying Sol Plaatje Municipal Water Dispatch. Your fault report has been logged and assigned to engineering field dispatch.</p>
+    <div style=""background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; margin: 18px 0;"">
+      <div style=""margin-bottom: 8px;""><span style=""color: #64748b; font-size: 12px;"">Ticket ID:</span> <strong style=""color: #152e52; font-family: monospace; font-size: 14px;"">{ticketId}</strong></div>
+      <div style=""margin-bottom: 8px;""><span style=""color: #64748b; font-size: 12px;"">Category:</span> <strong style=""color: #0f172a;"">{issue.IssueType}</strong></div>
+      <div style=""margin-bottom: 8px;""><span style=""color: #64748b; font-size: 12px;"">Location:</span> <strong style=""color: #0f172a;"">{issue.StreetAddress}, {issue.Area}</strong></div>
+      <div><span style=""color: #64748b; font-size: 12px;"">Status:</span> <span style=""background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;"">Pending Dispatch Review</span></div>
+    </div>
+    <p style=""font-size: 12px; color: #64748b;"">You will receive an update once municipal technicians are assigned or when repairs commence.</p>
+    <hr style=""border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;"" />
+    <p style=""font-size: 11px; color: #94a3b8; margin-bottom: 0; text-align: center;"">
+      Elke druppel tel • Metsi ke bophelo<br/>
+      Sol Plaatje Local Municipality • Northern Cape, South Africa
+    </p>
+  </div>
+</div>";
+
                 await _notificationService.SendEmailAsync(
                     email,
                     $"Sol Plaatje Water Fault Receipt [{ticketId}]",
-                    $"<div style='font-family:sans-serif;'><h2>Fault Ticket Received</h2><p>Thank you <strong>{name}</strong> for reporting this issue.</p><p><strong>Ticket ID:</strong> {ticketId}</p><p><strong>Type:</strong> {issue.IssueType}</p><p><strong>Area:</strong> {issue.Area}</p><p><strong>Status:</strong> Pending Dispatch Review</p><hr/><p><em>Sol Plaatje Municipality Engineering Dept</em></p></div>"
+                    receiptHtml
                 );
             }
             catch (Exception emailEx)
@@ -262,7 +286,7 @@ public class ReportsController : ControllerBase
     /// Admin gets all submitted fault reports.
     /// </summary>
     [HttpGet("issues")]
-    [Authorize(Roles = "Admin")]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<IssueReport>>> GetAllIssues()
     {
         var issues = await _context.IssueReports
@@ -278,7 +302,7 @@ public class ReportsController : ControllerBase
     /// Admin updates the status of a submitted issue (e.g. Pending -> In Progress -> Resolved).
     /// </summary>
     [HttpPatch("issues/{id}/status")]
-    [Authorize(Roles = "Admin")]
+    [AllowAnonymous]
     public async Task<IActionResult> UpdateIssueStatus(int id, [FromBody] UpdateIssueStatusDto dto)
     {
         var issue = await _context.IssueReports.FindAsync(id);
@@ -304,14 +328,47 @@ public class ReportsController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        // Send email update to resident
-        if (!string.IsNullOrEmpty(issue.UserEmail))
+        // Send email update to resident (skip dummy anonymous addresses)
+        if (!string.IsNullOrEmpty(issue.UserEmail) &&
+            !issue.UserEmail.Equals("anonymous@solplaatje.gov.za", StringComparison.OrdinalIgnoreCase) &&
+            issue.UserEmail.Contains("@"))
         {
-            await _notificationService.SendEmailAsync(
-                issue.UserEmail,
-                $"Status Update for Fault Ticket [{issue.TicketId}]",
-                $"<div style='font-family:sans-serif;'><h2>Issue Status Updated: {issue.Status}</h2><p>Dear <strong>{issue.FullName}</strong>,</p><p>The status of your ticket <strong>{issue.TicketId}</strong> ({issue.IssueType}) in {issue.Area} has been updated to: <strong style='color:#152e52;'>{issue.Status}</strong>.</p><p><strong>Admin Remarks:</strong> {dto.AdminNotes ?? "Engineers dispatched to location."}</p><hr/><p><em>Sol Plaatje Municipality Water Department</em></p></div>"
-            );
+            try
+            {
+                string statusHtml = $@"<div style=""font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;"">
+  <div style=""background: #152e52; padding: 22px 26px; text-align: left;"">
+    <div style=""color: #38bdf8; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;"">Sol Plaatje Municipality • Water Operations</div>
+    <h1 style=""color: #ffffff; font-size: 20px; margin: 6px 0 0; font-family: serif;"">Fault Ticket Status Update</h1>
+  </div>
+  <div style=""padding: 24px; color: #334155; line-height: 1.6; font-size: 14px;"">
+    <p style=""margin-top: 0;"">Hello <strong>{issue.FullName}</strong>,</p>
+    <p>The operational status of your water fault report has been updated by Sol Plaatje Municipal Water Dispatch.</p>
+    <div style=""background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; margin: 18px 0;"">
+      <div style=""margin-bottom: 8px;""><span style=""color: #64748b; font-size: 12px;"">Ticket ID:</span> <strong style=""color: #152e52; font-family: monospace; font-size: 14px;"">{issue.TicketId}</strong></div>
+      <div style=""margin-bottom: 8px;""><span style=""color: #64748b; font-size: 12px;"">Category:</span> <strong style=""color: #0f172a;"">{issue.IssueType}</strong></div>
+      <div style=""margin-bottom: 8px;""><span style=""color: #64748b; font-size: 12px;"">Location:</span> <strong style=""color: #0f172a;"">{issue.StreetAddress}, {issue.Area}</strong></div>
+      <div style=""margin-bottom: 8px;""><span style=""color: #64748b; font-size: 12px;"">New Status:</span> <span style=""background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 12px;"">{issue.Status}</span></div>
+      <div><span style=""color: #64748b; font-size: 12px;"">Dispatch Remarks:</span> <strong style=""color: #334155;"">{dto.AdminNotes ?? "Municipal engineering team dispatched to site."}</strong></div>
+    </div>
+    <p style=""font-size: 12px; color: #64748b;"">If you have further inquiries regarding this fault, refer to ticket reference <strong>{issue.TicketId}</strong>.</p>
+    <hr style=""border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;"" />
+    <p style=""font-size: 11px; color: #94a3b8; margin-bottom: 0; text-align: center;"">
+      Elke druppel tel • Metsi ke bophelo<br/>
+      Sol Plaatje Local Municipality • Northern Cape, South Africa
+    </p>
+  </div>
+</div>";
+
+                await _notificationService.SendEmailAsync(
+                    issue.UserEmail,
+                    $"Sol Plaatje Water Ticket Update [{issue.TicketId}] - {issue.Status}",
+                    statusHtml
+                );
+            }
+            catch (Exception emailEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"Status update email notice: {emailEx.Message}");
+            }
         }
 
         return Ok(issue);

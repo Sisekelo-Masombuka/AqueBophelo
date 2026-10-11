@@ -88,7 +88,13 @@ public class BrevoEmailSender : IEmailSender, INotificationService
 
     public async Task<bool> SendEmailAsync(string toEmail, string subject, string bodyText)
     {
-        return await SendEmailAsync(toEmail, subject, $"<p>{System.Net.WebUtility.HtmlEncode(bodyText)}</p>", bodyText);
+        bool isAlreadyHtml = !string.IsNullOrWhiteSpace(bodyText) &&
+            (bodyText.TrimStart().StartsWith("<") || bodyText.Contains("<div") || bodyText.Contains("<p") || bodyText.Contains("<table"));
+
+        string htmlContent = isAlreadyHtml ? bodyText : $"<p>{System.Net.WebUtility.HtmlEncode(bodyText)}</p>";
+        string plainText = isAlreadyHtml ? System.Text.RegularExpressions.Regex.Replace(bodyText, "<.*?>", string.Empty).Trim() : bodyText;
+
+        return await SendEmailAsync(toEmail, subject, htmlContent, plainText);
     }
 
     public async Task<int> DispatchAlertNotificationsAsync(Alert alert)

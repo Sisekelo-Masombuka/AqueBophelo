@@ -12,7 +12,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
-  FileText
+  FileText,
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import LiveMap from '../../components/LiveMap';
@@ -145,6 +147,21 @@ export function AdminOverview() {
 
   const [activeAlertsCount, setActiveAlertsCount] = useState(2);
   const [signalrConnected, setSignalrConnected] = useState(false);
+  const [isRefreshingIssues, setIsRefreshingIssues] = useState(false);
+
+  const fetchResidentIssues = async () => {
+    try {
+      setIsRefreshingIssues(true);
+      const res = await apiClient.get('/api/v1/reports/issues');
+      if (res.data && Array.isArray(res.data)) {
+        setResidentIssues(res.data);
+      }
+    } catch (err) {
+      console.warn('Could not refresh resident issues from API:', err);
+    } finally {
+      setIsRefreshingIssues(false);
+    }
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -168,7 +185,7 @@ export function AdminOverview() {
           setTrucks(trucksRes.value.data);
         }
 
-        if (issuesRes.status === 'fulfilled' && Array.isArray(issuesRes.value.data) && issuesRes.value.data.length > 0) {
+        if (issuesRes.status === 'fulfilled' && Array.isArray(issuesRes.value.data)) {
           setResidentIssues(issuesRes.value.data);
         }
       } catch (err) {
@@ -176,6 +193,10 @@ export function AdminOverview() {
       }
     }
     loadData();
+
+    // Auto-refresh reports every 10 seconds so newly submitted reports appear live
+    const interval = setInterval(fetchResidentIssues, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const openUpdateIssueModal = (issue) => {
@@ -444,9 +465,19 @@ export function AdminOverview() {
                 Review submitted resident tickets and update operational status. Updates automatically send email notifications to the resident.
               </p>
             </div>
-            <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#eaf4fb] text-[#152e52] border border-[#bcd6ea]">
-              {residentIssues.length} Tickets
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#eaf4fb] text-[#152e52] border border-[#bcd6ea]">
+                {residentIssues.length} Tickets
+              </span>
+              <button
+                onClick={fetchResidentIssues}
+                disabled={isRefreshingIssues}
+                className="p-1.5 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
+                title="Refresh Tickets"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingIssues ? 'animate-spin text-[#1d70b8]' : ''}`} />
+              </button>
+            </div>
           </div>
 
           {feedbackMsg && (
@@ -463,37 +494,94 @@ export function AdminOverview() {
                   <th className="py-2.5 px-3">Ticket ID</th>
                   <th className="py-2.5 px-3">Resident & Issue</th>
                   <th className="py-2.5 px-3">Location</th>
+                  <th className="py-2.5 px-3">Photo</th>
                   <th className="py-2.5 px-3">Status</th>
                   <th className="py-2.5 px-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {residentIssues.map((issue) => (
-                  <tr key={issue.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-3 font-mono font-bold text-[#152e52] text-xs">
-                      {issue.ticketId}
-                    </td>
-                    <td className="py-3 px-3">
-                      <p className="font-bold text-[#152e52]">{issue.issueType}</p>
-                      <p className="text-[11px] text-slate-500">{issue.fullName} ({issue.userEmail})</p>
-                    </td>
-                    <td className="py-3 px-3 text-slate-600">
-                      <p className="font-medium text-xs">{issue.area}</p>
-                      <p className="text-[11px] text-slate-500">{issue.streetAddress}</p>
-                    </td>
-                    <td className="py-3 px-3">
-                      <StatusBadge status={issue.status} />
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <button
-                        onClick={() => openUpdateIssueModal(issue)}
-                        className="px-3 py-1.5 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white text-xs font-semibold shadow-xs cursor-pointer"
-                      >
-                        Update Status
-                      </button>
+                {residentIssues.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-slate-500 text-xs">
+                      No resident fault reports logged yet. Reports submitted on the landing page or resident portal will appear here in real-time.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  residentIssues.map((issue) => {
+                    const isAnon = !issue.userEmail || issue.userEmail.includes('anonymous') || issue.fullName?.toLowerCase().includes('anonymous');
+                    const hasValidPhoto = issue.imageUrl && issue.imageUrl !== '/pipe_leak.jpg';
+                    return (
+                      <tr key={issue.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3 px-3">
+                          <span className="font-mono font-bold text-[#152e52] text-xs">
+                            {issue.ticketId}
+                          </span>
+                          {issue.createdAt && (
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              {new Date(issue.createdAt).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          )}
+                        </td>
+                        <td className="py-3 px-3">
+                          <p className="font-bold text-[#152e52]">{issue.issueType}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[11px] text-slate-500">
+                              {issue.fullName || (isAnon ? 'Anonymous Resident' : 'Resident')}
+                            </span>
+                            {isAnon && (
+                              <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                Anonymous
+                              </span>
+                            )}
+                          </div>
+                          {!isAnon && issue.userEmail && (
+                            <p className="text-[10px] text-slate-400">{issue.userEmail}</p>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-slate-600">
+                          <p className="font-medium text-xs">{issue.area}</p>
+                          <p className="text-[11px] text-slate-500">{issue.streetAddress}</p>
+                        </td>
+                        <td className="py-3 px-3">
+                          {hasValidPhoto ? (
+                            <a
+                              href={issue.imageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group inline-flex items-center gap-1.5 p-1 rounded border border-slate-200 hover:border-[#1d70b8] transition-colors"
+                              title="Click to view full photo on Cloudflare R2"
+                            >
+                              <img
+                                src={issue.imageUrl}
+                                alt="Fault attachment"
+                                className="w-8 h-8 rounded object-cover border border-slate-100 group-hover:opacity-90"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              <span className="text-[11px] text-[#1d70b8] font-medium group-hover:underline flex items-center gap-0.5">
+                                Photo <ExternalLink className="w-3 h-3" />
+                              </span>
+                            </a>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">No photo</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3">
+                          <StatusBadge status={issue.status} />
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <button
+                            onClick={() => openUpdateIssueModal(issue)}
+                            className="px-3 py-1.5 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors"
+                          >
+                            Update Status
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

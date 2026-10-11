@@ -44,7 +44,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
     setError('');
 
     try {
-      let finalImageUrl = imagePreview || '/pipe_leak.jpg';
+      let finalImageUrl = null;
 
       if (selectedFile) {
         try {
@@ -128,7 +128,7 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
         area,
         streetAddress,
         description,
-        imageUrl: imagePreview || '/pipe_leak.jpg',
+        imageUrl: imagePreview || null,
         fullName: isAnon ? 'Anonymous Resident' : (user?.fullName || 'Kimberley Resident'),
         userEmail: isAnon ? 'anonymous@solplaatje.gov.za' : (user?.email || 'resident@solplaatje.gov.za'),
         status: 'Pending',
