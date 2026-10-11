@@ -82,15 +82,13 @@ export function Register() {
   };
 
   const sendNewOtp = async () => {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
-    setOtpTimer(300);
+    setOtpTimer(600);
     setIsOtpExpired(false);
     setOtpError('');
     setOtpCode('');
 
     try {
-      await api.post('/auth/send-otp', { email, code });
+      await api.post('/auth/send-otp', { email, purpose: 'EmailVerification' });
     } catch (err) {
       console.warn('Backend OTP email dispatch notice:', err);
     }
@@ -101,21 +99,22 @@ export function Register() {
     setOtpError('');
 
     if (isOtpExpired) {
-      setOtpError('This OTP code has expired. Please click "Resend New OTP" to get a fresh 5-minute code.');
+      setOtpError('This OTP code has expired. Please click "Resend New OTP" to get a fresh code.');
       return;
     }
 
-    if (otpCode.trim() !== generatedOtp.trim() && otpCode.trim().length !== 6) {
-      setOtpError('Invalid OTP code. Please enter the 6-digit verification code.');
+    if (!otpCode.trim() || otpCode.trim().length !== 6) {
+      setOtpError('Please enter the 6-digit verification code sent to your email.');
       return;
     }
 
     setIsSubmitting(true);
     try {
+      await api.post('/auth/verify-otp', { email, code: otpCode.trim(), purpose: 'EmailVerification' });
       await register({ email, password, fullName, area, phoneNumber });
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setOtpError(err?.message || 'Verification failed. Please try again.');
+      setOtpError(err?.response?.data?.message || err?.message || 'Verification failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -128,15 +128,15 @@ export function ResetPasswordPage() {
 
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                  Reset code / token
+                  6-Digit OTP or Reset Token
                 </label>
-                <textarea
-                  rows={3}
-                  placeholder="Paste the reset token code from your email here..."
+                <input
+                  type="text"
+                  placeholder="e.g. 849201 or paste reset token"
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
                   required
-                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue focus:ring-1 focus:ring-blue"
                 />
               </div>
 

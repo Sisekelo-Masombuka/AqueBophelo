@@ -26,21 +26,7 @@ public class AuthController : ControllerBase
         _userManager = userManager;
     }
 
-    [HttpPost("send-otp")]
-    [AllowAnonymous]
-    public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains("@"))
-        {
-            return BadRequest(new { message = "Invalid email address." });
-        }
 
-        var subject = "AquaBophelo — Your Email Verification Code";
-        var body = $"Sol Plaatje Municipal Water System\n\nYour 6-digit Email Verification OTP is: {request.Code}\n\nThis code will expire in 5 minutes (300 seconds).\nElke druppel tel • Metsi ke bophelo";
-
-        await _notificationService.SendEmailAsync(request.Email, subject, body);
-        return Ok(new { message = $"Verification OTP sent successfully to {request.Email}" });
-    }
 
     [HttpPost("register")]
     [AllowAnonymous]
@@ -98,6 +84,66 @@ public class AuthController : ControllerBase
         {
             await _authService.ResetPasswordAsync(request.Email, request.Token, request.NewPassword);
             return Ok(new { message = "Password reset successful. You may now log in with your new password." });
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("send-otp")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains("@"))
+        {
+            return BadRequest(new { message = "Valid email address is required." });
+        }
+
+        try
+        {
+            await _authService.SendEmailOtpAsync(request.Email, string.IsNullOrWhiteSpace(request.Purpose) ? "EmailVerification" : request.Purpose);
+            return Ok(new { message = $"Verification code successfully dispatched to {request.Email} via Brevo." });
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("verify-otp")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Code))
+        {
+            return BadRequest(new { message = "Email and verification code are required." });
+        }
+
+        try
+        {
+            await _authService.VerifyEmailOtpAsync(request.Email, request.Code, string.IsNullOrWhiteSpace(request.Purpose) ? "EmailVerification" : request.Purpose);
+            return Ok(new { message = "Verification code confirmed successfully." });
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("confirm-email")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token))
+        {
+            return BadRequest(new { message = "Email and confirmation token/code are required." });
+        }
+
+        try
+        {
+            await _authService.ConfirmEmailAsync(request.Email, request.Token);
+            return Ok(new { message = "Email confirmed successfully." });
         }
         catch (BadHttpRequestException ex)
         {
@@ -234,7 +280,9 @@ public class AuthController : ControllerBase
     }
 }
 
-public record SendOtpRequest(string Email, string Code);
+public record SendOtpRequest(string Email, string? Purpose = "EmailVerification");
+public record VerifyOtpRequest(string Email, string Code, string? Purpose = "EmailVerification");
+public record ConfirmEmailRequest(string Email, string Token);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Email, string Token, string NewPassword);
 

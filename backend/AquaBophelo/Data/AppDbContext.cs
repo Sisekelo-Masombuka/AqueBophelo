@@ -26,6 +26,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ScheduledOutage> ScheduledOutages => Set<ScheduledOutage>();
     public DbSet<DriverProblemReport> DriverProblems => Set<DriverProblemReport>();
     public DbSet<VehicleInspectionCheck> VehicleInspectionChecks => Set<VehicleInspectionCheck>();
+    public DbSet<EmailOtp> EmailOtps => Set<EmailOtp>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
