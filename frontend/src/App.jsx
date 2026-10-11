@@ -29,6 +29,7 @@ import BroadcastAlertPage from './pages/admin/BroadcastAlertPage';
 import AdminReportsPage from './pages/admin/AdminReportsPage';
 
 import PushNotificationPrompt from './components/PushNotificationPrompt';
+import CookieConsentBanner from './components/CookieConsentBanner';
 
 function RootRedirect() {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -138,6 +139,7 @@ export function App() {
           </Route>
         </Routes>
         <PushNotificationPrompt />
+        <CookieConsentBanner />
       </BrowserRouter>
     </AuthProvider>
   );
