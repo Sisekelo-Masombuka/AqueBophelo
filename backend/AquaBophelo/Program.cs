@@ -81,6 +81,8 @@ builder.Services.AddAuthentication(options =>
 });
 
 // Register Domain Services
+builder.Services.AddSingleton<IEmailQueue, EmailQueue>();
+builder.Services.AddHostedService<EmailQueueBackgroundService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<DryRunNotificationService>();
 builder.Services.AddHttpClient<BrevoEmailSender>();

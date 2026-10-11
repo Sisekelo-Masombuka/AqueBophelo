@@ -15,6 +15,7 @@ public class BrevoEmailSender : IEmailSender, INotificationService
     private readonly BrevoOptions _options;
     private readonly DryRunNotificationService _fallbackService;
     private readonly AppDbContext _context;
+    private readonly IEmailQueue _emailQueue;
     private readonly ILogger<BrevoEmailSender> _logger;
 
     public BrevoEmailSender(
@@ -22,12 +23,14 @@ public class BrevoEmailSender : IEmailSender, INotificationService
         IOptions<BrevoOptions> options,
         DryRunNotificationService fallbackService,
         AppDbContext context,
+        IEmailQueue emailQueue,
         ILogger<BrevoEmailSender> logger)
     {
         _httpClient = httpClient;
         _options = options.Value;
         _fallbackService = fallbackService;
         _context = context;
+        _emailQueue = emailQueue;
         _logger = logger;
     }
 
@@ -105,7 +108,9 @@ public class BrevoEmailSender : IEmailSender, INotificationService
             }
         }
 
-        int dispatchedCount = 0;
+        int enqueuedCount = 0;
+        string priority = alert.Severity == "Critical" ? "Critical" : "Normal";
+
         foreach (var recipient in recipientEmails)
         {
             string subject = $"[AquaBophelo Notice] {alert.Title}";
@@ -119,12 +124,20 @@ public class BrevoEmailSender : IEmailSender, INotificationService
                     <p style='font-size: 12px; color: #64748b;'>Sol Plaatje Municipality &bull; Elke druppel tel &bull; Metsi ke bophelo</p>
                 </div>";
 
-            bool sent = await SendEmailAsync(recipient, subject, html, alert.Message);
-            if (sent) dispatchedCount++;
+            _emailQueue.EnqueueEmail(new EmailWorkItem
+            {
+                ToEmail = recipient,
+                Subject = subject,
+                HtmlContent = html,
+                PlainTextContent = alert.Message,
+                Priority = priority
+            });
+            enqueuedCount++;
         }
 
+        _logger.LogInformation("[BrevoEmailSender] Enqueued {Count} alert emails into background queue with priority '{Priority}'.", enqueuedCount, priority);
         await _fallbackService.DispatchAlertNotificationsAsync(alert);
-        return dispatchedCount;
+        return enqueuedCount;
     }
 
     public async Task<IEnumerable<NotificationLog>> GetNotificationLogsAsync(int? alertId = null)
