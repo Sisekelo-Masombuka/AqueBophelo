@@ -7,6 +7,7 @@ import { Droplet, AlertCircle, KeyRound, CheckCircle2, Eye, EyeOff } from 'lucid
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
 import BrandLogo from '../components/BrandLogo';
 import Footer from '../components/Footer';
+import TurnstileWidget from '../components/TurnstileWidget';
 
 export function Login() {
   const { login } = useAuth();
@@ -17,6 +18,7 @@ export function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
@@ -43,7 +45,7 @@ export function Login() {
 
     setIsSubmitting(true);
     try {
-      const res = await login(email, password);
+      const res = await login(email, password, turnstileToken);
       if (res && res.success) {
         const userRole = res.user?.role || 'Resident';
         let targetPath = from;
@@ -179,6 +181,8 @@ export function Login() {
                 </button>
               </div>
             </div>
+
+            <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
 
             <button
               type="submit"

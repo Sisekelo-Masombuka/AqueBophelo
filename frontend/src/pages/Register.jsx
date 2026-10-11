@@ -7,6 +7,7 @@ import api from '../api/client';
 import { Droplet, AlertCircle, CheckCircle2, KeyRound, Clock, RefreshCw, MapPin, Eye, EyeOff } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import Footer from '../components/Footer';
+import TurnstileWidget from '../components/TurnstileWidget';
 
 export function Register() {
   const { register } = useAuth();
@@ -19,6 +20,7 @@ export function Register() {
   const [area, setArea] = useState('Galeshewe');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -111,7 +113,7 @@ export function Register() {
     setIsSubmitting(true);
     try {
       await api.post('/auth/verify-otp', { email, code: otpCode.trim(), purpose: 'EmailVerification' });
-      await register({ email, password, fullName, area, phoneNumber });
+      await register({ email, password, fullName, area, phoneNumber, turnstileToken });
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setOtpError(err?.response?.data?.message || err?.message || 'Verification failed. Please try again.');
@@ -403,6 +405,8 @@ export function Register() {
                   </p>
                 )}
               </div>
+
+              <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
 
               <button
                 type="submit"

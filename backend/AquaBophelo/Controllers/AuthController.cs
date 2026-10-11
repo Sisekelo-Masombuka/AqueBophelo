@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using AquaBophelo.Dtos.Auth;
 using AquaBophelo.Models;
 using AquaBophelo.Services.Interfaces;
@@ -10,20 +11,24 @@ namespace AquaBophelo.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
+[EnableRateLimiting("AuthStrictPolicy")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly INotificationService _notificationService;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ITurnstileService _turnstileService;
 
     public AuthController(
         IAuthService authService,
         INotificationService notificationService,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        ITurnstileService turnstileService)
     {
         _authService = authService;
         _notificationService = notificationService;
         _userManager = userManager;
+        _turnstileService = turnstileService;
     }
 
 
@@ -32,6 +37,15 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterDto dto)
     {
+        if (!string.IsNullOrWhiteSpace(dto.TurnstileToken))
+        {
+            var isHuman = await _turnstileService.VerifyTokenAsync(dto.TurnstileToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+            if (!isHuman)
+            {
+                return BadRequest(new { message = "Bot protection check failed. Please refresh and try again." });
+            }
+        }
+
         try
         {
             var result = await _authService.RegisterAsync(dto);
@@ -47,6 +61,15 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto dto)
     {
+        if (!string.IsNullOrWhiteSpace(dto.TurnstileToken))
+        {
+            var isHuman = await _turnstileService.VerifyTokenAsync(dto.TurnstileToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+            if (!isHuman)
+            {
+                return BadRequest(new { message = "Bot protection check failed. Please refresh and try again." });
+            }
+        }
+
         try
         {
             var result = await _authService.LoginAsync(dto);

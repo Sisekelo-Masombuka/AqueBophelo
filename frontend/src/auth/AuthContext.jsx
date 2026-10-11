@@ -41,11 +41,11 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, turnstileToken) => {
     setIsLoading(true);
     try {
       // Attempt live API authentication
-      const response = await apiClient.post('/api/v1/auth/login', { email, password });
+      const response = await apiClient.post('/api/v1/auth/login', { email, password, turnstileToken });
       if (response.data && response.data.token) {
         const loggedUser = {
           id: response.data.userId || `usr-${Date.now()}`,
@@ -88,7 +88,7 @@ export function AuthProvider({ children }) {
     return { success: true, user: fallbackUser };
   };
 
-  const register = async ({ email, password, fullName, area, phoneNumber }) => {
+  const register = async ({ email, password, fullName, area, phoneNumber, turnstileToken }) => {
     setIsLoading(true);
     const chosenLang = localStorage.getItem('aquabophelo_lang') || 'EN';
     try {
@@ -99,6 +99,7 @@ export function AuthProvider({ children }) {
         areaName: area,
         phoneNumber,
         preferredLanguage: chosenLang,
+        turnstileToken,
       });
       if (response.data && response.data.token) {
         const newUser = {

@@ -9,8 +9,10 @@ using AquaBophelo.Hubs;
 using AquaBophelo.Models;
 using AquaBophelo.Services;
 using AquaBophelo.Services.Interfaces;
+using Microsoft.AspNetCore.RateLimiting;
 using AquaBophelo.Services.Notifications;
 using AquaBophelo.Services.Storage;
+using AquaBophelo.Services.Security;
 using AquaBophelo.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,9 +20,41 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
-// Configure Brevo Email & R2 Storage options
+// Configure Brevo Email, R2 Storage & Turnstile options
 builder.Services.Configure<BrevoOptions>(builder.Configuration.GetSection(BrevoOptions.Position));
 builder.Services.Configure<R2Options>(builder.Configuration.GetSection(R2Options.Position));
+builder.Services.Configure<TurnstileOptions>(builder.Configuration.GetSection(TurnstileOptions.Position));
+
+// Configure ASP.NET Core Built-in Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            message = "Too many requests. Please wait a moment before trying again.",
+            statusCode = 429
+        }, cancellationToken);
+    };
+
+    // Strict policy for Auth/OTP endpoints: 5 requests per 1-minute window
+    options.AddFixedWindowLimiter("AuthStrictPolicy", policyOptions =>
+    {
+        policyOptions.PermitLimit = 5;
+        policyOptions.Window = TimeSpan.FromMinutes(1);
+        policyOptions.QueueLimit = 0;
+    });
+
+    // General API policy: 60 requests per 1-minute window
+    options.AddFixedWindowLimiter("GeneralApiPolicy", policyOptions =>
+    {
+        policyOptions.PermitLimit = 60;
+        policyOptions.Window = TimeSpan.FromMinutes(1);
+        policyOptions.QueueLimit = 0;
+    });
+});
 
 // Configure AppDbContext with SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -89,6 +123,7 @@ builder.Services.AddHttpClient<BrevoEmailSender>();
 builder.Services.AddScoped<IEmailSender, BrevoEmailSender>();
 builder.Services.AddScoped<INotificationService, BrevoEmailSender>();
 builder.Services.AddSingleton<IR2StorageService, R2StorageService>();
+builder.Services.AddHttpClient<ITurnstileService, TurnstileService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IAlertEvaluator, AlertEvaluator>();
@@ -162,6 +197,8 @@ if (!app.Environment.IsDevelopment())
 
 // Enable CORS policy before Authorization
 app.UseCors("Frontend");
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

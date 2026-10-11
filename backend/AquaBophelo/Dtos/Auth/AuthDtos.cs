@@ -17,6 +17,7 @@ public class RegisterDto
     public int? AreaId { get; set; }
     public string? AreaName { get; set; }
     public string PreferredLanguage { get; set; } = "EN";
+    public string? TurnstileToken { get; set; }
 }
 
 public class LoginDto
@@ -26,6 +27,8 @@ public class LoginDto
 
     [Required]
     public string Password { get; set; } = string.Empty;
+
+    public string? TurnstileToken { get; set; }
 }
 
 public class AuthResponseDto
