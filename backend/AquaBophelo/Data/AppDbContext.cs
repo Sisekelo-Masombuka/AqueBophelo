@@ -122,5 +122,36 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         // Configure Global Soft Delete Query Filters
         builder.Entity<ApplicationUser>().HasQueryFilter(u => !u.IsDeleted);
         builder.Entity<IssueReport>().HasQueryFilter(i => !i.IsDeleted);
+
+        // Database Performance Indexes (DATA-02)
+        builder.Entity<DamReading>()
+            .HasIndex(r => new { r.DamId, r.RecordedAt });
+
+        builder.Entity<TruckLocation>()
+            .HasIndex(tl => new { tl.TruckId, tl.RecordedAt });
+
+        builder.Entity<TruckLocation>()
+            .HasIndex(tl => new { tl.TripId, tl.RecordedAt });
+
+        builder.Entity<Alert>()
+            .HasIndex(a => new { a.DamId, a.CreatedAt });
+
+        builder.Entity<Alert>()
+            .HasIndex(a => new { a.AreaId, a.CreatedAt });
+
+        builder.Entity<EmailOtp>()
+            .HasIndex(o => new { o.Email, o.Purpose, o.CreatedAt });
+
+        builder.Entity<IssueReport>()
+            .HasIndex(i => new { i.UserId, i.CreatedAt });
+
+        builder.Entity<IssueReport>()
+            .HasIndex(i => new { i.Status, i.CreatedAt });
+
+        builder.Entity<NotificationLog>()
+            .HasIndex(n => new { n.UserId, n.SentAt });
+
+        builder.Entity<SystemAuditLog>()
+            .HasIndex(l => new { l.Category, l.TimestampUtc });
     }
 }

@@ -60,11 +60,11 @@ namespace AquaBophelo.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AreaId");
-
                     b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("DamId");
+                    b.HasIndex("AreaId", "CreatedAt");
+
+                    b.HasIndex("DamId", "CreatedAt");
 
                     b.ToTable("Alerts");
                 });
@@ -291,7 +291,7 @@ namespace AquaBophelo.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DamId");
+                    b.HasIndex("DamId", "RecordedAt");
 
                     b.ToTable("DamReadings");
                 });
@@ -397,7 +397,7 @@ namespace AquaBophelo.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2");
@@ -410,9 +410,11 @@ namespace AquaBophelo.Migrations
 
                     b.Property<string>("Purpose")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email", "Purpose", "CreatedAt");
 
                     b.ToTable("EmailOtps");
                 });
@@ -458,7 +460,7 @@ namespace AquaBophelo.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("StreetAddress")
                         .IsRequired()
@@ -476,9 +478,13 @@ namespace AquaBophelo.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.HasIndex("UserId", "CreatedAt");
 
                     b.ToTable("IssueReports");
                 });
@@ -530,7 +536,7 @@ namespace AquaBophelo.Migrations
 
                     b.HasIndex("AlertId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "SentAt");
 
                     b.ToTable("NotificationLogs");
                 });
@@ -651,6 +657,8 @@ namespace AquaBophelo.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Category", "TimestampUtc");
 
                     b.ToTable("AuditLogs");
                 });
@@ -811,9 +819,9 @@ namespace AquaBophelo.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TripId");
+                    b.HasIndex("TripId", "RecordedAt");
 
-                    b.HasIndex("TruckId");
+                    b.HasIndex("TruckId", "RecordedAt");
 
                     b.ToTable("TruckLocations");
                 });
