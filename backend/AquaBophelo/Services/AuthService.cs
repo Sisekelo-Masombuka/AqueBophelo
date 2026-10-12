@@ -175,6 +175,10 @@ public class AuthService : IAuthService
             Role = primaryRole,
             AreaId = user.AreaId,
             AreaName = user.Area?.Name,
+            ProfilePictureUrl = user.ProfilePictureUrl,
+            OptInEmailAlerts = user.OptInEmailAlerts,
+            ShareLocationForTankers = user.ShareLocationForTankers,
+            PublicProfile = user.PublicProfile,
             PreferredLanguage = user.PreferredLanguage ?? "EN"
         };
     }
@@ -418,6 +422,9 @@ public class AuthService : IAuthService
             Email = user.Email ?? string.Empty,
             FullName = user.FullName,
             Role = primaryRole,
+            PhoneNumber = user.PhoneNumber,
+            ProfilePictureUrl = user.ProfilePictureUrl,
+            AreaName = user.Area?.Name,
             PreferredLanguage = user.PreferredLanguage ?? "EN",
             ExpiresAt = expiresAt,
             Message = "Authentication successful"
@@ -439,6 +446,81 @@ public class AuthService : IAuthService
             action: "ACCOUNT_SOFT_DELETED",
             category: "Auth",
             details: $"User account for {user.Email} soft-deleted. Scheduled for permanent deletion on {user.ScheduledPermanentDeletionAt:dd MMM yyyy} (30-day grace period).",
+            userId: user.Id,
+            userEmail: user.Email,
+            entityName: "ApplicationUser",
+            entityId: user.Id
+        );
+
+        return true;
+    }
+
+    public async Task<UserProfileDto> UpdateProfileAsync(string userId, UpdateProfileDetailsDto dto)
+    {
+        var user = await _context.Users
+            .Include(u => u.Area)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null) throw new BadHttpRequestException("User account not found.");
+
+        user.FullName = dto.FullName.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
+        {
+            user.PhoneNumber = dto.PhoneNumber.Trim();
+        }
+
+        if (dto.AreaId.HasValue)
+        {
+            user.AreaId = dto.AreaId.Value;
+        }
+        else if (!string.IsNullOrWhiteSpace(dto.AreaName))
+        {
+            var matchedArea = await _context.Areas.FirstOrDefaultAsync(a => a.Name.ToLower() == dto.AreaName.ToLower());
+            if (matchedArea != null) user.AreaId = matchedArea.Id;
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.PreferredLanguage))
+        {
+            user.PreferredLanguage = dto.PreferredLanguage.ToUpperInvariant();
+        }
+
+        await _userManager.UpdateAsync(user);
+
+        await _auditLogger.LogAsync(
+            action: "PROFILE_UPDATED",
+            category: "Auth",
+            details: $"Profile updated for user {user.Email}. Phone: {user.PhoneNumber}, AreaId: {user.AreaId}.",
+            userId: user.Id,
+            userEmail: user.Email,
+            entityName: "ApplicationUser",
+            entityId: user.Id
+        );
+
+        return (await GetProfileAsync(userId))!;
+    }
+
+    public async Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) throw new BadHttpRequestException("User account not found.");
+
+        var passwordCheck = await _userManager.CheckPasswordAsync(user, currentPassword);
+        if (!passwordCheck)
+        {
+            throw new BadHttpRequestException("Current password is incorrect.");
+        }
+
+        var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+            throw new BadHttpRequestException($"Password change failed: {errors}");
+        }
+
+        await _auditLogger.LogAsync(
+            action: "PASSWORD_CHANGED",
+            category: "Auth",
+            details: $"Password changed directly for user {user.Email}.",
             userId: user.Id,
             userEmail: user.Email,
             entityName: "ApplicationUser",

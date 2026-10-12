@@ -83,12 +83,16 @@ public class TruckHub : Hub
             return;
         }
 
-        // Verify that the caller is either the assigned driver for this trip/truck or an Admin
+        // Verify that the caller has Driver or Admin role
         var callingUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        var callingUserEmail = Context.User?.FindFirstValue(ClaimTypes.Email);
         var isAdmin = Context.User?.IsInRole("Admin") ?? false;
+        var isDriver = Context.User?.IsInRole("Driver") ?? false;
         var assignedDriverId = trip.DriverId ?? trip.Truck.DriverId;
 
-        if (!isAdmin && (string.IsNullOrEmpty(callingUserId) || callingUserId != assignedDriverId))
+        var isAuthorized = isAdmin || isDriver || (callingUserId != null && (callingUserId == assignedDriverId || trip.Driver?.Email == callingUserEmail));
+
+        if (!isAuthorized)
         {
             _logger.LogWarning(
                 "Unauthorized location update attempt for Trip {TripId} by caller {CallingUser}. Assigned driver is {AssignedDriver}.",

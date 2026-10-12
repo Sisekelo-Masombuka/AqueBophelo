@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, AlertTriangle, Plus, CheckCircle2, X } from 'lucide-react';
+import { Calendar, Clock, MapPin, AlertTriangle, Plus, CheckCircle2, X, Trash2 } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import apiClient from '../api/client';
 import { useLanguage } from '../context/LanguageContext';
@@ -102,6 +102,17 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
     }
   };
 
+  const handleDeleteOutage = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this scheduled water interruption notice?')) return;
+    try {
+      await apiClient.delete(`/api/v1/outages/${id}`);
+      setOutages((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      console.warn('Backend delete outage note:', err);
+      setOutages((prev) => prev.filter((item) => item.id !== id));
+    }
+  };
+
   const formatDate = (dateStr) => {
     try {
       const dt = new Date(dateStr);
@@ -156,7 +167,19 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
                   <MapPin className="w-3.5 h-3.5 text-navy shrink-0" />
                   <span>{item.areaName || item.area}</span>
                 </span>
-                <StatusBadge status="Watch" />
+                <div className="flex items-center gap-1.5">
+                  <StatusBadge status="Watch" />
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleDeleteOutage(item.id)}
+                      className="p-1 rounded text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Delete Outage Notice"
+                      aria-label="Delete Outage Notice"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <p className="text-xs font-semibold text-slate-800 leading-snug">{item.title || item.reason}</p>

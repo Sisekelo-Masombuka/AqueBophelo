@@ -7,16 +7,26 @@ import { useLanguage } from '../context/LanguageContext';
 import { StatusBadge } from '../components/StatusBadge';
 
 export function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const currentRole = user?.role || 'Resident';
 
-  const [fullName, setFullName] = useState(user?.fullName || 'Sisekelo Masombuka');
-  const [email] = useState(user?.email || 'resident@solplaatje.gov.za');
+  const [fullName, setFullName] = useState(user?.fullName || '');
+  const [email] = useState(user?.email || '');
   const [area, setArea] = useState(user?.area || 'Galeshewe');
-  const [phoneNumber, setPhoneNumber] = useState('082 123 4567');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
   const [avatarSrc, setAvatarSrc] = useState(user?.profilePictureUrl || null);
+
+  // Sync state whenever user in AuthContext updates
+  React.useEffect(() => {
+    if (user) {
+      if (user.fullName) setFullName(user.fullName);
+      if (user.phoneNumber) setPhoneNumber(user.phoneNumber);
+      if (user.area) setArea(user.area);
+      if (user.profilePictureUrl) setAvatarSrc(user.profilePictureUrl);
+    }
+  }, [user]);
 
   // Privacy Settings state
   const [optInEmailAlerts, setOptInEmailAlerts] = useState(true);
@@ -49,13 +59,19 @@ export function ProfilePage() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Resident Password OTP state
+  const [residentOtp, setResidentOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [demoOtp, setDemoOtp] = useState('');
+
   const [profileSuccess, setProfileSuccess] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
 
-  // Item 1.8: Profile Picture Upload to backend
+  // Item 1.8: Profile Picture Upload to backend and persistent state
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -65,9 +81,11 @@ export function ProfilePage() {
         setAvatarSrc(base64Image);
         try {
           await apiClient.post('/api/v1/auth/profile-picture', { profilePictureUrl: base64Image });
+          if (updateUser) updateUser({ profilePictureUrl: base64Image });
           setProfileSuccess('Profile picture uploaded and saved!');
         } catch (err) {
           console.warn('API profile picture upload notice:', err);
+          if (updateUser) updateUser({ profilePictureUrl: base64Image });
           setProfileSuccess('Profile picture updated!');
         }
         setTimeout(() => setProfileSuccess(''), 3000);
@@ -146,20 +164,93 @@ export function ProfilePage() {
     }
   };
 
-  const handleUpdateProfile = (e) => {
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setIsSubmittingProfile(true);
+    setProfileSuccess('');
 
-    setTimeout(() => {
+    try {
+      await apiClient.put('/api/v1/auth/profile', {
+        fullName,
+        phoneNumber,
+        areaName: area,
+      });
+      if (updateUser) updateUser({ fullName, phoneNumber, area });
+      setProfileSuccess('Profile details saved to Sol Plaatje municipal database!');
+    } catch (err) {
+      console.warn('Backend profile update note:', err);
+      if (updateUser) updateUser({ fullName, phoneNumber, area });
+      setProfileSuccess('Profile details saved locally!');
+    } finally {
       setIsSubmittingProfile(false);
-      setProfileSuccess('Profile details updated successfully!');
       setTimeout(() => setProfileSuccess(''), 3000);
-    }, 600);
+    }
   };
 
-  const handleChangePassword = (e) => {
+  // Resident Password Change: Step 1 -> Request 6-digit Email OTP
+  const handleRequestPasswordOtp = async () => {
+    setIsSendingOtp(true);
+    setPasswordError('');
+    setPasswordSuccess('');
+    try {
+      const res = await apiClient.post('/api/v1/auth/send-otp', {
+        email: user?.email,
+        purpose: 'PasswordReset',
+      });
+      setOtpSent(true);
+      if (res.data?.demoCode) setDemoOtp(res.data.demoCode);
+      setPasswordSuccess(`A 6-digit verification code has been dispatched to ${user?.email}.`);
+    } catch (err) {
+      setPasswordError(err.response?.data?.message || 'Failed to dispatch verification OTP. Please try again.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  // Resident Password Change: Step 2 -> Verify OTP and Update Password
+  const handleResidentResetPassword = async (e) => {
     e.preventDefault();
     setPasswordError('');
+    setPasswordSuccess('');
+
+    if (!residentOtp || residentOtp.length < 6) {
+      setPasswordError('Please enter the 6-digit OTP code sent to your email.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+
+    setIsSubmittingPassword(true);
+    try {
+      await apiClient.post('/api/v1/auth/reset-password', {
+        email: user?.email,
+        token: residentOtp.trim(),
+        newPassword,
+      });
+      setPasswordSuccess('Password successfully changed! You may now sign in with your new password.');
+      setResidentOtp('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setOtpSent(false);
+      setTimeout(() => setPasswordSuccess(''), 4000);
+    } catch (err) {
+      setPasswordError(err.response?.data?.message || 'Invalid or expired OTP code. Please check your inbox and try again.');
+    } finally {
+      setIsSubmittingPassword(false);
+    }
+  };
+
+  // Driver & Admin Password Change: Directly with Current Password (No Email OTP required)
+  const handleDirectChangePassword = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
 
     if (!currentPassword) {
       setPasswordError('Please enter your current password.');
@@ -175,14 +266,21 @@ export function ProfilePage() {
     }
 
     setIsSubmittingPassword(true);
-    setTimeout(() => {
-      setIsSubmittingPassword(false);
-      setPasswordSuccess('Password changed successfully!');
+    try {
+      await apiClient.post('/api/v1/auth/change-password', {
+        currentPassword,
+        newPassword,
+      });
+      setPasswordSuccess('Password successfully updated!');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setTimeout(() => setPasswordSuccess(''), 3000);
-    }, 600);
+    } catch (err) {
+      setPasswordError(err.response?.data?.message || 'Failed to update password. Please check your current password.');
+    } finally {
+      setIsSubmittingPassword(false);
+    }
   };
 
   return (
@@ -617,6 +715,225 @@ export function ProfilePage() {
                 </button>
               </div>
             </form>
+          </div>
+
+          {/* SECURITY & PASSWORD CHANGE CARD (ROLE ADAPTIVE: RESIDENT OTP VS DRIVER/ADMIN DIRECT) */}
+          <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-xs space-y-4">
+            <h3 className="font-serif font-bold text-base text-[#152e52] flex items-center space-x-2 border-b border-slate-200 pb-2">
+              <Lock className="w-4 h-4 text-[#1d70b8]" />
+              <span>Security &amp; Change Password</span>
+            </h3>
+
+            {passwordError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                <span>{passwordError}</span>
+              </div>
+            )}
+
+            {passwordSuccess && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-md text-xs text-[#2e7d32] flex items-center space-x-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{passwordSuccess}</span>
+              </div>
+            )}
+
+            {currentRole === 'Resident' ? (
+              /* RESIDENT FLOW: 2-Step Email OTP Password Change */
+              <div className="space-y-4 text-xs">
+                <p className="text-slate-600 font-normal leading-relaxed">
+                  As a resident, updating your password requires a 6-digit verification code dispatched to your registered email address (<strong className="font-semibold text-slate-800">{email}</strong>).
+                </p>
+
+                {!otpSent ? (
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={handleRequestPasswordOtp}
+                      disabled={isSendingOtp}
+                      className="px-4 py-2 bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs rounded-md transition-colors cursor-pointer flex items-center space-x-2 disabled:opacity-50"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>{isSendingOtp ? 'Sending Email OTP...' : 'Send Password Change OTP'}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleResidentResetPassword} className="space-y-3 pt-1">
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-xs text-blue-900 flex items-center justify-between">
+                      <span>Verification code dispatched to {email}. Check your inbox.</span>
+                      <button
+                        type="button"
+                        onClick={handleRequestPasswordOtp}
+                        disabled={isSendingOtp}
+                        className="text-xs font-semibold text-[#1d70b8] hover:underline cursor-pointer"
+                      >
+                        Resend
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">
+                        6-Digit Email OTP Code *
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={residentOtp}
+                        onChange={(e) => setResidentOtp(e.target.value)}
+                        placeholder="e.g. 123456"
+                        required
+                        className="w-full sm:w-48 border border-slate-300 rounded-md px-3 py-2 text-sm font-mono tracking-widest text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#1d70b8]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 font-medium mb-1">New Password *</label>
+                        <div className="relative">
+                          <input
+                            type={showNew ? 'text' : 'password'}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            required
+                            placeholder="At least 6 characters"
+                            className="w-full border border-slate-300 rounded-md px-3 py-2 pr-9 text-xs focus:ring-1 focus:ring-[#1d70b8]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNew(!showNew)}
+                            className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                          >
+                            {showNew ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-medium mb-1">Confirm New Password *</label>
+                        <div className="relative">
+                          <input
+                            type={showConfirm ? 'text' : 'password'}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                            placeholder="Repeat new password"
+                            className="w-full border border-slate-300 rounded-md px-3 py-2 pr-9 text-xs focus:ring-1 focus:ring-[#1d70b8]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirm(!showConfirm)}
+                            className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                          >
+                            {showConfirm ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 pt-2">
+                      <button
+                        type="submit"
+                        disabled={isSubmittingPassword}
+                        className="px-4 py-2 bg-[#2e7d32] hover:bg-[#256629] text-white font-semibold rounded-md text-xs transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {isSubmittingPassword ? 'Verifying & Saving...' : 'Verify OTP & Change Password'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setOtpSent(false); setResidentOtp(''); }}
+                        className="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-md text-xs font-medium cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            ) : (
+              /* DRIVER & ADMIN FLOW: Current Password + New Password (No Email OTP required) */
+              <div className="space-y-4 text-xs">
+                <p className="text-slate-600 font-normal leading-relaxed">
+                  As municipal operational staff ({currentRole}), you can change your password directly using your current password without requiring an email verification code.
+                </p>
+
+                <form onSubmit={handleDirectChangePassword} className="space-y-3">
+                  <div>
+                    <label className="block text-slate-700 font-medium mb-1">Current Password *</label>
+                    <div className="relative">
+                      <input
+                        type={showCurrent ? 'text' : 'password'}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="Enter current password"
+                        required
+                        className="w-full border border-slate-300 rounded-md px-3 py-2 pr-9 text-xs focus:ring-1 focus:ring-[#1d70b8]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrent(!showCurrent)}
+                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                      >
+                        {showCurrent ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">New Password *</label>
+                      <div className="relative">
+                        <input
+                          type={showNew ? 'text' : 'password'}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="At least 6 characters"
+                          required
+                          className="w-full border border-slate-300 rounded-md px-3 py-2 pr-9 text-xs focus:ring-1 focus:ring-[#1d70b8]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNew(!showNew)}
+                          className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                        >
+                          {showNew ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">Confirm New Password *</label>
+                      <div className="relative">
+                        <input
+                          type={showConfirm ? 'text' : 'password'}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Repeat new password"
+                          required
+                          className="w-full border border-slate-300 rounded-md px-3 py-2 pr-9 text-xs focus:ring-1 focus:ring-[#1d70b8]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirm(!showConfirm)}
+                          className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                        >
+                          {showConfirm ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-1">
+                    <button
+                      type="submit"
+                      disabled={isSubmittingPassword}
+                      className="px-4 py-2 bg-[#152e52] hover:bg-[#0f223d] text-white font-semibold rounded-md text-xs transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {isSubmittingPassword ? 'Saving Password...' : `Update ${currentRole} Password`}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
 
           {/* ITEM 1.5: DELETE OWN ACCOUNT WITH REAL EMAIL OTP */}

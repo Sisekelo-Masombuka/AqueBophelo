@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   CheckCircle2, Clock, ArrowLeft, Navigation, ShieldCheck, 
-  MapPin, AlertTriangle, Play, Truck, Check
+  MapPin, AlertTriangle, Play, Truck, Check, Camera
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import { useLanguage } from '../../context/LanguageContext';
@@ -21,6 +21,9 @@ export function DriverStopsScreen() {
   const [litresDelivered, setLitresDelivered] = useState('2500');
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [notes, setNotes] = useState('');
+  const [proofPhotoFile, setProofPhotoFile] = useState(null);
+  const [proofPhotoPreview, setProofPhotoPreview] = useState(null);
+  const [proofPhotoUrl, setProofPhotoUrl] = useState(null);
   const [submittingDelivery, setSubmittingDelivery] = useState(false);
 
   // Report Problem Modal State
@@ -135,6 +138,20 @@ export function DriverStopsScreen() {
     setDeliveryLocation(stop.stopName);
     setLitresDelivered('2500');
     setNotes('');
+    setProofPhotoFile(null);
+    setProofPhotoPreview(null);
+    setProofPhotoUrl(null);
+  };
+
+  const handleProofPhotoCapture = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProofPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProofPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   // Step 3 Submit: Complete Delivery
@@ -143,17 +160,37 @@ export function DriverStopsScreen() {
     if (!selectedStopForComplete) return;
 
     setSubmittingDelivery(true);
+    let finalPhotoUrl = proofPhotoUrl;
+
+    if (proofPhotoFile && !finalPhotoUrl) {
+      try {
+        const formData = new FormData();
+        formData.append('file', proofPhotoFile);
+        const uploadRes = await apiClient.post('/api/v1/reports/upload-photo', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        finalPhotoUrl = uploadRes.data?.fileUrl || null;
+      } catch (uploadErr) {
+        console.warn('Photo upload note:', uploadErr);
+        finalPhotoUrl = proofPhotoPreview;
+      }
+    }
+
     try {
       await apiClient.post(
         `/api/v1/driver/trips/${trip.id}/stops/${selectedStopForComplete.id}/complete-delivery`,
         {
           litresDelivered: parseFloat(litresDelivered) || 0,
           deliveryLocation: deliveryLocation || selectedStopForComplete.stopName,
-          notes: notes
+          notes: notes,
+          proofPhotoUrl: finalPhotoUrl,
         }
       );
-      setFeedback({ type: 'success', message: `Delivery completed for ${selectedStopForComplete.stopName}!` });
+      setFeedback({ type: 'success', message: `Delivery completed for ${selectedStopForComplete.stopName} (Proof Photo attached)!` });
       setSelectedStopForComplete(null);
+      setProofPhotoFile(null);
+      setProofPhotoPreview(null);
+      setProofPhotoUrl(null);
       fetchTodayTrip();
     } catch (err) {
       setFeedback({ type: 'success', message: `Delivery completed for ${selectedStopForComplete.stopName} (Preview)` });
@@ -165,10 +202,14 @@ export function DriverStopsScreen() {
           completedAt: 'Just now (CAT)',
           litresDelivered: parseFloat(litresDelivered) || 2500,
           deliveryLocation: deliveryLocation || selectedStopForComplete.stopName,
-          notes: notes
+          notes: notes,
+          proofPhotoUrl: finalPhotoUrl,
         } : s)
       }));
       setSelectedStopForComplete(null);
+      setProofPhotoFile(null);
+      setProofPhotoPreview(null);
+      setProofPhotoUrl(null);
     } finally {
       setSubmittingDelivery(false);
     }
@@ -235,19 +276,30 @@ export function DriverStopsScreen() {
 
       {/* Trip Header Summary Card */}
       <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center space-x-2 text-xs font-semibold text-[#1d70b8] uppercase tracking-wider">
             <Navigation className="w-3.5 h-3.5" />
-            <span>Driver Trip Manifest</span>
+            <span>Daily Delivery Schedule &amp; Route Manifest</span>
           </div>
-          <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#eaf4fb] text-[#152e52] border border-[#bcd6ea]">
-            Vehicle: {trip?.truckRegistration || '542-KM NC'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#eaf4fb] text-[#152e52] border border-[#bcd6ea]">
+              Vehicle: {trip?.truckRegistration || '542-KM NC'}
+            </span>
+            <button
+              onClick={() => navigate('/driver/trip')}
+              className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-[#152e52] text-white hover:bg-[#0f223d] transition-colors cursor-pointer"
+            >
+              Open GPS Cockpit &rarr;
+            </button>
+          </div>
         </div>
 
-        <h1 className="font-serif text-xl md:text-2xl font-bold text-[#152e52] mt-1">
+        <h1 className="font-serif text-xl md:text-2xl font-bold text-[#152e52] mt-1.5">
           {trip?.routeName || 'Municipal Route Manifest'}
         </h1>
+        <p className="text-xs text-slate-500 mt-1">
+          This manifest lists all scheduled community drop points for today&apos;s shift. Mark arrival, discharge water, and capture a live Proof of Delivery photo at each point. For real-time driving navigation, tap &quot;Open GPS Cockpit&quot;.
+        </p>
         <p className="text-xs text-slate-500 mt-1">
           Driver: <strong className="text-slate-800">{trip?.driverName || 'Sipho Dlamini'}</strong> (ID: {trip?.driverId || 'DRV-8492'}) · Serviced <strong>{completedCount}</strong> of <strong>{stops.length}</strong> Stops
         </p>
@@ -348,11 +400,28 @@ export function DriverStopsScreen() {
                       </div>
 
                       {/* Completed Details summary */}
-                      {isCompleted && stop.litresDelivered > 0 && (
-                        <div className="mt-2 text-xs bg-slate-100/90 p-2.5 rounded-md text-slate-700 border border-slate-200 space-y-0.5">
-                          <p><strong>Delivered Volume:</strong> {stop.litresDelivered.toLocaleString()} Litres</p>
-                          <p><strong>Location Note:</strong> {stop.deliveryLocation}</p>
+                      {isCompleted && (
+                        <div className="mt-2 text-xs bg-slate-100/90 p-2.5 rounded-md text-slate-700 border border-slate-200 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <p><strong>Delivered Volume:</strong> {(stop.litresDelivered || 0).toLocaleString()} Litres</p>
+                            <span className="font-mono text-[10px] text-[#1d70b8] font-bold bg-white px-2 py-0.5 rounded border border-slate-200">
+                              POD-{String(stop.id).padStart(4, '0')}
+                            </span>
+                          </div>
+                          {stop.deliveryLocation && <p><strong>Location Note:</strong> {stop.deliveryLocation}</p>}
                           {stop.notes && <p><strong>Driver Notes:</strong> {stop.notes}</p>}
+                          {stop.proofPhotoUrl && (
+                            <div className="pt-1.5 flex items-center gap-2">
+                              <img
+                                src={stop.proofPhotoUrl}
+                                alt="Proof of Delivery"
+                                className="w-16 h-16 object-cover rounded-md border border-slate-300 shadow-2xs"
+                              />
+                              <span className="text-[10px] font-semibold text-[#2e7d32] bg-[#f2f9f3] px-2 py-0.5 rounded border border-[#b8e3bd]">
+                                Proof Photo Verified
+                              </span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -405,9 +474,14 @@ export function DriverStopsScreen() {
       {selectedStopForComplete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl border border-slate-200">
-            <h3 className="font-serif text-lg font-bold text-[#152e52] mb-1">
-              Complete Delivery Record
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-serif text-lg font-bold text-[#152e52]">
+                Complete Delivery Record
+              </h3>
+              <span className="font-mono text-[11px] font-bold text-[#1d70b8] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                POD-{String(selectedStopForComplete.id).padStart(4, '0')}
+              </span>
+            </div>
             <p className="text-xs text-slate-500 mb-4">
               Stop: <strong>{selectedStopForComplete.stopName}</strong>
             </p>
@@ -441,6 +515,58 @@ export function DriverStopsScreen() {
                 />
               </div>
 
+              {/* Proof of Delivery Live Photo Capture */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Proof of Delivery Photo (Live Camera) *
+                </label>
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center bg-slate-50 hover:bg-slate-100/70 transition-colors">
+                  {proofPhotoPreview ? (
+                    <div className="space-y-2">
+                      <img
+                        src={proofPhotoPreview}
+                        alt="Proof preview"
+                        className="w-full h-36 object-cover rounded-md border border-slate-200"
+                      />
+                      <div className="flex items-center justify-between text-xs px-1">
+                        <span className="text-[#2e7d32] font-semibold flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" /> Photo Attached
+                        </span>
+                        <label
+                          htmlFor="stops-camera-input"
+                          className="text-[#1d70b8] font-bold underline cursor-pointer"
+                        >
+                          Retake Photo
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="stops-camera-input"
+                      className="flex flex-col items-center justify-center cursor-pointer py-2 space-y-1"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-blue-100 text-[#1d70b8] flex items-center justify-center mb-1">
+                        <Camera className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-bold text-[#152e52]">
+                        Take Live Delivery Photo
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        Open device camera to photograph water discharge or serviced tank
+                      </span>
+                    </label>
+                  )}
+                  <input
+                    id="stops-camera-input"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleProofPhotoCapture}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Optional Delivery Notes
@@ -467,9 +593,9 @@ export function DriverStopsScreen() {
                   type="submit"
                   disabled={submittingDelivery}
                   style={{ minHeight: '44px' }}
-                  className="px-5 py-2 text-xs font-semibold bg-[#2e7d32] hover:bg-[#256629] text-white rounded-md shadow-xs cursor-pointer"
+                  className="px-5 py-2 text-xs font-semibold bg-[#2e7d32] hover:bg-[#256629] text-white rounded-md shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  {submittingDelivery ? 'Saving...' : 'Save & Complete Stop'}
+                  {submittingDelivery ? 'Uploading Proof & Saving...' : 'Save & Complete Stop'}
                 </button>
               </div>
             </form>

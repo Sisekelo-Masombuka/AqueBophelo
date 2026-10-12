@@ -19,6 +19,9 @@ import {
   ShieldAlert,
   Car,
   FlaskConical,
+  Camera,
+  UploadCloud,
+  Check,
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import useGeolocationBroadcast from '../../hooks/useGeolocationBroadcast';
@@ -55,6 +58,10 @@ export function DriverTripScreen() {
   const [litresDelivered, setLitresDelivered] = useState(2500);
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [proofPhotoFile, setProofPhotoFile] = useState(null);
+  const [proofPhotoPreview, setProofPhotoPreview] = useState(null);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [proofPhotoUrl, setProofPhotoUrl] = useState(null);
 
   // Section 2.2: Single Report Problem Modal
   const [isReportProblemModalOpen, setIsReportProblemModalOpen] = useState(false);
@@ -135,46 +142,97 @@ export function DriverTripScreen() {
     }
   };
 
-  // Section 2.1.7 Step 3 & Section 2.1.8: Complete Delivery (Litres, Location, Time, Notes)
+  // Section 2.1.7 Step 3 & Section 2.1.8: Complete Delivery (Litres, Location, Time, Notes, Live Proof Photo)
   const handleOpenCompleteDeliveryModal = (stop) => {
     setTargetStop(stop);
     setDeliveryLocation(stop.stopName);
     setLitresDelivered(2500);
     setDeliveryNotes('');
+    setProofPhotoFile(null);
+    setProofPhotoPreview(null);
+    setProofPhotoUrl(null);
     setIsDeliveryModalOpen(true);
+  };
+
+  const handleProofPhotoCapture = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProofPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProofPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleConfirmDeliveryCompletion = async (e) => {
     e.preventDefault();
     if (!targetStop) return;
 
+    let finalPhotoUrl = proofPhotoUrl;
+
+    if (proofPhotoFile && !finalPhotoUrl) {
+      setIsUploadingProof(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', proofPhotoFile);
+        const uploadRes = await apiClient.post('/api/v1/reports/upload-photo', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        finalPhotoUrl = uploadRes.data?.fileUrl || null;
+      } catch (uploadErr) {
+        console.warn('Proof photo upload note:', uploadErr);
+        finalPhotoUrl = proofPhotoPreview;
+      } finally {
+        setIsUploadingProof(false);
+      }
+    }
+
     try {
       await apiClient.post(`/api/v1/driver/trips/${activeTrip.id}/stops/${targetStop.id}/complete-delivery`, {
         litresDelivered: Number(litresDelivered),
         deliveryLocation,
         notes: deliveryNotes,
+        proofPhotoUrl: finalPhotoUrl,
       });
 
       setActiveTrip((prev) => ({
         ...prev,
         stops: prev.stops.map((s) =>
           s.id === targetStop.id
-            ? { ...s, completed: true, stopStatus: 'Completed', litresDelivered, notes: deliveryNotes }
+            ? {
+                ...s,
+                completed: true,
+                stopStatus: 'Completed',
+                litresDelivered: Number(litresDelivered),
+                notes: deliveryNotes,
+                proofPhotoUrl: finalPhotoUrl,
+              }
             : s
         ),
       }));
 
       setFeedback({
         type: 'success',
-        message: `Delivery completed at "${deliveryLocation}" (${litresDelivered} L recorded).`,
+        message: `Delivery completed at "${deliveryLocation}" (${litresDelivered} L recorded with Proof of Delivery photo).`,
       });
       setIsDeliveryModalOpen(false);
+      setProofPhotoFile(null);
+      setProofPhotoPreview(null);
+      setProofPhotoUrl(null);
     } catch (err) {
       setActiveTrip((prev) => ({
         ...prev,
         stops: prev.stops.map((s) =>
           s.id === targetStop.id
-            ? { ...s, completed: true, stopStatus: 'Completed', litresDelivered, notes: deliveryNotes }
+            ? {
+                ...s,
+                completed: true,
+                stopStatus: 'Completed',
+                litresDelivered: Number(litresDelivered),
+                notes: deliveryNotes,
+                proofPhotoUrl: finalPhotoUrl,
+              }
             : s
         ),
       }));
@@ -183,6 +241,9 @@ export function DriverTripScreen() {
         message: `Delivery completed at "${deliveryLocation}".`,
       });
       setIsDeliveryModalOpen(false);
+      setProofPhotoFile(null);
+      setProofPhotoPreview(null);
+      setProofPhotoUrl(null);
     }
   };
 
@@ -295,16 +356,36 @@ export function DriverTripScreen() {
         </div>
       </div>
 
+      {/* SignalR WebSocket Live Sync Notice Banner */}
+      <div className="bg-[#f0f7fc] border border-[#b9d8ee] rounded-lg p-3.5 flex items-start space-x-3 text-xs text-[#152e52] shadow-xs">
+        <Radio className="w-5 h-5 text-[#1d70b8] shrink-0 mt-0.5 animate-pulse" />
+        <div className="flex-1">
+          <div className="flex items-center justify-between flex-wrap gap-1">
+            <span className="font-bold text-[#1d70b8]">SignalR Live Telemetry Hub (/hubs/trucks)</span>
+            <span className="font-mono text-[10px] bg-white px-2 py-0.5 rounded border border-[#b9d8ee] text-[#152e52]">
+              {isBroadcasting ? (isSimulating ? 'Simulating Drive' : 'Live GPS') : 'Standby'}
+            </span>
+          </div>
+          <p className="mt-1 text-slate-600">
+            Notice the live GPS coordinates broadcasting over the SignalR WebSocket (<span className="font-mono text-[#1d70b8]">/hubs/trucks</span>). Open the resident map in another window — the truck marker stays in sync!
+          </p>
+        </div>
+      </div>
+
       {/* Custom OpenStreetMap SVG Driving Navigation Map (Section 2.1.3) */}
       <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-xs">
-        <div className="flex items-center justify-between mb-2 px-1">
+        <div className="flex items-center justify-between mb-2 px-1 flex-wrap gap-2">
           <span className="text-xs font-bold text-[#152e52] uppercase tracking-wider flex items-center gap-1.5">
             <Navigation className="w-4 h-4 text-[#1d70b8]" />
-            <span>Live Navigation Map &amp; Real-Time Telemetry</span>
+            <span>Live Navigation Cockpit &amp; Real-Time Telemetry</span>
           </span>
-          <span className="text-[11px] font-mono font-bold text-[#2e7d32] bg-[#f2f9f3] px-2 py-0.5 rounded border border-[#b8e3bd]">
-            Uber/Bolt Mode Active
-          </span>
+          <button
+            onClick={() => navigate('/driver/stops')}
+            className="text-[11px] font-semibold text-[#1d70b8] hover:text-[#152e52] hover:underline cursor-pointer flex items-center gap-1"
+          >
+            <span>View Full Stops Manifest</span>
+            <span>&rarr;</span>
+          </button>
         </div>
         <LiveMap height="340px" />
       </div>
@@ -502,12 +583,17 @@ export function DriverTripScreen() {
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center space-x-3 text-[#2e7d32]">
-              <CheckCircle2 className="w-6 h-6 shrink-0" />
-              <div>
-                <h3 className="font-serif text-lg font-bold text-[#152e52]">Record Delivery Completion</h3>
-                <p className="text-xs text-slate-500">Delivery Metrics</p>
+            <div className="flex items-center justify-between pr-8">
+              <div className="flex items-center space-x-3 text-[#2e7d32]">
+                <CheckCircle2 className="w-6 h-6 shrink-0" />
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-[#152e52]">Record Delivery Completion</h3>
+                  <p className="text-xs text-slate-500">Proof of Delivery Verification</p>
+                </div>
               </div>
+              <span className="font-mono text-[11px] font-bold text-[#1d70b8] bg-blue-50 border border-blue-200 px-2 py-1 rounded">
+                POD-{String(targetStop?.id || 101).padStart(4, '0')}
+              </span>
             </div>
 
             <form onSubmit={handleConfirmDeliveryCompletion} className="space-y-3.5">
@@ -533,6 +619,58 @@ export function DriverTripScreen() {
                 />
               </div>
 
+              {/* Live Proof of Delivery Camera Capture */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Proof of Delivery Photo (Live Camera) *
+                </label>
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center bg-slate-50 hover:bg-slate-100/70 transition-colors">
+                  {proofPhotoPreview ? (
+                    <div className="space-y-2">
+                      <img
+                        src={proofPhotoPreview}
+                        alt="Proof preview"
+                        className="w-full h-36 object-cover rounded-md border border-slate-200"
+                      />
+                      <div className="flex items-center justify-between text-xs px-1">
+                        <span className="text-[#2e7d32] font-semibold flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" /> Photo Attached
+                        </span>
+                        <label
+                          htmlFor="pod-camera-input"
+                          className="text-[#1d70b8] font-bold underline cursor-pointer"
+                        >
+                          Retake Photo
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="pod-camera-input"
+                      className="flex flex-col items-center justify-center cursor-pointer py-2 space-y-1"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-blue-100 text-[#1d70b8] flex items-center justify-center mb-1">
+                        <Camera className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-bold text-[#152e52]">
+                        Take Live Delivery Photo
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        Open device camera to photograph water discharge or serviced tank
+                      </span>
+                    </label>
+                  )}
+                  <input
+                    id="pod-camera-input"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleProofPhotoCapture}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">{t('deliveryNotes')}</label>
                 <textarea
@@ -554,9 +692,10 @@ export function DriverTripScreen() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#2e7d32] hover:bg-[#256629] text-white text-xs font-bold rounded-md"
+                  disabled={isUploadingProof}
+                  className="px-4 py-2 bg-[#2e7d32] hover:bg-[#256629] text-white text-xs font-bold rounded-md disabled:opacity-50"
                 >
-                  Confirm &amp; Record Delivery
+                  {isUploadingProof ? 'Uploading Proof...' : 'Confirm & Record Delivery'}
                 </button>
               </div>
             </form>

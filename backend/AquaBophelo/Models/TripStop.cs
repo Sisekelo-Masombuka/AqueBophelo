@@ -20,4 +20,9 @@ public class TripStop
 
     public string StopStatus { get; set; } = "Pending"; // Pending, Arrived, Delivering, Completed
     public bool Completed { get; set; } = false;
+
+    /// <summary>
+    /// Proof of delivery photo URL captured live by driver on site.
+    /// </summary>
+    public string? ProofPhotoUrl { get; set; }
 }

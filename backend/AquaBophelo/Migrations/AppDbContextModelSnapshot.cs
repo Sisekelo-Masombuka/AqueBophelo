@@ -731,6 +731,9 @@ namespace AquaBophelo.Migrations
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ProofPhotoUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("RouteStopId")
                         .HasColumnType("int");
 

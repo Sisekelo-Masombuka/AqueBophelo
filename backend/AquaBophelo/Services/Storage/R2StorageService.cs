@@ -125,10 +125,49 @@ public class R2StorageService : IR2StorageService
 
         string fileUrl = !string.IsNullOrWhiteSpace(_options.PublicDomain)
             ? $"{_options.PublicDomain.TrimEnd('/')}/{objectKey}"
-            : $"https://{_options.AccountId}.r2.cloudflarestorage.com/{_options.BucketName}/{objectKey}";
+            : $"/api/v1/reports/photos/{objectKey}";
 
         _logger.LogInformation("[R2StorageService] Directly uploaded image to Cloudflare R2: {ObjectKey}", objectKey);
 
         return (fileUrl, objectKey);
+    }
+
+    public async Task<(Stream? contentStream, string contentType)> GetFileStreamAsync(string objectKey)
+    {
+        if (string.IsNullOrWhiteSpace(_options.AccountId) || string.IsNullOrWhiteSpace(_options.AccessKeyId) || string.IsNullOrWhiteSpace(_options.SecretAccessKey))
+        {
+            _logger.LogWarning("[R2StorageService] Credentials not configured. Unable to fetch object stream for {ObjectKey}", objectKey);
+            return (null, "image/jpeg");
+        }
+
+        try
+        {
+            var s3Config = new AmazonS3Config
+            {
+                ServiceURL = $"https://{_options.AccountId}.r2.cloudflarestorage.com",
+                ForcePathStyle = true
+            };
+
+            using var s3Client = new AmazonS3Client(_options.AccessKeyId, _options.SecretAccessKey, s3Config);
+
+            var getRequest = new GetObjectRequest
+            {
+                BucketName = _options.BucketName,
+                Key = objectKey
+            };
+
+            var response = await s3Client.GetObjectAsync(getRequest);
+            var memoryStream = new MemoryStream();
+            await response.ResponseStream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            string contentType = response.Headers.ContentType ?? "image/jpeg";
+            return (memoryStream, contentType);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[R2StorageService] Failed to retrieve stream for object {ObjectKey}", objectKey);
+            return (null, "image/jpeg");
+        }
     }
 }

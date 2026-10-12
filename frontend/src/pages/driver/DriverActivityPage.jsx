@@ -73,7 +73,11 @@ export function DriverActivityPage() {
         setLoading(true);
         const res = await apiClient.get('/api/v1/driver/activity');
         if (res.data) {
-          setActivityData(res.data);
+          setActivityData({
+            completedTrips: res.data.completedTrips || [],
+            previousDeliveries: res.data.previousDeliveries || [],
+            reportedProblems: res.data.reportedProblems || [],
+          });
         }
       } catch (err) {
         console.warn('Backend unavailable, using initial driver activity history', err);
@@ -84,13 +88,17 @@ export function DriverActivityPage() {
     fetchActivity();
   }, []);
 
+  const completedTrips = activityData?.completedTrips || [];
+  const previousDeliveries = activityData?.previousDeliveries || [];
+  const reportedProblems = activityData?.reportedProblems || [];
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-16">
       {/* Title */}
       <div>
         <h1 className="font-serif text-2xl font-bold text-[#152e52] flex items-center gap-2">
           <History className="w-6 h-6 text-[#1d70b8]" />
-          <span>Driver Activity & Delivery Log</span>
+          <span>Driver Activity &amp; Delivery Log</span>
         </h1>
         <p className="text-xs text-slate-500 mt-1">
           Historical Log of Completed Trips, Deliveries, and Reported Incidents
@@ -107,7 +115,7 @@ export function DriverActivityPage() {
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          Completed Trips ({activityData.completedTrips.length})
+          Completed Trips ({completedTrips.length})
         </button>
         <button
           onClick={() => setActiveTab('deliveries')}
@@ -117,7 +125,7 @@ export function DriverActivityPage() {
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          Previous Deliveries ({activityData.previousDeliveries.length})
+          Previous Deliveries ({previousDeliveries.length})
         </button>
         <button
           onClick={() => setActiveTab('problems')}
@@ -127,7 +135,7 @@ export function DriverActivityPage() {
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          Reported Problems ({activityData.reportedProblems.length})
+          Reported Problems ({reportedProblems.length})
         </button>
       </div>
 
@@ -140,12 +148,12 @@ export function DriverActivityPage() {
           {/* Tab 1: Completed Trips */}
           {activeTab === 'trips' && (
             <div className="space-y-3">
-              {activityData.completedTrips.length === 0 ? (
+              {completedTrips.length === 0 ? (
                 <p className="text-sm text-slate-500 bg-white p-6 rounded-md border text-center">
                   No completed trips logged yet.
                 </p>
               ) : (
-                activityData.completedTrips.map((trip) => (
+                completedTrips.map((trip) => (
                   <div key={trip.id} className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
@@ -162,7 +170,7 @@ export function DriverActivityPage() {
                         </span>
                         <span>·</span>
                         <span className="font-semibold text-[#2e7d32]">
-                          {trip.totalLitres.toLocaleString()} Litres Total
+                          {(trip.totalLitres || 0).toLocaleString()} Litres Total
                         </span>
                       </div>
                     </div>
@@ -180,14 +188,14 @@ export function DriverActivityPage() {
           {/* Tab 2: Previous Deliveries */}
           {activeTab === 'deliveries' && (
             <div className="space-y-3">
-              {activityData.previousDeliveries.length === 0 ? (
+              {previousDeliveries.length === 0 ? (
                 <p className="text-sm text-slate-500 bg-white p-6 rounded-md border text-center">
                   No delivery drop-offs recorded yet.
                 </p>
               ) : (
-                activityData.previousDeliveries.map((del) => (
+                previousDeliveries.map((del) => (
                   <div key={del.id} className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-1">
+                    <div className="space-y-1 flex-1">
                       <div className="flex items-center space-x-2">
                         <MapPin className="w-4 h-4 text-[#2e7d32]" />
                         <h3 className="font-serif text-base font-bold text-[#152e52]">{del.locationName}</h3>
@@ -199,11 +207,23 @@ export function DriverActivityPage() {
                           <span>{del.completedAt}</span>
                         </span>
                       </div>
+                      {del.proofPhotoUrl && (
+                        <div className="pt-2 flex items-center gap-2">
+                          <img
+                            src={del.proofPhotoUrl}
+                            alt="Proof of Delivery"
+                            className="w-16 h-16 object-cover rounded-md border border-slate-200 shadow-2xs"
+                          />
+                          <span className="text-[11px] font-semibold text-[#2e7d32] bg-[#f2f9f3] px-2 py-0.5 rounded border border-[#b8e3bd]">
+                            Proof Photo Verified
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="text-right shrink-0">
                       <span className="px-3 py-1 rounded-md text-xs font-bold bg-[#eaf4fb] text-[#152e52] border border-[#bcd6ea] block">
-                        {del.litres.toLocaleString()} Litres
+                        {(del.litres || 0).toLocaleString()} Litres
                       </span>
                     </div>
                   </div>
@@ -215,12 +235,12 @@ export function DriverActivityPage() {
           {/* Tab 3: Reported Problems */}
           {activeTab === 'problems' && (
             <div className="space-y-3">
-              {activityData.reportedProblems.length === 0 ? (
+              {reportedProblems.length === 0 ? (
                 <p className="text-sm text-slate-500 bg-white p-6 rounded-md border text-center">
                   No problems reported by driver.
                 </p>
               ) : (
-                activityData.reportedProblems.map((prob) => (
+                reportedProblems.map((prob) => (
                   <div key={prob.id} className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">

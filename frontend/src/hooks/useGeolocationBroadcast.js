@@ -43,6 +43,7 @@ export function useGeolocationBroadcast({ tripId, initialActive = false } = {}) 
       .withUrl(`${API_BASE_URL}/hubs/trucks`, {
         skipNegotiation: false,
         transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,
+        accessTokenFactory: () => localStorage.getItem('aquabophelo_token') || '',
       })
       .withAutomaticReconnect([0, 2000, 5000, 10000])
       .configureLogging(signalR.LogLevel.Warning)
@@ -167,6 +168,21 @@ export function useGeolocationBroadcast({ tripId, initialActive = false } = {}) 
     }
   }, []);
 
+  const toggleSimulation = useCallback(() => {
+    setIsSimulating((prev) => {
+      const nextSim = !prev;
+      if (nextSim) {
+        setIsBroadcasting(true);
+        // Immediately broadcast current waypoint so the map syncs without waiting 4s
+        const point = KIMBERLEY_WAYPOINTS[simStepRef.current];
+        broadcastCoordinate(point.lat, point.lng, point.speed, point.heading);
+      } else {
+        setIsBroadcasting(false);
+      }
+      return nextSim;
+    });
+  }, [broadcastCoordinate]);
+
   return {
     isBroadcasting,
     isSimulating,
@@ -175,7 +191,7 @@ export function useGeolocationBroadcast({ tripId, initialActive = false } = {}) 
     error,
     startBroadcast: startRealGpsBroadcast,
     stopBroadcast,
-    toggleSimulation: () => setIsSimulating((prev) => !prev),
+    toggleSimulation,
   };
 }
 

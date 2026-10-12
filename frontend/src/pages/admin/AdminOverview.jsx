@@ -14,7 +14,9 @@ import {
   Clock,
   FileText,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  ZoomIn,
+  X,
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import LiveMap from '../../components/LiveMap';
@@ -22,11 +24,18 @@ import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import BroadcastAlertModal from '../../components/BroadcastAlertModal';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7154';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5094';
 
 export function AdminOverview() {
   const navigate = useNavigate();
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [selectedPhotoModal, setSelectedPhotoModal] = useState(null);
+
+  const getFullImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
 
   // Resident Issue Reports (Section 3.4.1)
   const [residentIssues, setResidentIssues] = useState([
@@ -510,6 +519,7 @@ export function AdminOverview() {
                   residentIssues.map((issue) => {
                     const isAnon = !issue.userEmail || issue.userEmail.includes('anonymous') || issue.fullName?.toLowerCase().includes('anonymous');
                     const hasValidPhoto = issue.imageUrl && issue.imageUrl !== '/pipe_leak.jpg';
+                    const fullImg = getFullImageUrl(issue.imageUrl);
                     return (
                       <tr key={issue.id} className="hover:bg-slate-50 transition-colors">
                         <td className="py-3 px-3">
@@ -544,25 +554,32 @@ export function AdminOverview() {
                         </td>
                         <td className="py-3 px-3">
                           {hasValidPhoto ? (
-                            <a
-                              href={issue.imageUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="group inline-flex items-center gap-1.5 p-1 rounded border border-slate-200 hover:border-[#1d70b8] transition-colors"
-                              title="Click to view full photo on Cloudflare R2"
+                            <button
+                              type="button"
+                              onClick={() => setSelectedPhotoModal({
+                                url: fullImg,
+                                title: issue.issueType,
+                                resident: issue.fullName || (isAnon ? 'Anonymous Resident' : 'Resident'),
+                                location: `${issue.area}, ${issue.streetAddress}`,
+                                status: issue.status,
+                                ticketId: issue.ticketId,
+                              })}
+                              className="group inline-flex items-center gap-1.5 p-1 rounded border border-slate-200 hover:border-[#1d70b8] hover:bg-blue-50/50 transition-colors cursor-pointer"
+                              title="Click to view full photo evidence in lightbox"
                             >
                               <img
-                                src={issue.imageUrl}
+                                src={fullImg}
                                 alt="Fault attachment"
-                                className="w-8 h-8 rounded object-cover border border-slate-100 group-hover:opacity-90"
+                                className="w-8 h-8 rounded object-cover border border-slate-200 group-hover:opacity-90 shadow-2xs"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
                                 }}
                               />
-                              <span className="text-[11px] text-[#1d70b8] font-medium group-hover:underline flex items-center gap-0.5">
-                                Photo <ExternalLink className="w-3 h-3" />
+                              <span className="text-[11px] text-[#1d70b8] font-bold group-hover:underline flex items-center gap-0.5">
+                                <ZoomIn className="w-3.5 h-3.5" />
+                                <span>View Photo</span>
                               </span>
-                            </a>
+                            </button>
                           ) : (
                             <span className="text-[11px] text-slate-400 italic">No photo</span>
                           )}
@@ -676,6 +693,66 @@ export function AdminOverview() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Resident Fault Photo Lightbox Modal */}
+      {selectedPhotoModal && (
+        <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 text-slate-800">
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-serif text-base font-bold text-[#152e52]">
+                    {selectedPhotoModal.title}
+                  </h3>
+                  <span className="font-mono text-xs font-bold text-[#1d70b8] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                    {selectedPhotoModal.ticketId}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Reported by {selectedPhotoModal.resident} · {selectedPhotoModal.location}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedPhotoModal(null)}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 bg-slate-950 flex items-center justify-center min-h-[300px] max-h-[500px]">
+              <img
+                src={selectedPhotoModal.url}
+                alt="Fault Evidence"
+                className="max-h-[460px] max-w-full object-contain rounded shadow"
+              />
+            </div>
+
+            <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs">
+              <span className="text-slate-500">
+                Status: <strong className="text-slate-800">{selectedPhotoModal.status}</strong>
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={selectedPhotoModal.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium inline-flex items-center gap-1 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open Original</span>
+                </a>
+                <button
+                  onClick={() => setSelectedPhotoModal(null)}
+                  className="px-4 py-1.5 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

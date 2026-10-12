@@ -4,12 +4,13 @@ import {
   Truck, MapPin, Droplet, ZoomIn, ZoomOut, RotateCcw, Sun, Moon, X, 
   Star, AlertTriangle, CheckCircle2, PhoneCall, Clock, ShieldCheck, Check, Info
 } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
 import mapData from './kimberleyMap.json';
 
 /* ------------------------------------------------------------------ */
 /*  Config                                                             */
 /* ------------------------------------------------------------------ */
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7154';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5094';
 const MAP_CONFIG = { center: [24.76, -28.73], spanLng: 0.24, W: 900, H: 560 };
 const MAX_ZOOM = 5;
 const PAD = 90;
@@ -417,6 +418,7 @@ export function LiveMap({
   const selectedRef = useRef(regOf(tankers[0]));
   const cardRef = useRef(null);
   const pausedRef = useRef(false);
+  const { user } = useAuth();
   const zoomRef = useRef(1);
   const uRef = useRef(1);
   const facBoxes = useRef([]);
@@ -485,6 +487,7 @@ export function LiveMap({
       .withUrl(`${API_BASE_URL}/hubs/trucks`, {
         skipNegotiation: false,
         transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,
+        accessTokenFactory: () => localStorage.getItem('aquabophelo_token') || '',
       })
       .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Warning)
@@ -953,30 +956,36 @@ export function LiveMap({
 
           {/* 6. Resident Delivery Confirmation & Actions */}
           <div className="lm-actions-group">
-            {!deliveryConfirmed ? (
-              <div className="lm-btn-grid">
-                <button 
-                  onClick={() => { setDeliveryConfirmed(true); setShowRatingModal(true); }}
-                  className="lm-btn-confirm"
-                >
-                  <CheckCircle2 size={14} />
-                  <span>I Received Water</span>
-                </button>
-                <button 
-                  onClick={() => setShowReportModal(true)}
-                  className="lm-btn-report"
-                >
-                  <AlertTriangle size={14} />
-                  <span>Report Problem</span>
-                </button>
-              </div>
+            {(!user || user.role === 'Resident') ? (
+              !deliveryConfirmed ? (
+                <div className="lm-btn-grid">
+                  <button 
+                    onClick={() => { setDeliveryConfirmed(true); setShowRatingModal(true); }}
+                    className="lm-btn-confirm"
+                  >
+                    <CheckCircle2 size={14} />
+                    <span>I Received Water</span>
+                  </button>
+                  <button 
+                    onClick={() => setShowReportModal(true)}
+                    className="lm-btn-report"
+                  >
+                    <AlertTriangle size={14} />
+                    <span>Report Problem</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="lm-confirmed-badge">
+                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  <span>Delivery confirmed! Thank you.</span>
+                  {!ratingSubmitted && (
+                    <button onClick={() => setShowRatingModal(true)} className="lm-link-rate">Rate Driver</button>
+                  )}
+                </div>
+              )
             ) : (
-              <div className="lm-confirmed-badge">
-                <CheckCircle2 size={14} className="text-emerald-600" />
-                <span>Delivery confirmed! Thank you.</span>
-                {!ratingSubmitted && (
-                  <button onClick={() => setShowRatingModal(true)} className="lm-link-rate">Rate Driver</button>
-                )}
+              <div className="p-2.5 rounded-md bg-slate-50 border border-slate-200 text-xs text-slate-600 text-center">
+                <span className="font-semibold text-[#152e52]">{user.role} Operations View:</span> Live telemetry and dispatch monitoring active. Driver rating is reserved for community residents.
               </div>
             )}
           </div>

@@ -279,6 +279,11 @@ public class ReportsController : ControllerBase
             .AsNoTracking()
             .ToListAsync();
 
+        foreach (var issue in issues)
+        {
+            issue.ImageUrl = NormalizeImageUrl(issue.ImageUrl);
+        }
+
         return Ok(issues);
     }
 
@@ -295,7 +300,27 @@ public class ReportsController : ControllerBase
             .AsNoTracking()
             .ToListAsync();
 
+        foreach (var issue in issues)
+        {
+            issue.ImageUrl = NormalizeImageUrl(issue.ImageUrl);
+        }
+
         return Ok(issues);
+    }
+
+    private static string? NormalizeImageUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+        if (url.Contains("/reports/"))
+        {
+            var idx = url.IndexOf("/reports/", StringComparison.OrdinalIgnoreCase);
+            return "/api/v1/reports/photos" + url.Substring(idx);
+        }
+        if (url.StartsWith("reports/"))
+        {
+            return "/api/v1/reports/photos/" + url;
+        }
+        return url;
     }
 
     /// <summary>
@@ -449,6 +474,42 @@ public class ReportsController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = $"Cloudflare R2 storage error: {ex.Message}" });
+        }
+    }
+
+    /// <summary>
+    /// GET: api/v1/reports/photos/{*objectKey}
+    /// Safely streams photos from Cloudflare R2 bucket to the browser, eliminating cross-origin and private bucket restrictions.
+    /// </summary>
+    [HttpGet("photos/{*objectKey}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPhoto(
+        [FromServices] IR2StorageService r2Service,
+        string objectKey)
+    {
+        if (string.IsNullOrWhiteSpace(objectKey))
+        {
+            return BadRequest(new { message = "Object key is required." });
+        }
+
+        try
+        {
+            var (stream, contentType) = await r2Service.GetFileStreamAsync(objectKey);
+            if (stream == null)
+            {
+                var fallbackPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "pipe_leak.jpg");
+                if (System.IO.File.Exists(fallbackPath))
+                {
+                    return PhysicalFile(fallbackPath, "image/jpeg");
+                }
+                return NotFound(new { message = "Photo not found in bucket." });
+            }
+
+            return File(stream, contentType);
+        }
+        catch (Exception ex)
+        {
+            return NotFound(new { message = $"Error retrieving photo: {ex.Message}" });
         }
     }
 }

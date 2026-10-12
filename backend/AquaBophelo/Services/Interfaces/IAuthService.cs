@@ -13,4 +13,6 @@ public interface IAuthService
     Task<bool> VerifyEmailOtpAsync(string email, string code, string purpose = "EmailVerification");
     Task<bool> ConfirmEmailAsync(string email, string token);
     Task<bool> SoftDeleteAccountAsync(string userId);
+    Task<UserProfileDto> UpdateProfileAsync(string userId, UpdateProfileDetailsDto dto);
+    Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
 }

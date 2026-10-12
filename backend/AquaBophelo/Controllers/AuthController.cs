@@ -317,6 +317,56 @@ public class AuthController : ControllerBase
 
         return Ok(new { message = "Profile picture updated successfully.", profilePictureUrl = user.ProfilePictureUrl });
     }
+
+    /// <summary>
+    /// PUT: api/v1/auth/profile
+    /// Updates user profile details (FullName, PhoneNumber, Area, PreferredLanguage).
+    /// </summary>
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDetailsDto dto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(new { message = "User identity not found in token." });
+        }
+
+        try
+        {
+            var profile = await _authService.UpdateProfileAsync(userId, dto);
+            return Ok(profile);
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// POST: api/v1/auth/change-password
+    /// Securely changes password verifying current password without requiring email OTP (ideal for Drivers &amp; Admins).
+    /// </summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(new { message = "User identity not found in token." });
+        }
+
+        try
+        {
+            await _authService.ChangePasswordAsync(userId, dto.CurrentPassword, dto.NewPassword);
+            return Ok(new { message = "Password updated successfully." });
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
 
 public record SendOtpRequest(string Email, string? Purpose = "EmailVerification");

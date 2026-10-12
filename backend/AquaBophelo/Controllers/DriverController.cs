@@ -95,6 +95,7 @@ public class DriverController : ControllerBase
                 ts.LitresDelivered,
                 ts.DeliveryLocation,
                 ts.Notes,
+                ts.ProofPhotoUrl,
                 EstimatedArrival = "8 mins (1.2 km)"
             }).ToList();
 
@@ -236,6 +237,10 @@ public class DriverController : ControllerBase
         stop.LitresDelivered = dto.LitresDelivered ?? 2500;
         stop.DeliveryLocation = dto.DeliveryLocation ?? stop.RouteStop?.Name ?? "Distribution Point";
         stop.Notes = dto.Notes;
+        if (!string.IsNullOrWhiteSpace(dto.ProofPhotoUrl))
+        {
+            stop.ProofPhotoUrl = dto.ProofPhotoUrl;
+        }
 
         await _context.SaveChangesAsync();
         return Ok(new
@@ -244,7 +249,8 @@ public class DriverController : ControllerBase
             stopStatus = "Completed",
             completedAt = stop.CompletedAt,
             litresDelivered = stop.LitresDelivered,
-            notes = stop.Notes
+            notes = stop.Notes,
+            proofPhotoUrl = stop.ProofPhotoUrl
         });
     }
 
@@ -335,10 +341,29 @@ public class DriverController : ControllerBase
             .AsNoTracking()
             .ToListAsync();
 
+        var previousDeliveries = await _context.TripStops
+            .Include(ts => ts.RouteStop)
+            .Include(ts => ts.Trip)
+                .ThenInclude(t => t.Truck)
+            .Where(ts => ts.Completed)
+            .OrderByDescending(ts => ts.CompletedAt)
+            .Take(20)
+            .Select(ts => new
+            {
+                ts.Id,
+                LocationName = ts.DeliveryLocation ?? ts.RouteStop.Name,
+                Litres = ts.LitresDelivered ?? 2500,
+                CompletedAt = ts.CompletedAt.HasValue ? ts.CompletedAt.Value.AddHours(2).ToString("yyyy-MM-dd HH:mm CAT") : "Recently",
+                Notes = ts.Notes ?? "Delivery completed successfully.",
+                ProofPhotoUrl = ts.ProofPhotoUrl
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
         return Ok(new
         {
             TotalCompletedTrips = completedTrips.Count,
-            TotalLitresDelivered = completedTrips.Sum(t => t.TripStops.Where(s => s.Completed).Sum(s => s.LitresDelivered ?? 2500)),
+            TotalLitresDelivered = completedTrips.Sum(t => (t.TripStops ?? new List<TripStop>()).Where(s => s.Completed).Sum(s => s.LitresDelivered ?? 2500)),
             CompletedTrips = completedTrips.Select(t => new
             {
                 t.Id,
@@ -346,8 +371,9 @@ public class DriverController : ControllerBase
                 VehicleRegistration = t.Truck?.RegistrationNumber ?? "542-KM NC",
                 t.StartedAt,
                 t.EndedAt,
-                StopsCompleted = t.TripStops.Count(s => s.Completed)
+                StopsCompleted = (t.TripStops ?? new List<TripStop>()).Count(s => s.Completed)
             }),
+            PreviousDeliveries = previousDeliveries,
             ReportedProblems = reportedProblems
         });
     }
@@ -370,6 +396,6 @@ public class DriverController : ControllerBase
 }
 
 public class TripStatusUpdateDto { public string Status { get; set; } = "Active"; }
-public class CompleteDeliveryDto { public double? LitresDelivered { get; set; } public string? DeliveryLocation { get; set; } public string? Notes { get; set; } }
+public class CompleteDeliveryDto { public double? LitresDelivered { get; set; } public string? DeliveryLocation { get; set; } public string? Notes { get; set; } public string? ProofPhotoUrl { get; set; } }
 public class CreateDriverProblemDto { public int? TripId { get; set; } public int? StopId { get; set; } public string? VehicleRegistration { get; set; } public string Category { get; set; } = "Vehicle problem"; public string Description { get; set; } = string.Empty; }
 public class CreateVehicleCheckDto { public string? VehicleRegistration { get; set; } public bool BrakesOk { get; set; } = true; public bool TiresOk { get; set; } = true; public bool WaterSealOk { get; set; } = true; public bool LightsOk { get; set; } = true; public string? Remarks { get; set; } }

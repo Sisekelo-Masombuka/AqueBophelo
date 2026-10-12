@@ -14,7 +14,7 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load saved session from localStorage on app startup
+  // Load saved session from localStorage on app startup and sync with backend
   useEffect(() => {
     try {
       const savedToken = localStorage.getItem('aquabophelo_token');
@@ -26,6 +26,30 @@ export function AuthProvider({ children }) {
         if (parsedUser?.preferredLanguage) {
           localStorage.setItem('aquabophelo_lang', parsedUser.preferredLanguage);
         }
+
+        // Fetch live server profile in background to keep data fresh across tabs/refreshes
+        apiClient.get('/api/v1/auth/me')
+          .then((res) => {
+            if (res.data) {
+              const freshProfile = {
+                ...parsedUser,
+                id: res.data.id || parsedUser.id,
+                email: res.data.email || parsedUser.email,
+                fullName: res.data.fullName || parsedUser.fullName,
+                role: res.data.role || parsedUser.role,
+                phoneNumber: res.data.phoneNumber || parsedUser.phoneNumber || '',
+                area: res.data.areaName || parsedUser.area || 'Galeshewe',
+                areaId: res.data.areaId || parsedUser.areaId,
+                profilePictureUrl: res.data.profilePictureUrl || parsedUser.profilePictureUrl || null,
+                preferredLanguage: res.data.preferredLanguage || parsedUser.preferredLanguage || 'EN',
+              };
+              setUser(freshProfile);
+              localStorage.setItem('aquabophelo_user', JSON.stringify(freshProfile));
+            }
+          })
+          .catch((err) => {
+            console.warn('Backend profile sync note:', err);
+          });
       } else {
         setUser(null);
         setToken(null);
@@ -48,6 +72,14 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const updateUser = (updatedFields) => {
+    setUser((prev) => {
+      const merged = { ...prev, ...updatedFields };
+      localStorage.setItem('aquabophelo_user', JSON.stringify(merged));
+      return merged;
+    });
+  };
+
   const login = async (email, password, turnstileToken) => {
     setIsLoading(true);
     try {
@@ -55,12 +87,14 @@ export function AuthProvider({ children }) {
       const response = await apiClient.post('/api/v1/auth/login', { email, password, turnstileToken });
       if (response.data && response.data.token) {
         const loggedUser = {
-          id: response.data.userId || `usr-${Date.now()}`,
+          id: response.data.userId || response.data.id || `usr-${Date.now()}`,
           email: response.data.email || email,
           fullName: response.data.fullName || email.split('@')[0],
           role: response.data.role || 'Resident',
           preferredLanguage: response.data.preferredLanguage || localStorage.getItem('aquabophelo_lang') || 'EN',
-          area: 'Galeshewe',
+          area: response.data.areaName || 'Galeshewe',
+          phoneNumber: response.data.phoneNumber || '',
+          profilePictureUrl: response.data.profilePictureUrl || null,
         };
         saveAuthSession(response.data.token, loggedUser);
         setIsLoading(false);
@@ -91,12 +125,14 @@ export function AuthProvider({ children }) {
       });
       if (response.data && response.data.token) {
         const newUser = {
-          id: response.data.userId || `usr-${Date.now()}`,
+          id: response.data.userId || response.data.id || `usr-${Date.now()}`,
           email,
           fullName,
           role: 'Resident',
           preferredLanguage: response.data.preferredLanguage || chosenLang,
           area: area || 'Galeshewe',
+          phoneNumber: phoneNumber || response.data.phoneNumber || '',
+          profilePictureUrl: response.data.profilePictureUrl || null,
         };
         saveAuthSession(response.data.token, newUser);
         setIsLoading(false);
@@ -129,6 +165,7 @@ export function AuthProvider({ children }) {
         isLoading,
         login,
         register,
+        updateUser,
         logout,
       }}
     >

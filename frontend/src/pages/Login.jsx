@@ -51,10 +51,22 @@ export function Login() {
         const userRole = res.user?.role || 'Resident';
         let targetPath = from;
 
-        if (!from || from === '/' || from === '/dashboard') {
-          if (userRole === 'Admin') targetPath = '/admin';
-          else if (userRole === 'Driver') targetPath = '/driver/trip';
-          else targetPath = '/dashboard';
+        // If coming from default fallbacks, root, profile, or a role-incompatible route, navigate to the role's dashboard
+        const isDefaultOrProfile = !from || from === '/' || from === '/dashboard' || from === '/profile';
+
+        if (userRole === 'Admin') {
+          if (isDefaultOrProfile || !from.startsWith('/admin')) {
+            targetPath = '/admin';
+          }
+        } else if (userRole === 'Driver') {
+          if (isDefaultOrProfile || !from.startsWith('/driver')) {
+            targetPath = '/driver/trip';
+          }
+        } else {
+          // Resident
+          if (isDefaultOrProfile || from.startsWith('/admin') || from.startsWith('/driver')) {
+            targetPath = '/dashboard';
+          }
         }
 
         navigate(targetPath, { replace: true });
