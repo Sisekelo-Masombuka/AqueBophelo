@@ -133,9 +133,11 @@ public static class DbSeeder
             }
             else
             {
-                // Ensure password hash is valid for primary password
-                var token = await userManager.GeneratePasswordResetTokenAsync(user);
-                await userManager.ResetPasswordAsync(user, token, primaryPassword);
+                // User already exists: preserve their password, ensure their required role is assigned
+                if (!await userManager.IsInRoleAsync(user, role))
+                {
+                    await userManager.AddToRoleAsync(user, role);
+                }
             }
         }
 

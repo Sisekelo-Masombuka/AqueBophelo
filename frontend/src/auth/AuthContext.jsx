@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
           id: response.data.userId || `usr-${Date.now()}`,
           email: response.data.email || email,
           fullName: response.data.fullName || email.split('@')[0],
-          role: response.data.role || (email.toLowerCase().includes('admin') ? 'Admin' : email.toLowerCase().includes('driver') ? 'Driver' : 'Resident'),
+          role: response.data.role || 'Resident',
           preferredLanguage: response.data.preferredLanguage || localStorage.getItem('aquabophelo_lang') || 'EN',
           area: 'Galeshewe',
         };
@@ -60,36 +60,14 @@ export function AuthProvider({ children }) {
         setIsLoading(false);
         return { success: true, user: loggedUser };
       }
+      return { success: false, error: 'Authentication failed. Please check your credentials.' };
     } catch (apiError) {
-      console.warn('API auth response or network fallback:', apiError);
+      console.warn('API auth response error:', apiError);
+      const errorMsg = apiError.response?.data?.message || 'Invalid email address or password.';
+      return { success: false, error: errorMsg };
     } finally {
       setIsLoading(false);
     }
-
-    // Robust Fallback: Guarantee login works seamlessly for demo/testing
-    let matchedRole = 'Resident';
-    let fullName = email.split('@')[0];
-
-    if (email.toLowerCase().includes('admin')) {
-      matchedRole = 'Admin';
-      fullName = 'Sisekelo Masombuka (Admin)';
-    } else if (email.toLowerCase().includes('driver')) {
-      matchedRole = 'Driver';
-      fullName = 'Sipho Dlamini (Driver)';
-    }
-
-    const fallbackUser = {
-      id: `usr-${Date.now()}`,
-      email,
-      fullName: fullName.charAt(0).toUpperCase() + fullName.slice(1),
-      role: matchedRole,
-      preferredLanguage: localStorage.getItem('aquabophelo_lang') || 'EN',
-      area: 'Galeshewe',
-    };
-    const fallbackToken = `jwt-session-${matchedRole.toLowerCase()}-${Date.now()}`;
-    saveAuthSession(fallbackToken, fallbackUser);
-    setIsLoading(false);
-    return { success: true, user: fallbackUser };
   };
 
   const register = async ({ email, password, fullName, area, phoneNumber, turnstileToken }) => {
@@ -118,25 +96,14 @@ export function AuthProvider({ children }) {
         setIsLoading(false);
         return { success: true, user: newUser };
       }
+      return { success: false, error: 'Registration failed. Please check your details.' };
     } catch (apiError) {
-      console.warn('API registration response fallback:', apiError);
+      console.warn('API registration response error:', apiError);
+      const errorMsg = apiError.response?.data?.message || 'Registration failed. Please try again.';
+      return { success: false, error: errorMsg };
     } finally {
       setIsLoading(false);
     }
-
-    // Robust Fallback: Complete registration session smoothly
-    const newUser = {
-      id: `usr-${Date.now()}`,
-      email,
-      fullName: fullName || email.split('@')[0],
-      role: 'Resident',
-      preferredLanguage: chosenLang,
-      area: area || 'Galeshewe',
-    };
-    const fallbackToken = `jwt-session-resident-${Date.now()}`;
-    saveAuthSession(fallbackToken, newUser);
-    setIsLoading(false);
-    return { success: true, user: newUser };
   };
 
   const logout = () => {

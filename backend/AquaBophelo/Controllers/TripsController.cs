@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +10,7 @@ using AquaBophelo.Models;
 namespace AquaBophelo.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/v1/[controller]")]
 public class TripsController : ControllerBase
 {
@@ -30,9 +33,10 @@ public class TripsController : ControllerBase
 
     /// <summary>
     /// GET: api/v1/trips
-    /// Retrieves all trips ordered by most recent first
+    /// Retrieves all trips ordered by most recent first (Admin and Driver only)
     /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin,Driver")]
     public async Task<ActionResult<IEnumerable<TripResponseDto>>> GetAll()
     {
         var trips = await _context.Trips
@@ -50,9 +54,10 @@ public class TripsController : ControllerBase
 
     /// <summary>
     /// GET: api/v1/trips/active
-    /// Retrieves only currently active trips on the road
+    /// Retrieves only currently active trips on the road (Public live map radar)
     /// </summary>
     [HttpGet("active")]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<TripResponseDto>>> GetActive()
     {
         var activeTrips = await _context.Trips
@@ -71,9 +76,10 @@ public class TripsController : ControllerBase
 
     /// <summary>
     /// GET: api/v1/trips/{id}
-    /// Retrieves a single trip by ID with stops and progress
+    /// Retrieves a single trip by ID with stops and progress (Public map stops viewer)
     /// </summary>
     [HttpGet("{id:int}")]
+    [AllowAnonymous]
     public async Task<ActionResult<TripResponseDto>> GetById(int id)
     {
         var trip = await _context.Trips
@@ -95,9 +101,10 @@ public class TripsController : ControllerBase
 
     /// <summary>
     /// POST: api/v1/trips
-    /// Schedules and starts a new water delivery trip
+    /// Schedules and starts a new water delivery trip (Admin only)
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TripResponseDto>> Create([FromBody] CreateTripDto dto)
     {
         if (!ModelState.IsValid)
@@ -199,15 +206,24 @@ public class TripsController : ControllerBase
     /// Marks a specific delivery stop as completed by the driver
     /// </summary>
     [HttpPost("{id:int}/stops/{stopId:int}/complete")]
+    [Authorize(Roles = "Driver,Admin")]
     public async Task<IActionResult> CompleteStop(int id, int stopId)
     {
         var tripStop = await _context.TripStops
+            .Include(ts => ts.Trip)
             .Include(ts => ts.RouteStop)
             .FirstOrDefaultAsync(ts => ts.TripId == id && ts.Id == stopId);
 
         if (tripStop == null)
         {
             return NotFound(new { message = $"Stop with ID {stopId} for Trip {id} was not found." });
+        }
+
+        var callingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin && tripStop.Trip?.DriverId != callingUserId)
+        {
+            return Forbid();
         }
 
         tripStop.Completed = true;
@@ -250,6 +266,7 @@ public class TripsController : ControllerBase
     /// Ends an active delivery trip and sets the truck back to Available
     /// </summary>
     [HttpPost("{id:int}/end")]
+    [Authorize(Roles = "Driver,Admin")]
     public async Task<ActionResult<TripResponseDto>> EndTrip(int id)
     {
         var trip = await _context.Trips
@@ -263,6 +280,13 @@ public class TripsController : ControllerBase
         if (trip == null)
         {
             return NotFound(new { message = $"Trip with ID {id} was not found." });
+        }
+
+        var callingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin && trip.DriverId != callingUserId)
+        {
+            return Forbid();
         }
 
         if (trip.Status != "Active")

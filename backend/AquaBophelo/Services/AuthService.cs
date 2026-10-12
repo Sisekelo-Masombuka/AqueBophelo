@@ -43,7 +43,7 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByEmailAsync(dto.Email);
         if (existingUser != null)
         {
-            return await GenerateJwtTokenAsync(existingUser);
+            throw new BadHttpRequestException("An account with this email address already exists. Please sign in instead.");
         }
 
         int? areaId = dto.AreaId;

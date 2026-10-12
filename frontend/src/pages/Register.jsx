@@ -116,7 +116,11 @@ export function Register() {
     setIsSubmitting(true);
     try {
       await api.post('/api/v1/auth/verify-otp', { email, code: otpCode.trim(), purpose: 'EmailVerification' });
-      await register({ email, password, fullName, area, phoneNumber, turnstileToken });
+      const regResult = await register({ email, password, fullName, area, phoneNumber, turnstileToken });
+      if (regResult && !regResult.success) {
+        setOtpError(regResult.error || 'Registration failed. Please try again.');
+        return;
+      }
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setOtpError(err?.response?.data?.message || err?.message || 'Verification failed. Please try again.');

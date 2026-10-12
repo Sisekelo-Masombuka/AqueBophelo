@@ -37,13 +37,10 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterDto dto)
     {
-        if (!string.IsNullOrWhiteSpace(dto.TurnstileToken))
+        var isHuman = await _turnstileService.VerifyTokenAsync(dto.TurnstileToken ?? string.Empty, HttpContext.Connection.RemoteIpAddress?.ToString());
+        if (!isHuman)
         {
-            var isHuman = await _turnstileService.VerifyTokenAsync(dto.TurnstileToken, HttpContext.Connection.RemoteIpAddress?.ToString());
-            if (!isHuman)
-            {
-                return BadRequest(new { message = "Bot protection check failed. Please refresh and try again." });
-            }
+            return BadRequest(new { message = "Bot protection check failed. Please refresh and try again." });
         }
 
         try
@@ -61,13 +58,10 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto dto)
     {
-        if (!string.IsNullOrWhiteSpace(dto.TurnstileToken))
+        var isHuman = await _turnstileService.VerifyTokenAsync(dto.TurnstileToken ?? string.Empty, HttpContext.Connection.RemoteIpAddress?.ToString());
+        if (!isHuman)
         {
-            var isHuman = await _turnstileService.VerifyTokenAsync(dto.TurnstileToken, HttpContext.Connection.RemoteIpAddress?.ToString());
-            if (!isHuman)
-            {
-                return BadRequest(new { message = "Bot protection check failed. Please refresh and try again." });
-            }
+            return BadRequest(new { message = "Bot protection check failed. Please refresh and try again." });
         }
 
         try

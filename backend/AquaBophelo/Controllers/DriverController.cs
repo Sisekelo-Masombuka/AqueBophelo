@@ -8,7 +8,7 @@ using AquaBophelo.Models;
 namespace AquaBophelo.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Roles = "Driver,Admin")]
 [Route("api/v1/[controller]")]
 public class DriverController : ControllerBase
 {
@@ -133,6 +133,13 @@ public class DriverController : ControllerBase
         var trip = await _context.Trips.Include(t => t.Truck).FirstOrDefaultAsync(t => t.Id == id);
         if (trip == null) return NotFound();
 
+        var callingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin && trip.DriverId != callingUserId)
+        {
+            return Forbid();
+        }
+
         trip.Status = dto.Status; // Active, Completed
         if (dto.Status == "Completed")
         {
@@ -156,8 +163,18 @@ public class DriverController : ControllerBase
     [HttpPost("trips/{id:int}/stops/{stopId:int}/arrive")]
     public async Task<IActionResult> MarkStopArrived(int id, int stopId)
     {
-        var stop = await _context.TripStops.Include(ts => ts.RouteStop).FirstOrDefaultAsync(ts => ts.TripId == id && ts.Id == stopId);
+        var stop = await _context.TripStops
+            .Include(ts => ts.Trip)
+            .Include(ts => ts.RouteStop)
+            .FirstOrDefaultAsync(ts => ts.TripId == id && ts.Id == stopId);
         if (stop == null) return NotFound();
+
+        var callingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin && stop.Trip?.DriverId != callingUserId)
+        {
+            return Forbid();
+        }
 
         stop.StopStatus = "Arrived";
         stop.ArrivedAt = DateTime.UtcNow;
@@ -173,8 +190,18 @@ public class DriverController : ControllerBase
     [HttpPost("trips/{id:int}/stops/{stopId:int}/start-delivery")]
     public async Task<IActionResult> StartStopDelivery(int id, int stopId)
     {
-        var stop = await _context.TripStops.Include(ts => ts.RouteStop).FirstOrDefaultAsync(ts => ts.TripId == id && ts.Id == stopId);
+        var stop = await _context.TripStops
+            .Include(ts => ts.Trip)
+            .Include(ts => ts.RouteStop)
+            .FirstOrDefaultAsync(ts => ts.TripId == id && ts.Id == stopId);
         if (stop == null) return NotFound();
+
+        var callingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin && stop.Trip?.DriverId != callingUserId)
+        {
+            return Forbid();
+        }
 
         stop.StopStatus = "Delivering";
         stop.DeliveryStartedAt = DateTime.UtcNow;
@@ -190,8 +217,18 @@ public class DriverController : ControllerBase
     [HttpPost("trips/{id:int}/stops/{stopId:int}/complete-delivery")]
     public async Task<IActionResult> CompleteStopDelivery(int id, int stopId, [FromBody] CompleteDeliveryDto dto)
     {
-        var stop = await _context.TripStops.Include(ts => ts.RouteStop).FirstOrDefaultAsync(ts => ts.TripId == id && ts.Id == stopId);
+        var stop = await _context.TripStops
+            .Include(ts => ts.Trip)
+            .Include(ts => ts.RouteStop)
+            .FirstOrDefaultAsync(ts => ts.TripId == id && ts.Id == stopId);
         if (stop == null) return NotFound();
+
+        var callingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin && stop.Trip?.DriverId != callingUserId)
+        {
+            return Forbid();
+        }
 
         stop.StopStatus = "Completed";
         stop.Completed = true;

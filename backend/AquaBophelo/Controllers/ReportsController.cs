@@ -286,7 +286,7 @@ public class ReportsController : ControllerBase
     /// Admin gets all submitted fault reports.
     /// </summary>
     [HttpGet("issues")]
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<IssueReport>>> GetAllIssues()
     {
         var issues = await _context.IssueReports
@@ -302,7 +302,7 @@ public class ReportsController : ControllerBase
     /// Admin updates the status of a submitted issue (e.g. Pending -> In Progress -> Resolved).
     /// </summary>
     [HttpPatch("issues/{id}/status")]
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateIssueStatus(int id, [FromBody] UpdateIssueStatusDto dto)
     {
         var issue = await _context.IssueReports.FindAsync(id);
