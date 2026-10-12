@@ -117,7 +117,7 @@ public class BrevoEmailSender : IEmailSender, INotificationService
         // Also dispatch to all registered residents who opted-in for municipal email alerts
         var optedInUsers = await _context.Users
             .Where(u => !u.IsDeleted && u.OptInEmailAlerts && !string.IsNullOrWhiteSpace(u.Email) &&
-                        (!alert.AreaId.HasValue || u.AreaId == alert.AreaId.Value || u.AreaId == null))
+                        (!alert.AreaId.HasValue || u.AreaId == alert.AreaId.Value))
             .Select(u => u.Email)
             .ToListAsync();
 

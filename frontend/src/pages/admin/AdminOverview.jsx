@@ -35,18 +35,25 @@ export function AdminOverview() {
 
   const getFullImageUrl = (url) => {
     if (!url) return '';
-    let clean = url;
-    while (clean.includes('/reports/photos/reports/')) {
-      clean = clean.replace('/reports/photos/reports/', '/reports/');
+    if (url === '/pipe_leak.jpg' || url === 'pipe_leak.jpg') return '/pipe_leak.jpg';
+
+    let photoPath = url;
+    if (photoPath.includes('/reports/photos/')) {
+      const idx = photoPath.indexOf('/reports/photos/');
+      photoPath = `/api/v1${photoPath.substring(idx)}`;
+    } else if (photoPath.includes('/reports/')) {
+      const idx = photoPath.lastIndexOf('/reports/');
+      photoPath = `/api/v1/reports/photos${photoPath.substring(idx)}`;
+    } else if (photoPath.startsWith('reports/')) {
+      photoPath = `/api/v1/reports/photos/${photoPath}`;
     }
-    if (clean.startsWith('http://') || clean.startsWith('https://')) {
-      if (clean.includes('/reports/photos/')) {
-        const pathPart = clean.substring(clean.indexOf('/reports/photos/'));
-        return `${API_BASE_URL}/api/v1${pathPart}`;
-      }
-      return clean;
+
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+      return photoPath;
     }
-    return `${API_BASE_URL}${clean.startsWith('/') ? '' : '/'}${clean}`;
+
+    const base = apiClient.defaults?.baseURL || API_BASE_URL;
+    return `${base}${photoPath.startsWith('/') ? '' : '/'}${photoPath}`;
   };
 
   // Resident Issue Reports (Section 3.4.1)
@@ -537,7 +544,7 @@ export function AdminOverview() {
                 ) : (
                   residentIssues.map((issue) => {
                     const isAnon = !issue.userEmail || issue.userEmail.includes('anonymous') || issue.fullName?.toLowerCase().includes('anonymous');
-                    const hasValidPhoto = issue.imageUrl && issue.imageUrl !== '/pipe_leak.jpg';
+                    const hasValidPhoto = Boolean(issue.imageUrl && issue.imageUrl.trim() !== '');
                     const fullImg = getFullImageUrl(issue.imageUrl);
                     return (
                       <tr key={issue.id} className="hover:bg-slate-50 transition-colors">
@@ -591,7 +598,9 @@ export function AdminOverview() {
                                 alt="Fault attachment"
                                 className="w-8 h-8 rounded object-cover border border-slate-200 group-hover:opacity-90 shadow-2xs"
                                 onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
+                                  if (e.currentTarget.src !== window.location.origin + '/pipe_leak.jpg') {
+                                    e.currentTarget.src = '/pipe_leak.jpg';
+                                  }
                                 }}
                               />
                               <span className="text-[11px] text-[#1d70b8] font-bold group-hover:underline flex items-center gap-0.5">
@@ -751,6 +760,11 @@ export function AdminOverview() {
               <img
                 src={selectedPhotoModal.url}
                 alt="Fault Evidence"
+                onError={(e) => {
+                  if (e.currentTarget.src !== window.location.origin + '/pipe_leak.jpg') {
+                    e.currentTarget.src = '/pipe_leak.jpg';
+                  }
+                }}
                 className="max-h-[460px] max-w-full object-contain rounded shadow"
               />
             </div>

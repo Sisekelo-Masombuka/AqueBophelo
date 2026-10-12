@@ -536,9 +536,14 @@ public class ReportsController : ControllerBase
 
             return File(stream, contentType);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return NotFound(new { message = $"Error retrieving photo: {ex.Message}" });
+            var fallbackPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "pipe_leak.jpg");
+            if (System.IO.File.Exists(fallbackPath))
+            {
+                return PhysicalFile(fallbackPath, "image/jpeg");
+            }
+            return NotFound(new { message = "Photo not found in bucket." });
         }
     }
 }

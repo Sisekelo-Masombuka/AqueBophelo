@@ -583,107 +583,118 @@ export function DriverTripScreen() {
 
       {/* DELIVERY COMPLETION MODAL */}
       {isDeliveryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="bg-white border border-slate-200 rounded-lg p-6 w-full max-w-md shadow-xl text-slate-800 relative space-y-4">
-            <button
-              onClick={() => setIsDeliveryModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center justify-between pr-8">
-              <div className="flex items-center space-x-3 text-[#2e7d32]">
-                <CheckCircle2 className="w-6 h-6 shrink-0" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 w-full max-w-2xl shadow-2xl text-slate-800 relative my-auto max-h-[92vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 shrink-0">
+              <div className="flex items-center space-x-2.5 text-[#2e7d32]">
+                <CheckCircle2 className="w-5 h-5 shrink-0" />
                 <div>
-                  <h3 className="font-serif text-lg font-bold text-[#152e52]">Record Delivery Completion</h3>
-                  <p className="text-xs text-slate-500">Proof of Delivery Verification</p>
+                  <h3 className="font-serif text-base sm:text-lg font-bold text-[#152e52]">Record Delivery Completion</h3>
+                  <p className="text-xs text-slate-500">Proof of Delivery Verification & Site Drop Record</p>
                 </div>
               </div>
-              <span className="font-mono text-[11px] font-bold text-[#1d70b8] bg-blue-50 border border-blue-200 px-2 py-1 rounded">
-                POD-{String(targetStop?.id || 101).padStart(4, '0')}
-              </span>
-            </div>
-
-            <form onSubmit={handleConfirmDeliveryCompletion} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">{t('approxLitres')}</label>
-                <input
-                  type="number"
-                  value={litresDelivered}
-                  onChange={(e) => setLitresDelivered(e.target.value)}
-                  required
-                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs font-mono text-slate-900 font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Delivery Location</label>
-                <input
-                  type="text"
-                  value={deliveryLocation}
-                  onChange={(e) => setDeliveryLocation(e.target.value)}
-                  required
-                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900"
-                />
-              </div>
-
-              {/* Live Proof of Delivery Camera Viewfinder */}
-              <div>
-                <LiveCameraCapture
-                  previewUrl={proofPhotoPreview}
-                  onCapture={({ file, previewUrl }) => {
-                    setProofPhotoFile(file);
-                    setProofPhotoPreview(previewUrl);
-                  }}
-                  title="Proof of Delivery Live Camera"
-                  instruction="Use your device's live camera to photograph the water delivery hose, valve discharge, or community tank level."
-                />
-              </div>
-
-              {/* Recipient Verification Code / Site Supervisor PIN */}
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Recipient Verification PIN / Code (Optional)
-                </label>
-                <input
-                  type="text"
-                  maxLength={6}
-                  placeholder="e.g. 4-digit code provided by receiving resident or supervisor"
-                  value={deliveryPin}
-                  onChange={(e) => setDeliveryPin(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 font-mono tracking-wider focus:outline-none focus:border-[#1d70b8]"
-                />
-                <span className="text-[11px] text-slate-400 mt-0.5 block">
-                  Confirms drop-off identity directly with the resident or facility supervisor.
+              <div className="flex items-center space-x-2">
+                <span className="font-mono text-[11px] font-bold text-[#1d70b8] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                  POD-{String(targetStop?.id || 101).padStart(4, '0')}
                 </span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">{t('deliveryNotes')}</label>
-                <textarea
-                  rows={2}
-                  placeholder="Optional remarks (e.g. Tanker water level refilled at primary school tank)..."
-                  value={deliveryNotes}
-                  onChange={(e) => setDeliveryNotes(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-md p-2.5 text-xs text-slate-900"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsDeliveryModalOpen(false)}
-                  className="px-4 py-2 border border-slate-300 text-slate-700 text-xs font-medium rounded-md"
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body: Two Columns */}
+            <form onSubmit={handleConfirmDeliveryCompletion} className="overflow-y-auto flex-1 py-3.5 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Left Column: Delivery Details */}
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">{t('approxLitres')} *</label>
+                    <input
+                      type="number"
+                      value={litresDelivered}
+                      onChange={(e) => setLitresDelivered(e.target.value)}
+                      required
+                      className="w-full bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs font-mono text-slate-900 font-bold focus:ring-1 focus:ring-[#1d70b8] focus:border-[#1d70b8]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Delivery Location *</label>
+                    <input
+                      type="text"
+                      value={deliveryLocation}
+                      onChange={(e) => setDeliveryLocation(e.target.value)}
+                      required
+                      placeholder="e.g. Galeshewe Primary Tank No. 2"
+                      className="w-full bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-900 focus:ring-1 focus:ring-[#1d70b8] focus:border-[#1d70b8]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Recipient PIN / Code (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      placeholder="e.g. 4-digit code from resident or supervisor"
+                      value={deliveryPin}
+                      onChange={(e) => setDeliveryPin(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-900 font-mono tracking-wider focus:ring-1 focus:ring-[#1d70b8] focus:border-[#1d70b8]"
+                    />
+                    <span className="text-[10px] text-slate-400 mt-0.5 block">
+                      Confirms drop-off identity with the resident or facility supervisor.
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">{t('deliveryNotes')}</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Optional remarks (e.g. Valve opened, hose detached)..."
+                      value={deliveryNotes}
+                      onChange={(e) => setDeliveryNotes(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-md p-2 text-xs text-slate-900 resize-none focus:ring-1 focus:ring-[#1d70b8] focus:border-[#1d70b8]"
+                    />
+                  </div>
+                </div>
+
+                {/* Right Column: Live Camera Proof */}
+                <div>
+                  <LiveCameraCapture
+                    previewUrl={proofPhotoPreview}
+                    onCapture={({ file, previewUrl }) => {
+                      setProofPhotoFile(file);
+                      setProofPhotoPreview(previewUrl);
+                    }}
+                    title="Live Proof of Delivery"
+                    instruction="Photograph the delivery hose, discharge valve, or reservoir tank level."
+                  />
+                </div>
+              </div>
+
+              {/* Actions Footer */}
+              <div className="flex items-center justify-end space-x-2.5 pt-3 border-t border-slate-200 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsDeliveryModalOpen(false)}
+                  className="px-3.5 py-1.5 border border-slate-300 text-slate-700 text-xs font-medium rounded-md hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isUploadingProof}
-                  className="px-4 py-2 bg-[#2e7d32] hover:bg-[#256629] text-white text-xs font-bold rounded-md disabled:opacity-50"
+                  className="px-4 py-1.5 bg-[#2e7d32] hover:bg-[#256629] text-white text-xs font-bold rounded-md disabled:opacity-50 transition-colors cursor-pointer shadow-xs inline-flex items-center gap-1.5"
                 >
-                  {isUploadingProof ? 'Uploading Proof...' : 'Confirm & Record Delivery'}
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{isUploadingProof ? 'Saving Record...' : 'Confirm Delivery'}</span>
                 </button>
               </div>
             </form>
