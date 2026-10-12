@@ -3,6 +3,11 @@ import axios from 'axios';
 const PRIMARY_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5094';
 const FALLBACK_BASE_URL = 'https://localhost:7154';
 
+/**
+ * Pre-configured Axios HTTP client for the AquaBophelo React SPA.
+ * Manages baseURL resolution, Bearer token injection, language preferences,
+ * and automated failover handling.
+ */
 export const apiClient = axios.create({
   baseURL: PRIMARY_BASE_URL,
   headers: {
@@ -10,7 +15,11 @@ export const apiClient = axios.create({
   },
 });
 
-// Auto-attach JWT Bearer token and Accept-Language header if present in localStorage
+/**
+ * Request Interceptor:
+ * 1. Reads the JWT token from localStorage ('aquabophelo_token') and attaches it as a Bearer authorization header.
+ * 2. Reads the resident's preferred language code ('aquabophelo_lang') and sets the 'Accept-Language' header.
+ */
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('aquabophelo_token');

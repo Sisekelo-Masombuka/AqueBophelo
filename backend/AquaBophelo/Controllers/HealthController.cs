@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AquaBophelo.Controllers;
 
+/// <summary>
+/// Health-check and infrastructure diagnostics endpoints for uptime monitors.
+/// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
 public class HealthController : ControllerBase
@@ -14,6 +17,10 @@ public class HealthController : ControllerBase
         _environment = environment;
     }
 
+    /// <summary>
+    /// Performs a health check to verify backend API availability and server time.
+    /// </summary>
+    /// <returns>Uptime status, service name, UTC timestamp, and hosting environment.</returns>
     [HttpGet]
     [AllowAnonymous]
     public IActionResult GetHealth()

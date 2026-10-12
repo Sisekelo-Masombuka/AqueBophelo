@@ -1,7 +1,7 @@
 namespace AquaBophelo.Dtos.Reports;
 
 /// <summary>
-/// Operational Analytics & Fleet Summary Data Transfer Object for Municipal Admin
+/// Operational Analytics &amp; Fleet Summary Data Transfer Object for Municipal Admin
 /// </summary>
 public class FleetReportSummaryDto
 {

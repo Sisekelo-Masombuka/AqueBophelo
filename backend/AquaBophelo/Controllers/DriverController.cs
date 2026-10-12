@@ -212,7 +212,7 @@ public class DriverController : ControllerBase
 
     /// <summary>
     /// POST: api/v1/driver/trips/{id}/stops/{stopId}/complete-delivery
-    /// Section 2.1.7 & 2.1.8: Step 3 -> Delivery completed (records approx litres, location, time, optional notes)
+    /// Step 3: Delivery completed (records approx litres, location, time, optional notes)
     /// </summary>
     [HttpPost("trips/{id:int}/stops/{stopId:int}/complete-delivery")]
     public async Task<IActionResult> CompleteStopDelivery(int id, int stopId, [FromBody] CompleteDeliveryDto dto)
@@ -250,8 +250,7 @@ public class DriverController : ControllerBase
 
     /// <summary>
     /// POST: api/v1/driver/report-problem
-    /// Section 2.2.1 & 2.2.2 & 2.3.3: Report problem with categories:
-    /// Vehicle problem / Road-access problem / Water point problem / Unable to deliver / Other
+    /// Report problem with categories: Vehicle problem / Road-access problem / Water point problem / Unable to deliver / Other
     /// </summary>
     [HttpPost("report-problem")]
     public async Task<IActionResult> ReportProblem([FromBody] CreateDriverProblemDto dto)

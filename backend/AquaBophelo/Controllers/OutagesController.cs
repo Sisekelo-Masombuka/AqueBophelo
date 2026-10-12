@@ -22,7 +22,7 @@ public class OutagesController : ControllerBase
 
     /// <summary>
     /// GET: api/v1/outages
-    /// Returns list of scheduled water interruptions (cut-off time & expected return time)
+    /// Returns list of scheduled water interruptions (cut-off time &amp; expected return time)
     /// </summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ScheduledOutage>>> GetOutages()
@@ -37,7 +37,7 @@ public class OutagesController : ControllerBase
 
     /// <summary>
     /// POST: api/v1/outages
-    /// Allows Admin to post a scheduled water interruption (cut-off time & expected return time)
+    /// Allows Admin to post a scheduled water interruption (cut-off time &amp; expected return time)
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin")]

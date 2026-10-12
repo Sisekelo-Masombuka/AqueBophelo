@@ -3,6 +3,12 @@ import apiClient from '../api/client';
 
 const AuthContext = createContext(null);
 
+/**
+ * React Context Provider managing municipal authentication state, JWT tokens,
+ * active user profiles, login, registration, and logout operations.
+ *
+ * @param {{ children: React.ReactNode }} props
+ */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);

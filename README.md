@@ -137,25 +137,63 @@ Open http://localhost:5173. The **System Check** page should show **API: Online*
 
 AquaBophelo integrates six core external services to deliver enterprise-grade performance, bot protection, telemetry, and reliable citizen communications:
 
+```mermaid
+flowchart TD
+    subgraph Client["Frontend Client (React 19 + MapLibre)"]
+        SPA["React SPA (Vite + Tailwind v4)"]
+        Map["MapLibre Live Telemetry Map"]
+        SentryFE["Sentry Session Replay & Web Vitals"]
+    end
+
+    subgraph Backend["Backend API (ASP.NET Core 10)"]
+        API["Controllers (REST Web API)"]
+        SignalR["SignalR Hubs (/hubs/trucks, /hubs/ping)"]
+        Auth["Identity + JWT (RBAC + Lockout)"]
+        RateLimit["RateLimiter (AuthStrictPolicy 5/min)"]
+        Queue["Background Email Queue (Channel<T>)"]
+        EF["Entity Framework Core 10"]
+    end
+
+    subgraph Storage["Data Tier"]
+        DB[("SQL Server / Azure SQL")]
+        R2["Cloudflare R2 Object Storage (5MB Photos)"]
+    end
+
+    subgraph External["External Cloud Integrations"]
+        Brevo["Brevo Transactional Email (Daily Cap 300)"]
+        Turnstile["Cloudflare Turnstile Bot Defense"]
+        FCM["Firebase Cloud Messaging (Web Push)"]
+        SentryBE["Sentry Error Monitoring"]
+    end
+
+    SPA -->|HTTPS REST| RateLimit
+    RateLimit --> API
+    SPA -->|WSS WebSockets| SignalR
+    API --> Auth
+    API --> EF
+    SignalR --> EF
+    EF --> DB
+    API -->|Presigned PUT / Multipart| R2
+    API --> Queue
+    Queue -->|HTTP API| Brevo
+    API -->|Verify Token| Turnstile
+    API -->|Critical Alerts| FCM
+    API -.->|Telemetry Scrubbed| SentryBE
+    SPA -.->|Client Errors| SentryFE
 ```
-                                  +---------------------------------------+
-                                  |           Cloudflare R2               |
-                                  |    (Direct Presigned Photo Uploads)   |
-                                  +---------------------------------------+
-                                                      ^
-                                                      | Presigned PUT
-+-----------------------+   HTTP / Web   +---------------------------------------+   HTTP API   +-----------------------+
-|  React SPA Frontend   | -------------> |     ASP.NET Core Web API Backend      | -------------> |   Brevo Transactional |
-| (Vite + MapLibre + GA)|                | (Identity + EF Core + Rate Limiter)   |                |     Email Service     |
-+-----------------------+                +---------------------------------------+                +-----------------------+
-        |                                       |                         |
-        | Sentry SDK                            | Sentry SDK              | FCM Admin SDK
-        v                                       v                         v
-+-----------------------+               +-------------------+   +-----------------------+
-|   Sentry UI Telemetry |               |  Sentry API Error |   | Firebase Cloud        |
-|   & Session Replay    |               |  Telemetry Logs   |   | Messaging (Web Push)  |
-+-----------------------+               +-------------------+   +-----------------------+
-```
+
+---
+
+## Technical Documentation & Architecture Guides
+
+Detailed system documentation is available in the [`docs/`](docs/) directory:
+
+| Guide | Description |
+| :--- | :--- |
+| [**Authentication Guide (`docs/AUTH.md`)**](docs/AUTH.md) | Identity architecture, JWT tokens, RBAC roles, 6-digit SHA-256 OTP verification, 5-strike brute-force lockout, and soft-delete grace periods. |
+| [**Alerts & Notifications (`docs/ALERTS.md`)**](docs/ALERTS.md) | Reservoir capacity thresholds (Healthy/Watch/Warning/Critical), state-transition deduplication, asynchronous queue pipeline, and Brevo daily cap protection. |
+| [**Error Handling Guide (`docs/ERROR-HANDLING.md`)**](docs/ERROR-HANDLING.md) | RFC 7807 ProblemDetails responses, standard HTTP status codes, external service fail-safes, and Axios network failover. |
+| [**Security & POPIA Guide (`docs/SECURITY.md`)**](docs/SECURITY.md) | South African POPIA compliance, IDOR ownership controls, Cloudflare R2 upload restrictions, rate limiting, and HTTP security headers. |
 
 ---
 

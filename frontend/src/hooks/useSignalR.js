@@ -46,6 +46,29 @@ const INITIAL_TRUCKS = [
   },
 ];
 
+/**
+ * Custom React hook managing real-time WebSocket communication with the backend TruckHub.
+ * Subscribes to live GPS telemetry events ('LocationUpdated'), updates tanker coordinates
+ * in real-time, monitors connection status, and provides simulated fallback when offline.
+ *
+ * @returns {{
+ *   connectionStatus: 'Connected' | 'Reconnecting' | 'Disconnected' | 'Demo',
+ *   trucks: Array<{
+ *     id: number,
+ *     registrationNumber: string,
+ *     capacityLitres: number,
+ *     status: string,
+ *     lastLatitude: number,
+ *     lastLongitude: number,
+ *     speedKmh: number,
+ *     heading: number,
+ *     driverName: string,
+ *     route: string,
+ *     lastUpdated: string
+ *   }>,
+ *   lastMessageTime: string
+ * }}
+ */
 export function useSignalR() {
   const [connectionStatus, setConnectionStatus] = useState('Connecting'); // 'Connected' | 'Reconnecting' | 'Disconnected' | 'Demo'
   const [trucks, setTrucks] = useState(INITIAL_TRUCKS);
