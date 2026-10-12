@@ -178,29 +178,68 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Global Exception Handling Safety Net (Returns clean JSON 500 error instead of raw HTML stack trace)
+// Global Exception Handling Safety Net (Returns RFC 7807 ProblemDetails instead of raw HTML stack trace)
 app.UseExceptionHandler(exceptionHandlerApp =>
 {
     exceptionHandlerApp.Run(async context =>
     {
-        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        context.Response.ContentType = "application/json";
-
         var exceptionHandlerPathFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
         var exception = exceptionHandlerPathFeature?.Error;
 
         var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
         logger.LogError(exception, "Unhandled exception occurred while processing request path {Path}", context.Request.Path);
 
-        var response = new
+        int statusCode = StatusCodes.Status500InternalServerError;
+        string detail = "An internal server error occurred while processing your request.";
+
+        if (exception is BadHttpRequestException badRequestEx)
         {
-            message = "An internal server error occurred while processing your request.",
-            path = context.Request.Path.Value,
+            statusCode = badRequestEx.StatusCode;
+            detail = badRequestEx.Message;
+        }
+        else if (exception is UnauthorizedAccessException)
+        {
+            statusCode = StatusCodes.Status401Unauthorized;
+            detail = "You are not authorized to perform this action.";
+        }
+        else if (exception is KeyNotFoundException)
+        {
+            statusCode = StatusCodes.Status404NotFound;
+            detail = "The requested resource was not found.";
+        }
+
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/problem+json";
+
+        var problemDetails = new
+        {
+            type = $"https://httpstatuses.io/{statusCode}",
+            title = statusCode switch
+            {
+                400 => "Bad Request",
+                401 => "Unauthorized",
+                403 => "Forbidden",
+                404 => "Not Found",
+                _ => "Internal Server Error"
+            },
+            status = statusCode,
+            detail = detail,
+            instance = context.Request.Path.Value,
             timestamp = DateTime.UtcNow
         };
 
-        await context.Response.WriteAsJsonAsync(response);
+        await context.Response.WriteAsJsonAsync(problemDetails);
     });
+});
+
+// Security Headers Middleware (SEC-03: Protection against MIME-sniffing, clickjacking, and information leakage)
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("X-Permitted-Cross-Domain-Policies", "none");
+    await next();
 });
 
 // Seed Database
@@ -218,6 +257,7 @@ if (app.Environment.IsDevelopment())
 
 if (!app.Environment.IsDevelopment())
 {
+    app.UseHsts();
     app.UseHttpsRedirection();
 }
 

@@ -10,11 +10,13 @@ public class DamService : IDamService
 {
     private readonly AppDbContext _context;
     private readonly IAlertEvaluator _alertEvaluator;
+    private readonly ILogger<DamService> _logger;
 
-    public DamService(AppDbContext context, IAlertEvaluator alertEvaluator)
+    public DamService(AppDbContext context, IAlertEvaluator alertEvaluator, ILogger<DamService> logger)
     {
         _context = context;
         _alertEvaluator = alertEvaluator;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<DamResponseDto>> GetAllDamsAsync()
@@ -120,8 +122,15 @@ public class DamService : IDamService
         _context.DamReadings.Add(reading);
         await _context.SaveChangesAsync();
 
-        // Evaluate dam level thresholds for auto alerts
-        await _alertEvaluator.EvaluateDamReadingAsync(reading, dam);
+        // Evaluate dam level thresholds for auto alerts (fail-safe: external notification failure will not abort recorded reading)
+        try
+        {
+            await _alertEvaluator.EvaluateDamReadingAsync(reading, dam);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to evaluate alert triggers for Dam {DamId} reading, but reading was successfully persisted.", damId);
+        }
 
         return MapToReadingResponseDto(reading);
     }

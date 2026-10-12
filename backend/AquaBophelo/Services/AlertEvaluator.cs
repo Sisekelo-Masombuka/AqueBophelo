@@ -105,16 +105,23 @@ public class AlertEvaluator : IAlertEvaluator
         // WEB PUSH RULE: Free extra channel ONLY for Red (Critical) alerts!
         if (currentStateCategory == "Critical")
         {
-            _logger.LogInformation("[ALERT EVALUATOR] Dispatching Web Push Notification for Critical Dam Alert on {DamName}", dam.Name);
-            await _pushService.SendPushNotificationToAllAsync(
-                title: $"🚨 {title}",
-                body: message,
-                data: new Dictionary<string, string>
-                {
-                    { "damId", dam.Id.ToString() },
-                    { "type", "RedAlert" }
-                }
-            );
+            try
+            {
+                _logger.LogInformation("[ALERT EVALUATOR] Dispatching Web Push Notification for Critical Dam Alert on {DamName}", dam.Name);
+                await _pushService.SendPushNotificationToAllAsync(
+                    title: $"🚨 {title}",
+                    body: message,
+                    data: new Dictionary<string, string>
+                    {
+                        { "damId", dam.Id.ToString() },
+                        { "type", "RedAlert" }
+                    }
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[ALERT EVALUATOR] Non-fatal push notification error while broadcasting alert for {DamName}", dam.Name);
+            }
         }
     }
 

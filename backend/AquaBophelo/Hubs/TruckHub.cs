@@ -118,8 +118,15 @@ public class TruckHub : Hub
             RecordedAt = now
         };
 
-        _context.TruckLocations.Add(location);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.TruckLocations.Add(location);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist breadcrumb GPS point for Trip {TripId}", tripId);
+        }
 
         // 3. Construct live payload with Central Africa Time (CAT)
         var payload = new
