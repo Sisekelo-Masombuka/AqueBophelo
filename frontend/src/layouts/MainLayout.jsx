@@ -89,13 +89,21 @@ export function MainLayout() {
               {currentRole}
             </span>
 
-            {/* User Avatar Initial */}
+            {/* User Avatar */}
             <div
-              className="w-8 h-8 rounded-full bg-[#152e52] text-white flex items-center justify-center font-bold text-xs shadow-xs cursor-pointer hover:bg-[#1f3f6e] transition-colors"
+              className="w-8 h-8 rounded-full bg-[#152e52] text-white flex items-center justify-center font-bold text-xs shadow-xs cursor-pointer hover:ring-2 hover:ring-[#1d70b8] transition-all overflow-hidden shrink-0"
               onClick={() => navigate('/profile')}
               title={user?.fullName || currentRole}
             >
-              {user?.fullName ? user.fullName[0].toUpperCase() : currentRole[0]}
+              {user?.profilePictureUrl ? (
+                <img
+                  src={user.profilePictureUrl}
+                  alt={user?.fullName || currentRole}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span>{user?.fullName ? user.fullName[0].toUpperCase() : currentRole[0]}</span>
+              )}
             </div>
 
             {/* Logout Button */}

@@ -311,15 +311,33 @@ public class ReportsController : ControllerBase
     private static string? NormalizeImageUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url)) return null;
-        if (url.Contains("/reports/"))
+
+        // If it already points to our photo streaming endpoint, clean up any internal duplicates and return
+        if (url.Contains("/api/v1/reports/photos/"))
         {
-            var idx = url.IndexOf("/reports/", StringComparison.OrdinalIgnoreCase);
-            return "/api/v1/reports/photos" + url.Substring(idx);
+            var cleanKey = url;
+            while (cleanKey.Contains("/reports/photos/reports/"))
+            {
+                cleanKey = cleanKey.Replace("/reports/photos/reports/", "/reports/");
+            }
+            if (cleanKey.StartsWith("/api/v1/reports/photos/")) return cleanKey;
+            var idxLast = cleanKey.LastIndexOf("/reports/", StringComparison.OrdinalIgnoreCase);
+            return idxLast >= 0 ? "/api/v1/reports/photos" + cleanKey.Substring(idxLast) : cleanKey;
         }
+
+        // If it starts with reports/
         if (url.StartsWith("reports/"))
         {
             return "/api/v1/reports/photos/" + url;
         }
+
+        // If it contains /reports/, take the last occurrence to avoid duplicating nested paths
+        var idx = url.LastIndexOf("/reports/", StringComparison.OrdinalIgnoreCase);
+        if (idx >= 0)
+        {
+            return "/api/v1/reports/photos" + url.Substring(idx);
+        }
+
         return url;
     }
 
@@ -492,9 +510,20 @@ public class ReportsController : ControllerBase
             return BadRequest(new { message = "Object key is required." });
         }
 
+        // Clean up redundant prefix segments if passed via legacy or duplicated URLs
+        var cleanKey = objectKey.TrimStart('/');
+        while (cleanKey.StartsWith("reports/photos/", StringComparison.OrdinalIgnoreCase))
+        {
+            cleanKey = cleanKey.Substring("reports/photos/".Length).TrimStart('/');
+        }
+        while (cleanKey.StartsWith("api/v1/reports/photos/", StringComparison.OrdinalIgnoreCase))
+        {
+            cleanKey = cleanKey.Substring("api/v1/reports/photos/".Length).TrimStart('/');
+        }
+
         try
         {
-            var (stream, contentType) = await r2Service.GetFileStreamAsync(objectKey);
+            var (stream, contentType) = await r2Service.GetFileStreamAsync(cleanKey);
             if (stream == null)
             {
                 var fallbackPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "pipe_leak.jpg");

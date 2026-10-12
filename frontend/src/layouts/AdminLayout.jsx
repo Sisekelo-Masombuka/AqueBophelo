@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Building2,
   BarChart3,
+  Calendar,
 } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import { useLanguage } from '../context/LanguageContext';
@@ -28,6 +29,7 @@ export function AdminLayout() {
     { path: '/admin/routes', label: t('manageRoutes'), icon: MapPin },
     { path: '/admin/users', label: t('manageUsers'), icon: Users },
     { path: '/admin/alerts', label: t('broadcastAlerts'), icon: AlertTriangle },
+    { path: '/admin/outages', label: 'Water Outages', icon: Calendar },
     { path: '/admin/reports', label: t('reportsHistory'), icon: BarChart3 },
   ];
 

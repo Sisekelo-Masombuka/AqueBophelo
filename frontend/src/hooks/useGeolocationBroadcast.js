@@ -154,7 +154,12 @@ export function useGeolocationBroadcast({ tripId, initialActive = false } = {}) 
     };
   }, [isSimulating, isBroadcasting, broadcastCoordinate]);
 
-  // Stop all broadcasting
+  const currentLocationRef = useRef(currentLocation);
+  useEffect(() => {
+    currentLocationRef.current = currentLocation;
+  }, [currentLocation]);
+
+  // Stop all broadcasting and freeze truck at current location
   const stopBroadcast = useCallback(() => {
     setIsBroadcasting(false);
     setIsSimulating(false);
@@ -166,7 +171,11 @@ export function useGeolocationBroadcast({ tripId, initialActive = false } = {}) 
       clearInterval(simulationIntervalRef.current);
       simulationIntervalRef.current = null;
     }
-  }, []);
+    const cur = currentLocationRef.current;
+    if (cur?.latitude && cur?.longitude) {
+      broadcastCoordinate(cur.latitude, cur.longitude, 0, cur.heading || 0);
+    }
+  }, [broadcastCoordinate]);
 
   const toggleSimulation = useCallback(() => {
     setIsSimulating((prev) => {
@@ -178,6 +187,10 @@ export function useGeolocationBroadcast({ tripId, initialActive = false } = {}) 
         broadcastCoordinate(point.lat, point.lng, point.speed, point.heading);
       } else {
         setIsBroadcasting(false);
+        const cur = currentLocationRef.current;
+        if (cur?.latitude && cur?.longitude) {
+          broadcastCoordinate(cur.latitude, cur.longitude, 0, cur.heading || 0);
+        }
       }
       return nextSim;
     });

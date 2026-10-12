@@ -94,6 +94,20 @@ export function ProfilePage() {
     }
   };
 
+  const handleRemoveAvatar = async () => {
+    setAvatarSrc(null);
+    try {
+      await apiClient.post('/api/v1/auth/profile-picture', { profilePictureUrl: null });
+      if (updateUser) updateUser({ profilePictureUrl: null });
+      setProfileSuccess('Profile picture removed.');
+    } catch (err) {
+      console.warn('API profile picture remove notice:', err);
+      if (updateUser) updateUser({ profilePictureUrl: null });
+      setProfileSuccess('Profile picture removed.');
+    }
+    setTimeout(() => setProfileSuccess(''), 3000);
+  };
+
   // Item 1.7: Save Privacy Settings
   const handleTogglePrivacy = async (field, currentValue) => {
     const nextValue = !currentValue;
@@ -332,7 +346,29 @@ export function ProfilePage() {
                 className="hidden"
               />
             </label>
+
+            {avatarSrc && (
+              <button
+                type="button"
+                onClick={handleRemoveAvatar}
+                className="absolute top-0 right-0 p-1.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-full shadow-xs cursor-pointer"
+                title="Remove Profile Picture"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
+
+          {avatarSrc && (
+            <button
+              type="button"
+              onClick={handleRemoveAvatar}
+              className="text-xs text-rose-600 hover:text-rose-800 font-medium flex items-center gap-1 mb-2 hover:underline cursor-pointer"
+            >
+              <Trash2 className="w-3 h-3" />
+              <span>Remove Photo</span>
+            </button>
+          )}
 
           <h3 className="font-serif font-bold text-lg text-[#152e52]">{fullName}</h3>
           <p className="text-xs text-slate-500 mt-0.5 font-normal">{email}</p>

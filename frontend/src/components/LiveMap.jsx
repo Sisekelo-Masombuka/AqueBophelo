@@ -495,9 +495,17 @@ export function LiveMap({
 
     connection.on('LocationUpdated', (p) => {
       if (p?.registrationNumber) {
-        positionsRef.current[p.registrationNumber] = {
-          lat: p.latitude, lng: p.longitude, heading: p.heading ?? null, speedKmh: p.speedKmh || 0, t: Date.now(),
+        const reg = p.registrationNumber;
+        const norm = normPlate(reg);
+        const data = {
+          lat: p.latitude,
+          lng: p.longitude,
+          heading: p.heading ?? null,
+          speedKmh: p.speedKmh || 0,
+          t: Date.now(),
         };
+        positionsRef.current[reg] = data;
+        positionsRef.current[norm] = data;
         setLastGpsSecAgo(0);
       }
     });
@@ -652,8 +660,8 @@ export function LiveMap({
         const s = simRef.current[reg], e = elRef.current[reg];
         if (!s || !e?.trail || !s.len) continue;
 
-        const live = positionsRef.current[reg];
-        const liveOk = live && live.lat && live.lng && Date.now() - live.t < 30000;
+        const live = positionsRef.current[reg] || positionsRef.current[normPlate(reg)];
+        const liveOk = Boolean(live && live.lat && live.lng);
         const onTrip = t.status === 'OnTrip';
         let x, y, speed = 0;
 
@@ -663,7 +671,7 @@ export function LiveMap({
           s.samples.forEach((pt, i) => { const d = (pt.x - x) ** 2 + (pt.y - y) ** 2; if (d < bestD) { bestD = d; best = i; } });
           s.p = best / 200;
           if (live.heading != null) s.heading = live.heading;
-          speed = live.speedKmh;
+          speed = live.speedKmh || 0;
         } else if (!onTrip) {
           s.p = 0;
           const a = e.trail.getPointAtLength(0);

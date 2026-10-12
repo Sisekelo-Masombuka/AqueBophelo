@@ -27,6 +27,7 @@ import ManageRoutes from './pages/admin/ManageRoutes';
 import ManageUsers from './pages/admin/ManageUsers';
 import BroadcastAlertPage from './pages/admin/BroadcastAlertPage';
 import AdminReportsPage from './pages/admin/AdminReportsPage';
+import ScheduledOutagesComponent from './components/ScheduledOutagesComponent';
 
 import PushNotificationPrompt from './components/PushNotificationPrompt';
 import CookieConsentBanner from './components/CookieConsentBanner';
@@ -131,6 +132,7 @@ export function App() {
               <Route path="routes" element={<ManageRoutes />} />
               <Route path="users" element={<ManageUsers />} />
               <Route path="alerts" element={<BroadcastAlertPage />} />
+              <Route path="outages" element={<div className="space-y-6"><ScheduledOutagesComponent isAdmin={true} /></div>} />
               <Route path="reports" element={<AdminReportsPage />} />
             </Route>
 

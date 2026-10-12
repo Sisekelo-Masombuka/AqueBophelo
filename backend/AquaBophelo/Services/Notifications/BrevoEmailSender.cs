@@ -117,7 +117,7 @@ public class BrevoEmailSender : IEmailSender, INotificationService
         // Also dispatch to all registered residents who opted-in for municipal email alerts
         var optedInUsers = await _context.Users
             .Where(u => !u.IsDeleted && u.OptInEmailAlerts && !string.IsNullOrWhiteSpace(u.Email) &&
-                        (!alert.AreaId.HasValue || u.AreaId == alert.AreaId.Value))
+                        (!alert.AreaId.HasValue || u.AreaId == alert.AreaId.Value || u.AreaId == null))
             .Select(u => u.Email)
             .ToListAsync();
 
@@ -129,7 +129,7 @@ public class BrevoEmailSender : IEmailSender, INotificationService
             }
         }
 
-        int enqueuedCount = 0;
+        int sentCount = 0;
         string priority = alert.Severity == "Critical" ? "Critical" : "Normal";
 
         foreach (var recipient in recipientEmails)
@@ -145,6 +145,17 @@ public class BrevoEmailSender : IEmailSender, INotificationService
                     <p style='font-size: 12px; color: #64748b;'>Sol Plaatje Municipality &bull; Elke druppel tel &bull; Metsi ke bophelo</p>
                 </div>";
 
+            try
+            {
+                // Send directly to ensure instant delivery through Brevo transactional API
+                await SendEmailAsync(recipient, subject, html, alert.Message);
+                sentCount++;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[BrevoEmailSender] Error sending direct alert email to {Recipient}", recipient);
+            }
+
             _emailQueue.EnqueueEmail(new EmailWorkItem
             {
                 ToEmail = recipient,
@@ -153,12 +164,11 @@ public class BrevoEmailSender : IEmailSender, INotificationService
                 PlainTextContent = alert.Message,
                 Priority = priority
             });
-            enqueuedCount++;
         }
 
-        _logger.LogInformation("[BrevoEmailSender] Enqueued {Count} alert emails into background queue with priority '{Priority}'.", enqueuedCount, priority);
+        _logger.LogInformation("[BrevoEmailSender] Dispatched {Count} alert emails directly to registered residents.", sentCount);
         await _fallbackService.DispatchAlertNotificationsAsync(alert);
-        return enqueuedCount;
+        return sentCount;
     }
 
     public async Task<IEnumerable<NotificationLog>> GetNotificationLogsAsync(int? alertId = null)

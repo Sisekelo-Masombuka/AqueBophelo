@@ -27,6 +27,7 @@ import apiClient from '../../api/client';
 import useGeolocationBroadcast from '../../hooks/useGeolocationBroadcast';
 import StatusBadge from '../../components/StatusBadge';
 import LiveMap from '../../components/LiveMap';
+import LiveCameraCapture from '../../components/LiveCameraCapture';
 import { useLanguage } from '../../context/LanguageContext';
 
 export function DriverTripScreen() {
@@ -58,6 +59,7 @@ export function DriverTripScreen() {
   const [litresDelivered, setLitresDelivered] = useState(2500);
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [deliveryPin, setDeliveryPin] = useState('');
   const [proofPhotoFile, setProofPhotoFile] = useState(null);
   const [proofPhotoPreview, setProofPhotoPreview] = useState(null);
   const [isUploadingProof, setIsUploadingProof] = useState(false);
@@ -148,6 +150,7 @@ export function DriverTripScreen() {
     setDeliveryLocation(stop.stopName);
     setLitresDelivered(2500);
     setDeliveryNotes('');
+    setDeliveryPin('');
     setProofPhotoFile(null);
     setProofPhotoPreview(null);
     setProofPhotoUrl(null);
@@ -188,11 +191,15 @@ export function DriverTripScreen() {
       }
     }
 
+    const compiledNotes = deliveryPin?.trim()
+      ? `${deliveryNotes ? deliveryNotes + ' ' : ''}[Recipient Verification PIN: ${deliveryPin.trim()}]`
+      : deliveryNotes;
+
     try {
       await apiClient.post(`/api/v1/driver/trips/${activeTrip.id}/stops/${targetStop.id}/complete-delivery`, {
         litresDelivered: Number(litresDelivered),
         deliveryLocation,
-        notes: deliveryNotes,
+        notes: compiledNotes,
         proofPhotoUrl: finalPhotoUrl,
       });
 
@@ -205,7 +212,7 @@ export function DriverTripScreen() {
                 completed: true,
                 stopStatus: 'Completed',
                 litresDelivered: Number(litresDelivered),
-                notes: deliveryNotes,
+                notes: compiledNotes,
                 proofPhotoUrl: finalPhotoUrl,
               }
             : s
@@ -217,6 +224,7 @@ export function DriverTripScreen() {
         message: `Delivery completed at "${deliveryLocation}" (${litresDelivered} L recorded with Proof of Delivery photo).`,
       });
       setIsDeliveryModalOpen(false);
+      setDeliveryPin('');
       setProofPhotoFile(null);
       setProofPhotoPreview(null);
       setProofPhotoUrl(null);
@@ -230,7 +238,7 @@ export function DriverTripScreen() {
                 completed: true,
                 stopStatus: 'Completed',
                 litresDelivered: Number(litresDelivered),
-                notes: deliveryNotes,
+                notes: compiledNotes,
                 proofPhotoUrl: finalPhotoUrl,
               }
             : s
@@ -241,6 +249,7 @@ export function DriverTripScreen() {
         message: `Delivery completed at "${deliveryLocation}".`,
       });
       setIsDeliveryModalOpen(false);
+      setDeliveryPin('');
       setProofPhotoFile(null);
       setProofPhotoPreview(null);
       setProofPhotoUrl(null);
@@ -619,56 +628,35 @@ export function DriverTripScreen() {
                 />
               </div>
 
-              {/* Live Proof of Delivery Camera Capture */}
+              {/* Live Proof of Delivery Camera Viewfinder */}
+              <div>
+                <LiveCameraCapture
+                  previewUrl={proofPhotoPreview}
+                  onCapture={({ file, previewUrl }) => {
+                    setProofPhotoFile(file);
+                    setProofPhotoPreview(previewUrl);
+                  }}
+                  title="Proof of Delivery Live Camera"
+                  instruction="Use your device's live camera to photograph the water delivery hose, valve discharge, or community tank level."
+                />
+              </div>
+
+              {/* Recipient Verification Code / Site Supervisor PIN */}
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Proof of Delivery Photo (Live Camera) *
+                  Recipient Verification PIN / Code (Optional)
                 </label>
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center bg-slate-50 hover:bg-slate-100/70 transition-colors">
-                  {proofPhotoPreview ? (
-                    <div className="space-y-2">
-                      <img
-                        src={proofPhotoPreview}
-                        alt="Proof preview"
-                        className="w-full h-36 object-cover rounded-md border border-slate-200"
-                      />
-                      <div className="flex items-center justify-between text-xs px-1">
-                        <span className="text-[#2e7d32] font-semibold flex items-center gap-1">
-                          <Check className="w-3.5 h-3.5" /> Photo Attached
-                        </span>
-                        <label
-                          htmlFor="pod-camera-input"
-                          className="text-[#1d70b8] font-bold underline cursor-pointer"
-                        >
-                          Retake Photo
-                        </label>
-                      </div>
-                    </div>
-                  ) : (
-                    <label
-                      htmlFor="pod-camera-input"
-                      className="flex flex-col items-center justify-center cursor-pointer py-2 space-y-1"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-blue-100 text-[#1d70b8] flex items-center justify-center mb-1">
-                        <Camera className="w-5 h-5" />
-                      </div>
-                      <span className="text-xs font-bold text-[#152e52]">
-                        Take Live Delivery Photo
-                      </span>
-                      <span className="text-[11px] text-slate-500">
-                        Open device camera to photograph water discharge or serviced tank
-                      </span>
-                    </label>
-                  )}
-                  <input
-                    id="pod-camera-input"
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleProofPhotoCapture}
-                    className="hidden"
-                  />
-                </div>
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="e.g. 4-digit code provided by receiving resident or supervisor"
+                  value={deliveryPin}
+                  onChange={(e) => setDeliveryPin(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 font-mono tracking-wider focus:outline-none focus:border-[#1d70b8]"
+                />
+                <span className="text-[11px] text-slate-400 mt-0.5 block">
+                  Confirms drop-off identity directly with the resident or facility supervisor.
+                </span>
               </div>
 
               <div>

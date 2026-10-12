@@ -17,12 +17,14 @@ import {
   ExternalLink,
   ZoomIn,
   X,
+  Calendar,
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import LiveMap from '../../components/LiveMap';
 import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import BroadcastAlertModal from '../../components/BroadcastAlertModal';
+import ScheduledOutagesComponent from '../../components/ScheduledOutagesComponent';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5094';
 
@@ -33,8 +35,18 @@ export function AdminOverview() {
 
   const getFullImageUrl = (url) => {
     if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    let clean = url;
+    while (clean.includes('/reports/photos/reports/')) {
+      clean = clean.replace('/reports/photos/reports/', '/reports/');
+    }
+    if (clean.startsWith('http://') || clean.startsWith('https://')) {
+      if (clean.includes('/reports/photos/')) {
+        const pathPart = clean.substring(clean.indexOf('/reports/photos/'));
+        return `${API_BASE_URL}/api/v1${pathPart}`;
+      }
+      return clean;
+    }
+    return `${API_BASE_URL}${clean.startsWith('/') ? '' : '/'}${clean}`;
   };
 
   // Resident Issue Reports (Section 3.4.1)
@@ -361,6 +373,13 @@ export function AdminOverview() {
               <span>Manage Fleet</span>
               <ArrowUpRight className="w-3.5 h-3.5 text-[#1d70b8]" />
             </button>
+            <button
+              onClick={() => navigate('/admin/outages')}
+              className="px-3.5 py-2 border border-slate-300 hover:bg-slate-50 text-[#152e52] rounded-md font-medium text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
+            >
+              <Calendar className="w-3.5 h-3.5 text-[#1d70b8]" />
+              <span>Water Outages</span>
+            </button>
           </div>
         </div>
 
@@ -631,6 +650,11 @@ export function AdminOverview() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Municipal Water Interruption Schedules & Planned Outages (Section 3.5) */}
+      <div className="pt-2">
+        <ScheduledOutagesComponent isAdmin={true} />
       </div>
 
       {/* Update Issue Status Modal Prompt */}
