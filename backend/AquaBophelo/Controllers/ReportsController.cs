@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using AquaBophelo.Data;
 using AquaBophelo.Dtos.Reports;
@@ -380,6 +381,7 @@ public class ReportsController : ControllerBase
     /// </summary>
     [HttpPost("presigned-url")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<IActionResult> GetPresignedUploadUrl(
         [FromServices] IR2StorageService r2Service,
         [FromBody] PresignedUrlRequestDto dto)
@@ -412,6 +414,7 @@ public class ReportsController : ControllerBase
     /// </summary>
     [HttpPost("upload-photo")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<IActionResult> UploadPhoto(
         [FromServices] IR2StorageService r2Service,
         IFormFile? file)
@@ -419,6 +422,13 @@ public class ReportsController : ControllerBase
         if (file == null || file.Length == 0)
         {
             return BadRequest(new { message = "No image file provided." });
+        }
+
+        // SEC-02: Enforce 5 MB maximum file upload limit
+        const long maxSizeBytes = 5 * 1024 * 1024;
+        if (file.Length > maxSizeBytes)
+        {
+            return BadRequest(new { message = "File size exceeds the 5 MB limit. Please upload a smaller image." });
         }
 
         try

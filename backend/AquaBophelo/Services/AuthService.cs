@@ -40,9 +40,17 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
     {
-        var existingUser = await _userManager.FindByEmailAsync(dto.Email);
+        var normalizedEmail = dto.Email.Trim().ToUpperInvariant();
+        var existingUser = await _context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
+
         if (existingUser != null)
         {
+            if (existingUser.IsDeleted)
+            {
+                throw new BadHttpRequestException("This account was previously deactivated. Please contact municipal support to reactivate your account.");
+            }
             throw new BadHttpRequestException("An account with this email address already exists. Please sign in instead.");
         }
 
@@ -94,11 +102,55 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
     {
-        var user = await _userManager.FindByEmailAsync(dto.Email);
-        if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))
+        var normalizedEmail = dto.Email.Trim().ToUpperInvariant();
+        var user = await _context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
+
+        if (user == null)
         {
             throw new BadHttpRequestException("Invalid email or password.");
         }
+
+        // AUTH-05: Check deactivated / soft-deleted accounts
+        if (user.IsDeleted)
+        {
+            throw new BadHttpRequestException("This account has been deactivated. Please contact municipal support or register a new account.");
+        }
+
+        // AUTH-04: Check if account is currently locked out
+        if (await _userManager.IsLockedOutAsync(user))
+        {
+            var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
+            var remainingMinutes = lockoutEnd.HasValue
+                ? (int)Math.Max(1, Math.Ceiling((lockoutEnd.Value - DateTimeOffset.UtcNow).TotalMinutes))
+                : 15;
+            throw new BadHttpRequestException($"Account is temporarily locked due to multiple failed login attempts. Please try again in {remainingMinutes} minute(s).");
+        }
+
+        var passwordValid = await _userManager.CheckPasswordAsync(user, dto.Password);
+        if (!passwordValid)
+        {
+            // Record failed attempt
+            await _userManager.AccessFailedAsync(user);
+
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                await _auditLogger.LogAsync(
+                    action: "USER_LOCKED_OUT",
+                    category: "Auth",
+                    details: $"Account for '{user.Email}' has been temporarily locked out after 5 consecutive failed attempts.",
+                    userId: user.Id,
+                    userEmail: user.Email
+                );
+                throw new BadHttpRequestException("Account has been temporarily locked due to 5 failed login attempts. Please try again in 15 minutes.");
+            }
+
+            throw new BadHttpRequestException("Invalid email or password.");
+        }
+
+        // Reset failed count on successful login
+        await _userManager.ResetAccessFailedCountAsync(user);
 
         return await GenerateJwtTokenAsync(user);
     }
@@ -135,10 +187,16 @@ public class AuthService : IAuthService
         // Prevents wasting email delivery quota on non-existent accounts.
         if (purpose == "PasswordReset")
         {
-            var targetUser = await _userManager.FindByEmailAsync(email);
+            var targetUser = await _context.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail.ToUpperInvariant());
             if (targetUser == null)
             {
                 throw new BadHttpRequestException("No account was found with this email address. Please create an account to get started.");
+            }
+            if (targetUser.IsDeleted)
+            {
+                throw new BadHttpRequestException("This account has been deactivated. Please contact municipal support to reactivate your account.");
             }
         }
 
@@ -249,10 +307,17 @@ public class AuthService : IAuthService
 
     public async Task<bool> ForgotPasswordAsync(string email)
     {
-        var user = await _userManager.FindByEmailAsync(email);
+        var normalizedEmail = email.Trim().ToUpperInvariant();
+        var user = await _context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
         if (user == null)
         {
             throw new BadHttpRequestException("No account was found with this email address. Please create an account to get started.");
+        }
+        if (user.IsDeleted)
+        {
+            throw new BadHttpRequestException("This account has been deactivated. Please contact municipal support to reactivate your account.");
         }
 
         await SendEmailOtpAsync(email, "PasswordReset");
@@ -261,10 +326,17 @@ public class AuthService : IAuthService
 
     public async Task<bool> ResetPasswordAsync(string email, string tokenOrCode, string newPassword)
     {
-        var user = await _userManager.FindByEmailAsync(email);
+        var normalizedEmail = email.Trim().ToUpperInvariant();
+        var user = await _context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
         if (user == null)
         {
             throw new BadHttpRequestException("No account was found with this email address. Please create an account to get started.");
+        }
+        if (user.IsDeleted)
+        {
+            throw new BadHttpRequestException("This account has been deactivated. Please contact municipal support to reactivate your account.");
         }
 
         if (tokenOrCode.Trim().Length == 6 && int.TryParse(tokenOrCode.Trim(), out _))

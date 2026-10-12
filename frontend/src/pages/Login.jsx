@@ -15,6 +15,7 @@ export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
+  const isExpired = new URLSearchParams(location.search).get('expired') === 'true';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -123,6 +124,14 @@ export function Login() {
               {t('subheading')}
             </p>
           </div>
+
+          {/* Session Expired Banner */}
+          {isExpired && !error && (
+            <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start space-x-2 text-xs text-amber-800 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+              <span>Your session has expired. Please sign in again to continue.</span>
+            </div>
+          )}
 
           {/* Error Banner */}
           {error && (

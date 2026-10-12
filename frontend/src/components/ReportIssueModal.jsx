@@ -29,6 +29,23 @@ export function ReportIssueModal({ isOpen, onClose, userArea = 'Galeshewe', onIs
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      const maxSizeBytes = 5 * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        setError('Selected image exceeds the 5 MB limit. Please choose a smaller photo.');
+        setSelectedFile(null);
+        setImagePreview(null);
+        return;
+      }
+
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Invalid image format. Please upload a JPEG, PNG, WebP, or GIF image.');
+        setSelectedFile(null);
+        setImagePreview(null);
+        return;
+      }
+
+      setError('');
       setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {

@@ -24,12 +24,36 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Automatic network/cert error fallback interceptor (HTTPS -> HTTP fallback)
+// Response interceptor: handles network fallback & 401 session expiration
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (!originalRequest || originalRequest._retry) {
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    // AUTH-06: Automatic session expiry handling on 401 Unauthorized
+    if (error.response?.status === 401) {
+      const isAuthEndpoint = originalRequest.url && (
+        originalRequest.url.includes('/auth/login') ||
+        originalRequest.url.includes('/auth/register') ||
+        originalRequest.url.includes('/auth/forgot-password') ||
+        originalRequest.url.includes('/auth/reset-password')
+      );
+
+      // Only redirect if an existing token was present and this is not an auth form attempt
+      if (!isAuthEndpoint && localStorage.getItem('aquabophelo_token')) {
+        localStorage.removeItem('aquabophelo_token');
+        localStorage.removeItem('aquabophelo_user');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login?expired=true';
+        }
+      }
+      return Promise.reject(error);
+    }
+
+    if (originalRequest._retry) {
       return Promise.reject(error);
     }
 

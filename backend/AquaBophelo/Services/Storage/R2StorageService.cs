@@ -19,18 +19,38 @@ public class R2StorageService : IR2StorageService
         "image/gif"
     };
 
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp",
+        ".gif"
+    };
+
     public R2StorageService(IOptions<R2Options> options, ILogger<R2StorageService> logger)
     {
         _options = options.Value;
         _logger = logger;
     }
 
-    public async Task<(string presignedUrl, string fileUrl, string objectKey)> GetPresignedUploadUrlAsync(string fileName, string contentType, int expirationMinutes = 15)
+    private static void ValidateFileMetadata(string fileName, string contentType)
     {
         if (string.IsNullOrWhiteSpace(contentType) || !AllowedContentTypes.Contains(contentType))
         {
             throw new BadHttpRequestException("Invalid content type. Only image files (JPEG, PNG, WebP, GIF) are allowed.");
         }
+
+        var ext = Path.GetExtension(fileName);
+        if (string.IsNullOrWhiteSpace(ext) || !AllowedExtensions.Contains(ext))
+        {
+            throw new BadHttpRequestException("Invalid file extension. Only .jpg, .jpeg, .png, .webp, and .gif files are allowed.");
+        }
+    }
+
+    public async Task<(string presignedUrl, string fileUrl, string objectKey)> GetPresignedUploadUrlAsync(string fileName, string contentType, int expirationMinutes = 15)
+    {
+        ValidateFileMetadata(fileName, contentType);
 
         if (string.IsNullOrWhiteSpace(_options.AccountId) || string.IsNullOrWhiteSpace(_options.AccessKeyId) || string.IsNullOrWhiteSpace(_options.SecretAccessKey))
         {
@@ -72,10 +92,7 @@ public class R2StorageService : IR2StorageService
 
     public async Task<(string fileUrl, string objectKey)> UploadFileAsync(Stream fileStream, string fileName, string contentType)
     {
-        if (string.IsNullOrWhiteSpace(contentType) || !AllowedContentTypes.Contains(contentType))
-        {
-            throw new BadHttpRequestException("Invalid content type. Only image files (JPEG, PNG, WebP, GIF) are allowed.");
-        }
+        ValidateFileMetadata(fileName, contentType);
 
         if (string.IsNullOrWhiteSpace(_options.AccountId) || string.IsNullOrWhiteSpace(_options.AccessKeyId) || string.IsNullOrWhiteSpace(_options.SecretAccessKey))
         {
