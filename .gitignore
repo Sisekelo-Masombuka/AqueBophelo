@@ -23,7 +23,8 @@ appsettings.Development.json
 firebase-service-account.json
 *.user.config
 
-## Temporary scratch scripts and locks
+## Temporary scratch scripts, locks and archives
 scratch/
 ~$*
 *.tmp
+*.zip
