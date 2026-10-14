@@ -107,6 +107,18 @@ public class AuthService : IAuthService
             {
                 System.Diagnostics.Debug.WriteLine($"Initial OTP send notice: {ex.Message}");
             }
+
+            // CRITICAL SECURITY ENFORCEMENT: Do NOT issue a JWT token until email verification is complete!
+            return new AuthResponseDto
+            {
+                Token = string.Empty,
+                Email = user.Email ?? string.Empty,
+                FullName = user.FullName,
+                Role = "Resident",
+                AreaName = dto.AreaName,
+                PreferredLanguage = user.PreferredLanguage,
+                Message = "Registration successful. Please verify your email with the 6-digit verification code sent to your inbox before signing in."
+            };
         }
 
         return await GenerateJwtTokenAsync(user);
@@ -403,11 +415,19 @@ public class AuthService : IAuthService
         var roles = await _userManager.GetRolesAsync(user);
         var primaryRole = roles.FirstOrDefault() ?? "Resident";
 
+        // Security assertion: unverified residents must never be granted an active JWT session
+        var isAdminOrDriver = roles.Contains("Admin") || roles.Contains("Driver");
+        if (!user.EmailConfirmed && !isAdminOrDriver)
+        {
+            throw new BadHttpRequestException("Cannot generate authenticated session: Resident email address is not verified.");
+        }
+
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-            new Claim(ClaimTypes.Name, user.FullName)
+            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim("email_confirmed", user.EmailConfirmed ? "true" : "false")
         };
 
         foreach (var role in roles)

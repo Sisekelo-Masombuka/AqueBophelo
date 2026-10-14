@@ -104,9 +104,9 @@ The database is seeded with a clean, out-of-the-box state containing the Master 
 
 | Role | Email Address | Initial Password Provisioning | Privileges |
 | :--- | :--- | :--- | :--- |
-| **Master Admin** | `admin@aquabophelo.app` | *Configured securely via `ADMIN_INITIAL_PASSWORD` (Local dev fallback: `SolPlaatje2026!`)* | Full Municipal Control Center, Fleet & Route Management, User Administration, Outage Scheduling, Fault Ticket Review |
+| **Master Admin** | `admin@aquabophelo.app` | *Configured securely via `ADMIN_INITIAL_PASSWORD` environment variable or `.NET user-secrets`* | Full Municipal Control Center, Fleet & Route Management, User Administration, Outage Scheduling, Fault Ticket Review |
 
-*Note: For production deployments, define `ADMIN_INITIAL_PASSWORD` in your hosting environment variables or Azure App Service Application Settings. If unset in production, automatic administrator provisioning is safely skipped to prevent unauthorized access.*
+*Note: For production and local environments, define `ADMIN_INITIAL_PASSWORD` in your hosting environment variables, `.env` file, or `.NET user-secrets` (`dotnet user-secrets set "Admin:InitialPassword" "YourStrongSecretPassword!"`). If unset in production, automatic administrator provisioning is safely skipped to prevent unauthorized access.*
 
 ---
 

@@ -145,63 +145,12 @@ public static class DbSeeder
             Console.WriteLine("[DbSeeder] Notice: 'ADMIN_INITIAL_PASSWORD' environment variable is not configured. Skipping automatic admin provisioning in production.");
         }
 
-        // Purge legacy mock/test resident accounts if present
-        string[] testEmailsToPurge = { "admin@aquabophelo.gov.za", "nomcebo.resident@gmail.com", "resident@aquabophelo.gov.za", "driver@aquabophelo.gov.za", "sipho.driver@aquabophelo.gov.za" };
-        foreach (var testEmail in testEmailsToPurge)
+        // 5. Destructive Demo Data Cleanup (STRICT SAFETY GATE: strictly isolated to local development with explicit PURGE_DEMO_DATA=true flag)
+        // Never executed automatically in production or during normal reference data seeding.
+        var shouldPurgeDemo = hostEnvironment.IsDevelopment() && configuration.GetValue<bool>("PURGE_DEMO_DATA", false);
+        if (shouldPurgeDemo)
         {
-            var testUser = await userManager.FindByEmailAsync(testEmail);
-            if (testUser != null)
-            {
-                try
-                {
-                    // 1. Unlink trucks
-                    var userTrucks = await context.Trucks.Where(t => t.DriverId == testUser.Id).ToListAsync();
-                    foreach (var ut in userTrucks) { ut.DriverId = null; }
-
-                    // 2. Remove Trips associated with this driver
-                    var userTrips = await context.Trips.Where(t => t.DriverId == testUser.Id).ToListAsync();
-                    if (userTrips.Count > 0)
-                    {
-                        var tripIds = userTrips.Select(t => t.Id).ToList();
-                        var locations = await context.TruckLocations.Where(tl => tl.TripId.HasValue && tripIds.Contains(tl.TripId.Value)).ToListAsync();
-                        context.TruckLocations.RemoveRange(locations);
-                        context.Trips.RemoveRange(userTrips);
-                    }
-
-                    // 3. Remove AlertSubscriptions for this user
-                    var userSubs = await context.AlertSubscriptions.Where(s => s.UserId == testUser.Id).ToListAsync();
-                    if (userSubs.Count > 0)
-                    {
-                        context.AlertSubscriptions.RemoveRange(userSubs);
-                    }
-
-                    // 4. Remove DeviceTokens for this user
-                    var userTokens = await context.DeviceTokens.Where(dt => dt.UserId == testUser.Id).ToListAsync();
-                    if (userTokens.Count > 0)
-                    {
-                        context.DeviceTokens.RemoveRange(userTokens);
-                    }
-
-                    await context.SaveChangesAsync();
-
-                    await userManager.DeleteAsync(testUser);
-                }
-                catch (Exception ex)
-                {
-                    // If deletion encounters an issue, log and continue safely
-                    Console.WriteLine($"[DbSeeder] Notice purging {testEmail}: {ex.Message}");
-                }
-            }
-        }
-
-        // Purge legacy mock fault tickets if present (#SPM-2026-9812, #SPM-2026-4410)
-        var mockReports = await context.IssueReports
-            .Where(r => r.TicketId == "#SPM-2026-9812" || r.TicketId == "#SPM-2026-4410" || r.ImageUrl == "/pipe_leak.jpg")
-            .ToListAsync();
-        if (mockReports.Count > 0)
-        {
-            context.IssueReports.RemoveRange(mockReports);
-            await context.SaveChangesAsync();
+            await PurgeLegacyDemoDataAsync(context, userManager);
         }
 
         // 5. Seed Delivery Routes (Base corridors for Sol Plaatje)
@@ -280,6 +229,69 @@ public static class DbSeeder
             };
 
             await context.Trucks.AddRangeAsync(trucks);
+            await context.SaveChangesAsync();
+        }
+    }
+
+    /// <summary>
+    /// Destructive cleanup helper strictly for local development environments when PURGE_DEMO_DATA=true is explicitly set.
+    /// Never called in production or during normal reference data seeding.
+    /// </summary>
+    private static async Task PurgeLegacyDemoDataAsync(AppDbContext context, UserManager<ApplicationUser> userManager)
+    {
+        string[] testEmailsToPurge = { "admin@aquabophelo.gov.za", "nomcebo.resident@gmail.com", "resident@aquabophelo.gov.za", "driver@aquabophelo.gov.za", "sipho.driver@aquabophelo.gov.za" };
+        foreach (var testEmail in testEmailsToPurge)
+        {
+            var testUser = await userManager.FindByEmailAsync(testEmail);
+            if (testUser != null)
+            {
+                try
+                {
+                    // 1. Unlink trucks
+                    var userTrucks = await context.Trucks.Where(t => t.DriverId == testUser.Id).ToListAsync();
+                    foreach (var ut in userTrucks) { ut.DriverId = null; }
+
+                    // 2. Remove Trips associated with this driver
+                    var userTrips = await context.Trips.Where(t => t.DriverId == testUser.Id).ToListAsync();
+                    if (userTrips.Count > 0)
+                    {
+                        var tripIds = userTrips.Select(t => t.Id).ToList();
+                        var locations = await context.TruckLocations.Where(tl => tl.TripId.HasValue && tripIds.Contains(tl.TripId.Value)).ToListAsync();
+                        context.TruckLocations.RemoveRange(locations);
+                        context.Trips.RemoveRange(userTrips);
+                    }
+
+                    // 3. Remove AlertSubscriptions for this user
+                    var userSubs = await context.AlertSubscriptions.Where(s => s.UserId == testUser.Id).ToListAsync();
+                    if (userSubs.Count > 0)
+                    {
+                        context.AlertSubscriptions.RemoveRange(userSubs);
+                    }
+
+                    // 4. Remove DeviceTokens for this user
+                    var userTokens = await context.DeviceTokens.Where(dt => dt.UserId == testUser.Id).ToListAsync();
+                    if (userTokens.Count > 0)
+                    {
+                        context.DeviceTokens.RemoveRange(userTokens);
+                    }
+
+                    await context.SaveChangesAsync();
+                    await userManager.DeleteAsync(testUser);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[DbSeeder] Notice purging {testEmail}: {ex.Message}");
+                }
+            }
+        }
+
+        // Purge legacy mock fault tickets if present (#SPM-2026-9812, #SPM-2026-4410)
+        var mockReports = await context.IssueReports
+            .Where(r => r.TicketId == "#SPM-2026-9812" || r.TicketId == "#SPM-2026-4410" || r.ImageUrl == "/pipe_leak.jpg")
+            .ToListAsync();
+        if (mockReports.Count > 0)
+        {
+            context.IssueReports.RemoveRange(mockReports);
             await context.SaveChangesAsync();
         }
     }

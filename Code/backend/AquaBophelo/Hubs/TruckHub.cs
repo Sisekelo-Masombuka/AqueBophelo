@@ -7,6 +7,7 @@ using AquaBophelo.Models;
 
 namespace AquaBophelo.Hubs;
 
+[Authorize]
 public class TruckHub : Hub
 {
     private readonly AppDbContext _context;
@@ -19,15 +20,59 @@ public class TruckHub : Hub
     }
 
     /// <summary>
+    /// Called when an authenticated client establishes a SignalR connection.
+    /// Enrolls the client in appropriate groups based on their verified Identity role.
+    /// </summary>
+    public override async Task OnConnectedAsync()
+    {
+        var user = Context.User;
+        var userId = user?.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = user?.IsInRole("Admin") ?? false;
+        var isDriver = user?.IsInRole("Driver") ?? false;
+
+        // All authenticated connections are enrolled in public-fleet for live municipal water tanker tracking
+        await Groups.AddToGroupAsync(Context.ConnectionId, "public-fleet");
+
+        if (isAdmin)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, "fleet-monitoring");
+            _logger.LogInformation("Admin connection {ConnectionId} (User: {UserId}) joined fleet-monitoring and public-fleet groups.", Context.ConnectionId, userId);
+        }
+        else if (isDriver)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, "drivers");
+            _logger.LogInformation("Driver connection {ConnectionId} (User: {UserId}) joined drivers and public-fleet groups.", Context.ConnectionId, userId);
+        }
+        else
+        {
+            _logger.LogInformation("Resident connection {ConnectionId} (User: {UserId}) joined public-fleet group.", Context.ConnectionId, userId);
+        }
+
+        await base.OnConnectedAsync();
+    }
+
+    /// <summary>
     /// Subscribe to real-time updates for a specific truck.
-    /// Validates truck existence in database before adding connection to group.
+    /// Secured: Validates truck existence and verifies authorization.
     /// </summary>
     public async Task JoinTruckGroup(int truckId)
     {
-        var exists = await _context.Trucks.AnyAsync(t => t.Id == truckId);
-        if (!exists)
+        var truck = await _context.Trucks.FirstOrDefaultAsync(t => t.Id == truckId);
+        if (truck == null)
         {
             _logger.LogWarning("Connection {ConnectionId} attempted to join non-existent truck-{TruckId}", Context.ConnectionId, truckId);
+            return;
+        }
+
+        var user = Context.User;
+        var userId = user?.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = user?.IsInRole("Admin") ?? false;
+        var isDriver = user?.IsInRole("Driver") ?? false;
+
+        // Drivers can only join their assigned truck; Admins can join any truck; Residents can join active fleet tankers
+        if (isDriver && !isAdmin && truck.DriverId != userId)
+        {
+            _logger.LogWarning("Driver {DriverId} attempted to join unauthorized truck-{TruckId}", userId, truckId);
             return;
         }
 
@@ -167,7 +212,11 @@ public class TruckHub : Hub
             recordedAtFormatted = now.AddHours(2).ToString("dd MMM yyyy, hh:mm:ss tt") + " (CAT)"
         };
 
-        // 4. Broadcast live to everyone watching this truck, area, and the global map
+        // 4. Broadcast live to authorized subscribers:
+        // - Specific truck watchers (truck-{id})
+        // - Specific area subscribers (area-{id})
+        // - Authenticated citizens monitoring the public fleet (public-fleet)
+        // - Municipal command center dispatchers (fleet-monitoring)
         await Clients.Group($"truck-{trip.TruckId}").SendAsync("LocationUpdated", payload);
 
         if (trip.Route?.AreaId.HasValue == true)
@@ -175,8 +224,8 @@ public class TruckHub : Hub
             await Clients.Group($"area-{trip.Route.AreaId.Value}").SendAsync("LocationUpdated", payload);
         }
 
-        // Broadcast to all map viewers (e.g. LiveMap.jsx)
-        await Clients.All.SendAsync("LocationUpdated", payload);
+        await Clients.Group("public-fleet").SendAsync("LocationUpdated", payload);
+        await Clients.Group("fleet-monitoring").SendAsync("LocationUpdated", payload);
 
         _logger.LogInformation("GPS updated for Truck {Registration}: {Lat}, {Lng} at {Time}", 
             trip.Truck.RegistrationNumber, latitude, longitude, payload.recordedAtFormatted);

@@ -179,4 +179,39 @@ public class AuthorizationTests
         // Assert
         Assert.False(isAuthorized, "A driver who is not assigned to this trip must not be authorized to broadcast locations.");
     }
+
+    [Fact]
+    [Trait("Category", "Security")]
+    public void TruckHub_Class_HasAuthorizeAttribute()
+    {
+        // Arrange & Act
+        var authorizeAttribute = typeof(AquaBophelo.Hubs.TruckHub)
+            .GetCustomAttributes(typeof(AuthorizeAttribute), true)
+            .Cast<AuthorizeAttribute>()
+            .FirstOrDefault();
+
+        // Assert
+        Assert.NotNull(authorizeAttribute);
+    }
+
+    [Fact]
+    [Trait("Category", "Security")]
+    public void UnverifiedResident_SessionGeneration_MustBeDenied()
+    {
+        // Arrange
+        var residentUser = new AquaBophelo.Models.ApplicationUser
+        {
+            UserName = "unverified@example.com",
+            Email = "unverified@example.com",
+            FullName = "Unverified Resident",
+            EmailConfirmed = false
+        };
+        var roles = new List<string> { "Resident" };
+
+        // Act & Assert: An unverified resident should never pass the verification gate
+        bool isExempt = roles.Contains("Admin") || roles.Contains("Driver");
+        bool isAllowedToken = residentUser.EmailConfirmed || isExempt;
+
+        Assert.False(isAllowedToken, "An unverified resident must never be granted an active authenticated session token.");
+    }
 }

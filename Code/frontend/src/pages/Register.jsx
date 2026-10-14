@@ -121,6 +121,10 @@ export function Register() {
         setOtpError(regResult.error || 'Registration failed. Please try again.');
         return;
       }
+      if (regResult?.requiresVerification) {
+        navigate('/login', { replace: true, state: { message: regResult.message } });
+        return;
+      }
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setOtpError(err?.response?.data?.message || err?.message || 'Verification failed. Please try again.');

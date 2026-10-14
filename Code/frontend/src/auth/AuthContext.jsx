@@ -138,6 +138,10 @@ export function AuthProvider({ children }) {
         setIsLoading(false);
         return { success: true, user: newUser };
       }
+      if (response.data && !response.data.token) {
+        setIsLoading(false);
+        return { success: true, requiresVerification: true, message: response.data.message || 'Please verify your email.' };
+      }
       return { success: false, error: 'Registration failed. Please check your details.' };
     } catch (apiError) {
       console.warn('API registration response error:', apiError);
