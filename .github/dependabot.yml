@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # Maintain dependencies for NuGet (.NET Backend)
+  - package-ecosystem: "nuget"
+    directory: "/Code/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "backend"
+
+  # Maintain dependencies for npm (React Frontend)
+  - package-ecosystem: "npm"
+    directory: "/Code/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+
+  # Maintain GitHub Actions workflow dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "ci-cd"

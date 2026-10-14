@@ -410,7 +410,7 @@ public class AuthService : IAuthService
         return Convert.ToBase64String(bytes);
     }
 
-    private async Task<AuthResponseDto> GenerateJwtTokenAsync(ApplicationUser user)
+    internal async Task<AuthResponseDto> GenerateJwtTokenAsync(ApplicationUser user)
     {
         var roles = await _userManager.GetRolesAsync(user);
         var primaryRole = roles.FirstOrDefault() ?? "Resident";

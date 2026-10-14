@@ -242,21 +242,32 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// 1. Apply Database Migrations (Essential prerequisite - fails fast if relational schema cannot be migrated)
-using (var scope = app.Services.CreateScope())
+// 1. Apply Database Schema Migrations (gated by MIGRATE_ON_START, default true in Development, configurable in Production)
+var shouldMigrate = app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("MIGRATE_ON_START", true);
+if (shouldMigrate)
 {
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (context.Database.IsRelational())
+    try
     {
-        await context.Database.MigrateAsync();
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        if (context.Database.IsRelational())
+        {
+            await context.Database.MigrateAsync();
+        }
+        else
+        {
+            await context.Database.EnsureCreatedAsync();
+        }
     }
-    else
+    catch (Exception ex)
     {
-        await context.Database.EnsureCreatedAsync();
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Failed to apply database migrations on startup.");
+        if (!app.Environment.IsDevelopment()) throw; // In production, fail-fast on migration failure
     }
 }
 
-// 2. Seed Reference Data (Gated for safety and resiliency)
+// 2. Seed Reference Data (Gated strictly by SEED_DATABASE=true or Development mode)
 var shouldSeed = app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("SEED_DATABASE", false);
 if (shouldSeed)
 {
@@ -296,5 +307,13 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<PingHub>("/hubs/ping");
 app.MapHub<TruckHub>("/hubs/trucks");
+
+// Top-level liveness & readiness probes for Kubernetes, Docker and Azure App Service
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+app.MapGet("/health/live", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+app.MapGet("/health/ready", async (AppDbContext context) =>
+    await context.Database.CanConnectAsync()
+        ? Results.Ok(new { status = "healthy", database = "connected", timestamp = DateTime.UtcNow })
+        : Results.StatusCode(503));
 
 app.Run();

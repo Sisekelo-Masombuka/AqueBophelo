@@ -4,7 +4,7 @@ services:
     container_name: aquabophelo-sql
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=SolPlaatje2026!
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD:-AquaBophelo_Dev_Mssql_Pass_2026!}
     ports:
       - "1433:1433"
     volumes:
@@ -17,12 +17,14 @@ services:
     container_name: aquabophelo-api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=db;Database=AquaBopheloDb;User Id=sa;Password=SolPlaatje2026!;TrustServerCertificate=True;
-      - Jwt__Key=SolPlaatjeSuperSecretKey2026AquaBopheloHighSecurityKey!
+      - ConnectionStrings__DefaultConnection=Server=db;Database=AquaBopheloDb;User Id=sa;Password=${MSSQL_SA_PASSWORD:-AquaBophelo_Dev_Mssql_Pass_2026!};TrustServerCertificate=True;
+      - Jwt__Key=${JWT_KEY:-AquaBopheloDevelopmentKeyForLocalDockerComposeEnvironmentOnly2026!}
       - Jwt__Issuer=AquaBopheloAPI
       - Jwt__Audience=AquaBopheloClient
       - Jwt__ExpiryMinutes=120
-      - SEED_DATABASE=true
+      - SEED_DATABASE=${SEED_DATABASE:-false}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@aquabophelo.app}
+      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD:-}
     ports:
       - "5094:8080"
     depends_on:
@@ -33,7 +35,7 @@ services:
       context: ./Code/frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_BASE_URL=http://localhost:5094
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:5094}
     container_name: aquabophelo-spa
     ports:
       - "3000:80"

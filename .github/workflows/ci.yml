@@ -29,6 +29,9 @@ jobs:
       - name: Run Backend Unit & Security Tests
         run: dotnet test Code/backend/AquaBophelo.slnx --configuration Release --no-build --verbosity normal
 
+      - name: Scan Backend NuGet Packages for Known Vulnerabilities
+        run: dotnet list Code/backend/AquaBophelo.slnx package --vulnerable --include-transitive
+
   frontend-ci:
     name: Frontend Build & Lint (Node.js 20 & Vite)
     runs-on: ubuntu-latest
@@ -50,6 +53,9 @@ jobs:
 
       - name: Install Frontend Dependencies
         run: npm ci
+
+      - name: Run Frontend Linter (oxlint)
+        run: npm run lint
 
       - name: Build Frontend SPA
         run: npm run build

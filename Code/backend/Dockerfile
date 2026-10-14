@@ -20,7 +20,8 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-# Create non-root user and set permissions
+# Create non-root user and set permissions (UID 1654 is default app user in ASP.NET Core images)
+ARG APP_UID=1654
 COPY --from=build /app/publish .
 USER $APP_UID
 
