@@ -38,6 +38,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterDto dto)
     {
         var isHuman = await _turnstileService.VerifyTokenAsync(dto.TurnstileToken ?? string.Empty, HttpContext.Connection.RemoteIpAddress?.ToString());
@@ -59,6 +60,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto dto)
     {
         var isHuman = await _turnstileService.VerifyTokenAsync(dto.TurnstileToken ?? string.Empty, HttpContext.Connection.RemoteIpAddress?.ToString());
@@ -80,6 +82,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("forgot-password")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains("@"))
@@ -100,6 +103,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("reset-password")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
@@ -124,6 +128,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("send-otp")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains("@"))
@@ -152,6 +157,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("verify-otp")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Code))
@@ -172,6 +178,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("confirm-email")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token))
@@ -215,6 +222,7 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("send-delete-otp")]
     [Authorize]
+    [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<IActionResult> SendDeleteAccountOtp()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -245,6 +253,7 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpDelete("delete-account")]
     [Authorize]
+    [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountDto? dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

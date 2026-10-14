@@ -23,6 +23,7 @@ EXPOSE 8080
 # Create non-root user and set permissions (UID 1654 is default app user in ASP.NET Core images)
 ARG APP_UID=1654
 COPY --from=build --chown=$APP_UID:$APP_UID /app/publish .
+RUN chown -R $APP_UID:$APP_UID /app
 USER $APP_UID
 
 ENTRYPOINT ["dotnet", "AquaBophelo.dll"]

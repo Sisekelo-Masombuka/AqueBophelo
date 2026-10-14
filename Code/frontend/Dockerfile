@@ -39,5 +39,13 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
+# Script to inject runtime environment variables into config.js before starting nginx
+RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'if [ -n "$VITE_API_BASE_URL" ]; then' >> /docker-entrypoint.sh && \
+    echo '  echo "window.__CONFIG__ = { VITE_API_BASE_URL: \"$VITE_API_BASE_URL\" };" > /usr/share/nginx/html/config.js' >> /docker-entrypoint.sh && \
+    echo 'fi' >> /docker-entrypoint.sh && \
+    echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
+
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

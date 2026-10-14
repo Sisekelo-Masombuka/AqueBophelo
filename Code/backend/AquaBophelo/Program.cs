@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -34,6 +35,22 @@ builder.WebHost.UseSentry(options =>
             sentryEvent.Request.Headers.Remove("Cookie");
             sentryEvent.Request.Headers.Remove("Set-Cookie");
         }
+
+        // Scrub query string PII (e.g. tokens, passwords, or emails in query parameters)
+        if (sentryEvent.Request?.Url != null)
+        {
+            try
+            {
+                var uri = new Uri(sentryEvent.Request.Url);
+                if (!string.IsNullOrEmpty(uri.Query))
+                {
+                    sentryEvent.Request.Url = uri.GetLeftPart(UriPartial.Path);
+                }
+            }
+            catch { /* non-fatal URL parsing guard */ }
+        }
+
+        sentryEvent.SetTag("environment", builder.Environment.EnvironmentName);
         return sentryEvent;
     });
 });
@@ -105,6 +122,23 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict;
 });
+
+// Configure ASP.NET Core Data Protection Key Ring Persistence (for multi-instance load balancing)
+var dataProtectionBuilder = builder.Services.AddDataProtection()
+    .SetApplicationName("AquaBophelo");
+
+var dpKeysPath = builder.Configuration["DataProtection:KeysPath"] 
+    ?? Environment.GetEnvironmentVariable("DATA_PROTECTION_KEYS_PATH");
+
+if (!string.IsNullOrWhiteSpace(dpKeysPath))
+{
+    var keysDir = new DirectoryInfo(dpKeysPath);
+    if (!keysDir.Exists)
+    {
+        keysDir.Create();
+    }
+    dataProtectionBuilder.PersistKeysToFileSystem(keysDir);
+}
 
 // Configure HSTS Policy for Production
 builder.Services.AddHsts(options =>
@@ -206,8 +240,18 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add SignalR real-time messaging service
-builder.Services.AddSignalR();
+// Add SignalR real-time messaging service (with optional Redis scale-out backplane for multi-instance deployments)
+var signalRBuilder = builder.Services.AddSignalR();
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"] 
+    ?? Environment.GetEnvironmentVariable("REDIS_CONNECTIONSTRING");
+
+if (!string.IsNullOrWhiteSpace(redisConnectionString))
+{
+    signalRBuilder.AddStackExchangeRedis(redisConnectionString, options =>
+    {
+        options.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("AquaBophelo_SignalR");
+    });
+}
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -275,9 +319,16 @@ app.Use(async (context, next) =>
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
     context.Response.Headers.Append("X-Permitted-Cross-Domain-Policies", "none");
+
+    var cspScriptSrc = app.Environment.IsDevelopment()
+        ? "'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net"
+        : "'self' https://challenges.cloudflare.com";
+
     context.Response.Headers.Append("Content-Security-Policy",
         "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net; " +
+        $"script-src {cspScriptSrc}; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+        "font-src 'self' https://fonts.gstatic.com data:; " +
         "connect-src 'self' wss://api.aquabophelo.app https://api.aquabophelo.app https://challenges.cloudflare.com https://*.sentry.io; " +
         "img-src 'self' data: https://media.aquabophelo.app; " +
         "frame-src https://challenges.cloudflare.com; " +

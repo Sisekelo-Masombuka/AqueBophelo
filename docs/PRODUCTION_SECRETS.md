@@ -98,3 +98,49 @@ VITE_FIREBASE_VAPID_KEY=your-firebase-web-push-vapid-key
 - [ ] **Email Verification Gate:** Verify that registering an account without OTP verification does NOT issue a JWT token.
 - [ ] **No Destructive Seeding:** Verify that running migrations or seeding in production does not delete or purge any existing user records, trips, or tickets.
 - [ ] **CORS Security:** Verify that only `https://aquabophelo.app` and `https://www.aquabophelo.app` are allowed by CORS policies.
+
+---
+
+## 5. Multi-Instance Scale-Out & Session Continuity
+
+When running multiple backend API instances behind a load balancer (e.g., Azure Container Apps, Kubernetes, or multi-node Azure App Service):
+
+### 1. SignalR Redis Scale-Out Backplane
+- Set `Redis__ConnectionString` (or environment variable `REDIS_CONNECTIONSTRING`) to your Azure Cache for Redis or managed Redis instance.
+- SignalR automatically routes location updates and notifications across all nodes so connected clients receive broadcasts regardless of which node they are connected to.
+
+### 2. ASP.NET Core Data Protection Key Ring Persistence
+- Set `DataProtection__KeysPath` (or environment variable `DATA_PROTECTION_KEYS_PATH`) to a persistent shared mount (e.g., `/var/keys` on Azure Files or Kubernetes PersistentVolumeClaim).
+- This ensures application cookies, session tokens, and anti-forgery keys remain valid across node restarts and pod scale-outs.
+
+---
+
+## 6. Safe Production Database Migration Orchestration
+
+Never rely on automatic runtime migrations (`MIGRATE_ON_START=true`) in multi-instance production environments to prevent concurrent migration race conditions or locks during restarts.
+
+### Production Migration Procedure:
+1. **Take Database Snapshot / Backup:**
+   Always perform a full transactional backup or point-in-time snapshot before applying schema changes.
+2. **Generate Idempotent SQL Migration Script:**
+   Generate the SQL script from your deployment pipeline or local SDK:
+   ```bash
+   dotnet ef migrations script --idempotent --output migrations.sql --project Code/backend/AquaBophelo
+   ```
+3. **Execute Script via CD Release Pipeline or DBA:**
+   Apply `migrations.sql` against the staging/production database using your release gate or DBA review process.
+4. **Deploy Application Nodes:**
+   Once schema migration finishes successfully, deploy new backend container instances with `MIGRATE_ON_START=false`.
+
+---
+
+## 7. Secret Management & Automated Scanning
+
+- **Secret Storage:** All production secrets must reside in a dedicated secret store (e.g., Azure Key Vault, AWS Secrets Manager, or GitHub Actions Secrets for CI). Never commit `.env` files with real credentials to source control.
+- **Automated CI Scanning:** The CI workflow (`.github/workflows/ci.yml`) runs Gitleaks to detect exposed credentials before merges.
+- **Local Verification:** Developers can run a local Gitleaks scan prior to pushing:
+   ```bash
+   gitleaks detect --source . --report-format json --report-path gitleaks-report.json
+   ```
+- **Incident Response:** If any credential is accidentally exposed, immediately rotate it in the respective third-party service provider and purge the Git history using `git-filter-repo` or BFG Repo-Cleaner.
+

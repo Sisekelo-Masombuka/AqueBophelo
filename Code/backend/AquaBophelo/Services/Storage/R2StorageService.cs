@@ -93,6 +93,12 @@ public class R2StorageService : IR2StorageService
     {
         ValidateFileMetadata(fileName, contentType);
 
+        const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB maximum allowed image payload
+        if (fileStream.CanSeek && fileStream.Length > MaxFileSizeBytes)
+        {
+            throw new BadHttpRequestException("Uploaded image exceeds the 10 MB maximum allowed file size.");
+        }
+
         string safeFileName = Path.GetFileName(fileName).Replace(" ", "_");
         string objectKey = $"reports/{Guid.NewGuid()}_{safeFileName}";
 

@@ -163,9 +163,9 @@ The backend container is hardened to run as a non-root user (`app`, UID 1654) an
 docker build -f Code/backend/Dockerfile -t aquabophelo-backend .
 docker run -p 8080:8080 -e ASPNETCORE_ENVIRONMENT=Production aquabophelo-backend
 
-# Frontend (Nginx alpine with 1-year immutable caching for static assets)
+# Frontend (Nginx alpine with 1-year immutable caching and dynamic runtime config injection)
 docker build -f Code/frontend/Dockerfile -t aquabophelo-frontend .
-docker run -p 3000:80 aquabophelo-frontend
+docker run -p 3000:80 -e VITE_API_BASE_URL=https://api.aquabophelo.app aquabophelo-frontend
 ```
 
 ---
