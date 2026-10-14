@@ -22,15 +22,17 @@ builder.WebHost.UseSentry(options =>
 {
     options.Dsn = builder.Configuration["Sentry:Dsn"];
     options.SendDefaultPii = false; // Guarantee privacy compliance (POPIA/GDPR)
-    options.TracesSampleRate = 1.0;
+    options.TracesSampleRate = builder.Configuration.GetValue<double>("Sentry:TracesSampleRate", builder.Environment.IsDevelopment() ? 1.0 : 0.1);
     options.MinimumEventLevel = LogLevel.Error;
     options.SetBeforeSend((sentryEvent, hint) =>
     {
-        // PII Scrubbing: Remove sensitive authentication tokens from request headers
+        // PII Scrubbing: Remove sensitive authentication tokens and cookies from request headers
         if (sentryEvent.Request?.Headers != null)
         {
             sentryEvent.Request.Headers.Remove("Authorization");
             sentryEvent.Request.Headers.Remove("api-key");
+            sentryEvent.Request.Headers.Remove("Cookie");
+            sentryEvent.Request.Headers.Remove("Set-Cookie");
         }
         return sentryEvent;
     });
@@ -96,9 +98,28 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
+// Configure Secure Application Cookie Policy
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+});
+
+// Configure HSTS Policy for Production
+builder.Services.AddHsts(options =>
+{
+    options.Preload = true;
+    options.IncludeSubDomains = true;
+    options.MaxAge = TimeSpan.FromDays(365);
+});
+
 // Configure JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("Fatal Security Startup Error: 'Jwt:Key' is not configured in appsettings, environment variables, or user-secrets.");
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetBytes(jwtKey).Length < 32)
+{
+    throw new InvalidOperationException("Fatal Security Startup Error: 'Jwt:Key' is missing or has insufficient entropy (< 32 bytes / 256 bits). Configure a secure 256-bit or 512-bit signing key in your platform secrets store.");
+}
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]
     ?? throw new InvalidOperationException("Fatal Security Startup Error: 'Jwt:Issuer' is not configured in appsettings, environment variables, or user-secrets.");
 var jwtAudience = builder.Configuration["Jwt:Audience"]
@@ -254,6 +275,13 @@ app.Use(async (context, next) =>
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
     context.Response.Headers.Append("X-Permitted-Cross-Domain-Policies", "none");
+    context.Response.Headers.Append("Content-Security-Policy",
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net; " +
+        "connect-src 'self' wss://api.aquabophelo.app https://api.aquabophelo.app https://challenges.cloudflare.com https://*.sentry.io; " +
+        "img-src 'self' data: https://media.aquabophelo.app; " +
+        "frame-src https://challenges.cloudflare.com; " +
+        "frame-ancestors 'none';");
     await next();
 });
 
@@ -321,7 +349,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers().RequireRateLimiting("GeneralApiPolicy");
 app.MapHub<PingHub>("/hubs/ping");
 app.MapHub<TruckHub>("/hubs/trucks");
 

@@ -19,7 +19,7 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Configure SPA fallback routing for React Router
+# Configure SPA fallback routing and static asset caching
 RUN echo 'server { \
     listen 80; \
     server_name localhost; \
@@ -27,6 +27,11 @@ RUN echo 'server { \
         root /usr/share/nginx/html; \
         index index.html index.htm; \
         try_files $uri $uri/ /index.html; \
+    } \
+    location ~* \.(js|css|png|jpg|jpeg|svg|ico|woff|woff2)$ { \
+        root /usr/share/nginx/html; \
+        expires 1y; \
+        add_header Cache-Control "public, max-age=31536000, immutable"; \
     } \
     error_page 500 502 503 504 /50x.html; \
     location = /50x.html { \

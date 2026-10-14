@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import api from '../api/client';
-import { Droplet, AlertCircle, CheckCircle2, KeyRound, Clock, RefreshCw, MapPin, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, CheckCircle2, KeyRound, Clock, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import Footer from '../components/Footer';
 import TurnstileWidget from '../components/TurnstileWidget';
@@ -28,7 +28,7 @@ export function Register() {
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [otpTimer, setOtpTimer] = useState(300); // 5 minutes in seconds
-  const [isOtpExpired, setIsOtpExpired] = useState(false);
+  const isOtpExpired = isOtpStep && otpTimer <= 0;
   const [otpError, setOtpError] = useState('');
 
   const [error, setError] = useState('');
@@ -38,22 +38,14 @@ export function Register() {
   const doPasswordsMatch = password && confirmPassword && password === confirmPassword;
 
   useEffect(() => {
-    let interval = null;
-    if (isOtpStep && otpTimer > 0) {
-      interval = setInterval(() => {
-        setOtpTimer((prev) => prev - 1);
-      }, 1000);
-    } else if (otpTimer === 0) {
-      setIsOtpExpired(true);
-      setOtpError('OTP Code has expired (5-minute limit reached). Please click "Resend New OTP" below.');
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    if (!isOtpStep || otpTimer <= 0) return;
+    const interval = setInterval(() => {
+      setOtpTimer((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
   }, [isOtpStep, otpTimer]);
 
-  const handleInitialSubmit = (e) => {
+  const handleInitialSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -78,20 +70,30 @@ export function Register() {
       return;
     }
 
-    sendNewOtp();
-    setIsOtpStep(true);
+    setIsSubmitting(true);
+    try {
+      await api.post('/api/v1/auth/send-otp', { email, purpose: 'EmailVerification' });
+      setOtpTimer(300);
+      setOtpError('');
+      setOtpCode('');
+      setIsOtpStep(true);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to dispatch verification code to your email. Please check your email and network connection and try again.';
+      setError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const sendNewOtp = async () => {
-    setOtpTimer(600);
-    setIsOtpExpired(false);
+    setOtpTimer(300);
     setOtpError('');
     setOtpCode('');
 
     try {
       await api.post('/api/v1/auth/send-otp', { email, purpose: 'EmailVerification' });
     } catch (err) {
-      console.warn('Backend OTP email dispatch notice:', err);
+      setOtpError(err.response?.data?.message || 'Failed to resend verification code. Please wait a moment and try again.');
     }
   };
 

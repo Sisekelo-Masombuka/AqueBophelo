@@ -17,12 +17,12 @@ RUN dotnet publish "AquaBophelo.csproj" -c Release -o /app/publish /p:UseAppHost
 # Runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
-EXPOSE 8081
 
 # Create non-root user and set permissions (UID 1654 is default app user in ASP.NET Core images)
 ARG APP_UID=1654
-COPY --from=build /app/publish .
+COPY --from=build --chown=$APP_UID:$APP_UID /app/publish .
 USER $APP_UID
 
 ENTRYPOINT ["dotnet", "AquaBophelo.dll"]

@@ -143,11 +143,30 @@ npm run dev
 - Frontend Web App: `http://localhost:5173`
 
 ### 5. Running Automated Tests
-Run the automated xUnit unit and integration test suite:
+Run the automated backend xUnit unit, integration, and security test suite:
 ```bash
 dotnet test Code/backend/AquaBophelo.slnx
 ```
-**Test Results:** `20 Passed, 0 Failed, 0 Skipped` (100% pass rate).
+**Backend Test Results:** `37 Passed, 0 Failed, 0 Skipped` (100% pass rate).
+
+Run the automated frontend Vitest test suite:
+```bash
+cd Code/frontend
+npm test
+```
+**Frontend Test Results:** `20 Passed, 0 Failed, 0 Skipped` (100% pass rate across 5 test suites covering Registration & OTP flow, Authentication, Live Tankers, Admin Operations, and Fault Reporting).
+
+### 6. Containerized Deployment (Docker)
+The backend container is hardened to run as a non-root user (`app`, UID 1654) and binds strictly to port 8080:
+```bash
+# Backend (binds to http://localhost:8080)
+docker build -f Code/backend/Dockerfile -t aquabophelo-backend .
+docker run -p 8080:8080 -e ASPNETCORE_ENVIRONMENT=Production aquabophelo-backend
+
+# Frontend (Nginx alpine with 1-year immutable caching for static assets)
+docker build -f Code/frontend/Dockerfile -t aquabophelo-frontend .
+docker run -p 3000:80 aquabophelo-frontend
+```
 
 ---
 

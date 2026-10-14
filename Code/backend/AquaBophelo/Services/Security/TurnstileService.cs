@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using AquaBophelo.Configuration;
 using AquaBophelo.Services.Interfaces;
@@ -11,23 +12,43 @@ public class TurnstileService : ITurnstileService
     private readonly HttpClient _httpClient;
     private readonly TurnstileOptions _options;
     private readonly ILogger<TurnstileService> _logger;
+    private readonly IHostEnvironment _hostEnvironment;
 
     public TurnstileService(
         HttpClient httpClient,
         IOptions<TurnstileOptions> options,
-        ILogger<TurnstileService> logger)
+        ILogger<TurnstileService> logger,
+        IHostEnvironment hostEnvironment)
     {
         _httpClient = httpClient;
         _options = options.Value;
         _logger = logger;
+        _hostEnvironment = hostEnvironment;
     }
 
     public async Task<bool> VerifyTokenAsync(string token, string? remoteIp = null)
     {
-        if (string.IsNullOrWhiteSpace(_options.SecretKey) || token == "1x0000000000000000000000000000000AA")
+        // Development / Testing Environments: Permit explicit dummy test token or log warning if secret unset
+        if (_hostEnvironment.IsDevelopment() || _hostEnvironment.EnvironmentName.Equals("Testing", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogInformation("[TurnstileService] Development or test bypass token received.");
-            return true;
+            if (token == "1x0000000000000000000000000000000AA")
+            {
+                _logger.LogInformation("[TurnstileService] Development dummy test token accepted.");
+                return true;
+            }
+
+            if (string.IsNullOrWhiteSpace(_options.SecretKey))
+            {
+                _logger.LogWarning("[TurnstileService] SecretKey not configured in development. Allowing bypass.");
+                return true;
+            }
+        }
+
+        // Production Security Gate: Fail-Closed if SecretKey is missing
+        if (string.IsNullOrWhiteSpace(_options.SecretKey))
+        {
+            _logger.LogCritical("[TurnstileService] Turnstile SecretKey is not configured in production. Rejecting verification request (Fail-Closed).");
+            return false;
         }
 
         if (string.IsNullOrWhiteSpace(token))
