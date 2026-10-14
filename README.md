@@ -2,7 +2,8 @@
 
 **Smart Municipal Water Monitoring, Tanker Telemetry, and Resident Alerting Platform**  
 *Sol Plaatje Municipality · Kimberley, Northern Cape, South Africa*  
-*Developed by VibeTech · Sol Plaatje University*
+*Developed by VibeTech · Sol Plaatje University*  
+*Production Deployment:* [https://aquabophelo.app/](https://aquabophelo.app/)
 
 ---
 
@@ -103,7 +104,7 @@ The database is seeded with a clean, out-of-the-box state containing the Master 
 
 | Role | Email Address | Password | Privileges |
 | :--- | :--- | :--- | :--- |
-| **Master Admin** | `admin@aquabophelo.gov.za` | `SolPlaatje2026!` | Full Municipal Control Center, Fleet & Route Management, User Administration, Outage Scheduling, Fault Ticket Review |
+| **Master Admin** | `admin@aquabophelo.app` | `SolPlaatje2026!` | Full Municipal Control Center, Fleet & Route Management, User Administration, Outage Scheduling, Fault Ticket Review |
 
 *Residents and drivers can be registered dynamically via the web interface or created by the Administrator.*
 

@@ -161,7 +161,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("Frontend", policy =>
     {
         var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-            ?? new[] { "http://localhost:5173" };
+            ?? new[] { "http://localhost:5173", "https://localhost:5173", "https://aquabophelo.app", "https://www.aquabophelo.app" };
 
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()

@@ -142,10 +142,10 @@ public static class DbSeeder
         }
 
         // 4. Seed Single Pristine Master Admin Account
-        await SeedUser("admin@aquabophelo.gov.za", "Sol Plaatje Municipal Admin", "Admin", "SolPlaatje2026!");
+        await SeedUser("admin@aquabophelo.app", "Sol Plaatje Municipal Admin", "Admin", "SolPlaatje2026!");
 
         // Purge legacy mock/test resident accounts if present
-        string[] testEmailsToPurge = { "nomcebo.resident@gmail.com", "resident@aquabophelo.gov.za", "driver@aquabophelo.gov.za", "sipho.driver@aquabophelo.gov.za" };
+        string[] testEmailsToPurge = { "admin@aquabophelo.gov.za", "nomcebo.resident@gmail.com", "resident@aquabophelo.gov.za", "driver@aquabophelo.gov.za", "sipho.driver@aquabophelo.gov.za" };
         foreach (var testEmail in testEmailsToPurge)
         {
             var testUser = await userManager.FindByEmailAsync(testEmail);

@@ -505,7 +505,7 @@ export function ProfilePage() {
                   </div>
                 )}
 
-                <form onSubmit={handleChangePassword} className="space-y-3 text-xs">
+                <form onSubmit={handleDirectChangePassword} className="space-y-3 text-xs">
                   <div>
                     <label className="block text-slate-700 font-medium mb-1">Current Password</label>
                     <div className="relative">
