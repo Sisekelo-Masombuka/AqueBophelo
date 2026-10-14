@@ -142,7 +142,13 @@ public class R2StorageService : IR2StorageService
         if (string.IsNullOrWhiteSpace(_options.AccountId) || string.IsNullOrWhiteSpace(_options.AccessKeyId) || string.IsNullOrWhiteSpace(_options.SecretAccessKey))
         {
             string cleanObjKey = objectKey.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
-            string localFilePath = Path.Combine(AppContext.BaseDirectory, "uploads", cleanObjKey);
+            string uploadsBase = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "uploads"));
+            string localFilePath = Path.GetFullPath(Path.Combine(uploadsBase, cleanObjKey));
+            if (!localFilePath.StartsWith(uploadsBase, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BadHttpRequestException("Access denied: Invalid object path.");
+            }
+
             if (File.Exists(localFilePath))
             {
                 var fs = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);

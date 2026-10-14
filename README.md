@@ -102,11 +102,11 @@ AquaBophelo/
 
 The database is seeded with a clean, out-of-the-box state containing the Master Administrator account, foundational municipal reservoirs (Newton Reservoir, Riverton Water Works), and available municipal tankers (`NC-542-KM`, `NC-882-KM`, `NC-104-KM`):
 
-| Role | Email Address | Password | Privileges |
+| Role | Email Address | Initial Password | Privileges |
 | :--- | :--- | :--- | :--- |
-| **Master Admin** | `admin@aquabophelo.app` | `SolPlaatje2026!` | Full Municipal Control Center, Fleet & Route Management, User Administration, Outage Scheduling, Fault Ticket Review |
+| **Master Admin** | `admin@aquabophelo.app` | `SolPlaatje2026!` *(Configurable via `ADMIN_INITIAL_PASSWORD` in production)* | Full Municipal Control Center, Fleet & Route Management, User Administration, Outage Scheduling, Fault Ticket Review |
 
-*Residents and drivers can be registered dynamically via the web interface or created by the Administrator.*
+*Note: For production deployments, rotate `ADMIN_INITIAL_PASSWORD` and set `SEED_DATABASE=false` after initial database setup.*
 
 ---
 

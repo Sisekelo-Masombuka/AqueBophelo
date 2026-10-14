@@ -34,6 +34,32 @@ public class HealthController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Kubernetes/Container Liveness Probe: Confirms the Web API process is alive and responsive.
+    /// </summary>
+    [HttpGet("live")]
+    [AllowAnonymous]
+    public IActionResult GetLiveness()
+    {
+        return Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+    }
+
+    /// <summary>
+    /// Kubernetes/Container Readiness Probe: Verifies active database connectivity before accepting traffic.
+    /// </summary>
+    [HttpGet("ready")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetReadiness([FromServices] AquaBophelo.Data.AppDbContext context)
+    {
+        var canConnect = await context.Database.CanConnectAsync();
+        if (!canConnect)
+        {
+            return StatusCode(503, new { status = "unhealthy", message = "Database connection unavailable." });
+        }
+
+        return Ok(new { status = "healthy", database = "connected", timestamp = DateTime.UtcNow });
+    }
+
     [HttpPost("test-email")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> TestEmail([FromServices] AquaBophelo.Services.Interfaces.IEmailSender emailSender, [FromQuery] string toEmail)

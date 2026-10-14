@@ -242,10 +242,20 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Seed Database
-using (var scope = app.Services.CreateScope())
+// Seed Database (Gated for safety and resiliency)
+var shouldSeed = app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("SEED_DATABASE", false);
+if (shouldSeed)
 {
-    await DbSeeder.SeedAsync(scope.ServiceProvider);
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        await DbSeeder.SeedAsync(scope.ServiceProvider);
+    }
+    catch (Exception ex)
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Non-fatal warning: Database seeding encountered an error on startup.");
+    }
 }
 
 // Configure the HTTP request pipeline.
