@@ -2,7 +2,7 @@
 
 **Smart Municipal Water Monitoring, Tanker Telemetry, and Resident Alerting Platform**  
 *Sol Plaatje Municipality · Kimberley, Northern Cape, South Africa*  
-*Developed by Group 1 (VibeTech) · Sol Plaatje University*
+*Developed by VibeTech · Sol Plaatje University*
 
 ---
 
@@ -14,14 +14,14 @@
 
 ---
 
-## 👥 VibeTech Team (Group 1)
+## 👥 VibeTech Team
 
-| Student Name | Student Number | Primary Role |
-| :--- | :--- | :--- |
-| **Nosipho Mbatha** | `202406965` | Backend & Database Engineering |
-| **Nomcebo Nkosi** | `202402024` | Frontend & User Interface Engineering |
-| **Sisekelo Masombuka** | `202448576` | Architecture, Security & Full-Stack Integration |
-| **Jabulile Shabalala** | `202324579` | Frontend, Testing & Documentation |
+| Team Member | Role |
+| :--- | :--- |
+| **Nosipho Mbatha** | Backend & Database Engineering |
+| **Nomcebo Nkosi** | Frontend & User Interface Engineering |
+| **Sisekelo Masombuka** | Architecture, Security & Full-Stack Integration |
+| **Jabulile Shabalala** | Frontend, Testing & Documentation |
 
 ---
 
@@ -48,7 +48,7 @@ AquaBophelo/
 │   ├── Requirements Specifications.pdf Phase 2: Software Requirements Specification (SRS)
 │   ├── Phase 3 PROJECT FINAL .pdf    Phase 3: System Design, ERDs & Architecture
 │   └── Final Phase Four 4.pdf        Phase 4: Implementation, Testing & Evaluation Report
-├── Group1-Names.txt                  Group VibeTech student roster & repository link
+├── VibeTech-Names.txt                Group VibeTech student roster & repository link
 ├── README.md                         Comprehensive project documentation & run instructions
 ├── .gitignore                        Multi-stack repository ignore rules (.NET + Node)
 └── .gitattributes                    Line endings & Git LFS large asset configuration
@@ -218,6 +218,6 @@ Located in [`Demo/`](Demo/):
 ---
 
 ## ⚖️ License & Academic Declaration
-
-This project was developed for the **Diploma in Information and Communication Technology (ICT)** at **Sol Plaatje University**.  
-*Sol Plaatje Municipality is the client context for the design; this is an academic capstone project.*
+ 
+This project was developed for the **Diploma in Information and Communication Technology (ICT)** at **Sol Plaatje University by VibeTech Group**.  
+*Sol Plaatje Municipality is the client context for the design; this is an academic year project.*

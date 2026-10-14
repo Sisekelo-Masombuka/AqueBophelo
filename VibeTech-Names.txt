@@ -1,4 +1,4 @@
-Group: VibeTech (Group 1)
+Group: VibeTech
 Project: AquaBophelo — Municipal Water Distribution & Tanker Tracking System
 
 Team Members:
