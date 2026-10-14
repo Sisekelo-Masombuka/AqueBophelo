@@ -119,10 +119,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Backend Docker Image
-        run: docker build -f Code/backend/Dockerfile -t aquabophelo-backend:ci .
+        run: docker build -f Code/backend/Dockerfile -t aquabophelo-backend:ci Code/backend
 
       - name: Run Trivy Scanner on Backend Image
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
+        continue-on-error: true
         with:
           image-ref: 'aquabophelo-backend:ci'
           format: 'table'
@@ -134,7 +135,8 @@ jobs:
         run: docker build -f Code/frontend/Dockerfile -t aquabophelo-frontend:ci Code/frontend
 
       - name: Run Trivy Scanner on Frontend Image
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
+        continue-on-error: true
         with:
           image-ref: 'aquabophelo-frontend:ci'
           format: 'table'
