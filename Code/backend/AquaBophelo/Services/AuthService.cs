@@ -272,7 +272,10 @@ public class AuthService : IAuthService
 
         otpRecord.AttemptCount++;
 
-        if (otpRecord.CodeHash != hashedInput)
+        var expectedBytes = Encoding.UTF8.GetBytes(otpRecord.CodeHash);
+        var actualBytes = Encoding.UTF8.GetBytes(hashedInput);
+
+        if (!CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes))
         {
             await _context.SaveChangesAsync();
             throw new BadHttpRequestException("Invalid verification code. Please check your email and try again.");

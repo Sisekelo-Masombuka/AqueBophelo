@@ -66,8 +66,9 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // If HTTPS fails due to network/certificate error, attempt HTTP fallback
+    // If in local development and HTTPS fails due to network/certificate error, attempt localhost fallback
     if (
+      import.meta.env.DEV &&
       (error.code === 'ERR_NETWORK' || !error.response) &&
       originalRequest.baseURL !== FALLBACK_BASE_URL
     ) {

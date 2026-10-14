@@ -35,11 +35,11 @@ public class HealthController : ControllerBase
     }
 
     [HttpPost("test-email")]
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> TestEmail([FromServices] AquaBophelo.Services.Interfaces.IEmailSender emailSender, [FromQuery] string toEmail)
     {
-        if (string.IsNullOrWhiteSpace(toEmail))
-            return BadRequest(new { message = "toEmail query parameter is required." });
+        if (string.IsNullOrWhiteSpace(toEmail) || !toEmail.Contains("@"))
+            return BadRequest(new { message = "Valid toEmail query parameter is required." });
 
         string subject = "AquaBophelo Brevo Integration Test";
         string html = @"
@@ -56,9 +56,13 @@ public class HealthController : ControllerBase
     }
 
     [HttpGet("test-sentry")]
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin")]
     public IActionResult TestSentry()
     {
+        if (!_environment.IsDevelopment())
+        {
+            return Forbid();
+        }
         throw new InvalidOperationException("AquaBophelo Backend Sentry Verification Exception - Sol Plaatje Municipal Water Telemetry System");
     }
 }

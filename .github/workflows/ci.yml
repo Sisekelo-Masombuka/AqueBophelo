@@ -1,0 +1,57 @@
+name: AquaBophelo CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, 'security/**', 'feature/**' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-ci:
+    name: Backend Build & Test (.NET 10)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore NuGet Packages
+        run: dotnet restore Code/backend/AquaBophelo.slnx
+
+      - name: Build Backend Solution
+        run: dotnet build Code/backend/AquaBophelo.slnx --configuration Release --no-restore
+
+      - name: Run Backend Unit & Security Tests
+        run: dotnet test Code/backend/AquaBophelo.slnx --configuration Release --no-build --verbosity normal
+
+  frontend-ci:
+    name: Frontend Build & Lint (Node.js 20 & Vite)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Code/frontend
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: Code/frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Build Frontend SPA
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: https://api.aquabophelo.app

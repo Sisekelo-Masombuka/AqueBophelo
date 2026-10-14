@@ -62,6 +62,7 @@ public class TruckHub : Hub
         var trip = await _context.Trips
             .Include(t => t.Truck)
             .Include(t => t.Route)
+            .Include(t => t.Driver)
             .FirstOrDefaultAsync(t => t.Id == tripId);
 
         if (trip == null || trip.Status != "Active" || trip.Truck == null)
@@ -83,14 +84,16 @@ public class TruckHub : Hub
             return;
         }
 
-        // Verify that the caller has Driver or Admin role
+        // Verify that the caller is an Administrator or the specific assigned Driver for this trip/truck
         var callingUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         var callingUserEmail = Context.User?.FindFirstValue(ClaimTypes.Email);
         var isAdmin = Context.User?.IsInRole("Admin") ?? false;
-        var isDriver = Context.User?.IsInRole("Driver") ?? false;
         var assignedDriverId = trip.DriverId ?? trip.Truck.DriverId;
 
-        var isAuthorized = isAdmin || isDriver || (callingUserId != null && (callingUserId == assignedDriverId || trip.Driver?.Email == callingUserEmail));
+        var isAssignedDriver = callingUserId != null &&
+            (callingUserId == assignedDriverId || (!string.IsNullOrEmpty(callingUserEmail) && trip.Driver?.Email == callingUserEmail));
+
+        var isAuthorized = isAdmin || isAssignedDriver;
 
         if (!isAuthorized)
         {
@@ -129,7 +132,8 @@ public class TruckHub : Hub
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to persist breadcrumb GPS point for Trip {TripId}", tripId);
+            _logger.LogError(ex, "Failed to persist breadcrumb GPS point for Trip {TripId}. Broadcast cancelled.", tripId);
+            return;
         }
 
         // 3. Construct live payload with Central Africa Time (CAT)

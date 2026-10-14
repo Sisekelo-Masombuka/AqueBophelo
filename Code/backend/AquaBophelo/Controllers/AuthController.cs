@@ -18,17 +18,20 @@ public class AuthController : ControllerBase
     private readonly INotificationService _notificationService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITurnstileService _turnstileService;
+    private readonly IWebHostEnvironment _environment;
 
     public AuthController(
         IAuthService authService,
         INotificationService notificationService,
         UserManager<ApplicationUser> userManager,
-        ITurnstileService turnstileService)
+        ITurnstileService turnstileService,
+        IWebHostEnvironment environment)
     {
         _authService = authService;
         _notificationService = notificationService;
         _userManager = userManager;
         _turnstileService = turnstileService;
+        _environment = environment;
     }
 
 
@@ -134,7 +137,7 @@ public class AuthController : ControllerBase
             return Ok(new
             {
                 message = $"Verification code successfully dispatched to {request.Email}.",
-                demoCode = code
+                demoCode = _environment.IsDevelopment() ? code : null
             });
         }
         catch (BadHttpRequestException ex)
@@ -221,21 +224,24 @@ public class AuthController : ControllerBase
             return NotFound(new { message = "User account not found." });
         }
 
-        var code = Random.Shared.Next(100000, 999999).ToString();
-        user.DeleteOtpCode = code;
-        user.DeleteOtpExpiry = DateTime.UtcNow.AddMinutes(5);
-        await _userManager.UpdateAsync(user);
-
-        var subject = "AquaBophelo — Account Deletion Confirmation Code";
-        var body = $"Sol Plaatje Municipal Water System\n\nSecurity Notice: A request was made to PERMANENTLY DELETE your AquaBophelo account.\n\nYour 6-digit Deletion OTP Code is: {code}\n\nThis code will expire in 5 minutes. If you did not initiate this request, please change your password immediately.";
-
-        await _notificationService.SendEmailAsync(user.Email, subject, body);
-        return Ok(new { message = $"Account deletion confirmation OTP sent to {user.Email}", demoCode = code });
+        try
+        {
+            var code = await _authService.SendEmailOtpAsync(user.Email, "DeleteAccount");
+            return Ok(new
+            {
+                message = $"Account deletion confirmation OTP sent to {user.Email}",
+                demoCode = _environment.IsDevelopment() ? code : null
+            });
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     /// <summary>
     /// DELETE: api/v1/auth/delete-account
-    /// Verifies OTP code if provided and soft-deletes user account with 30-day grace period.
+    /// Mandates valid OTP verification before soft-deleting user account with 30-day grace period.
     /// </summary>
     [HttpDelete("delete-account")]
     [Authorize]
@@ -243,23 +249,29 @@ public class AuthController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var user = await _userManager.FindByIdAsync(userId!);
-        if (user == null)
+        if (user == null || string.IsNullOrEmpty(user.Email))
         {
             return NotFound(new { message = "User account not found." });
         }
 
-        if (dto != null && !string.IsNullOrWhiteSpace(dto.OtpCode))
+        if (dto == null || string.IsNullOrWhiteSpace(dto.OtpCode))
         {
-            if (user.DeleteOtpCode != dto.OtpCode.Trim())
-            {
-                return BadRequest(new { message = "Invalid email OTP code. Please check your inbox and try again." });
-            }
-
-            if (user.DeleteOtpExpiry.HasValue && user.DeleteOtpExpiry.Value < DateTime.UtcNow)
-            {
-                return BadRequest(new { message = "OTP code has expired. Please request a new code." });
-            }
+            return BadRequest(new { message = "Account deletion requires a valid 6-digit email OTP code. Please request a verification code first." });
         }
+
+        try
+        {
+            await _authService.VerifyEmailOtpAsync(user.Email, dto.OtpCode.Trim(), "DeleteAccount");
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+
+        // Clear any legacy OTP fields
+        user.DeleteOtpCode = null;
+        user.DeleteOtpExpiry = null;
+        await _userManager.UpdateAsync(user);
 
         var success = await _authService.SoftDeleteAccountAsync(user.Id);
         if (!success) return BadRequest(new { message = "Failed to process account deletion." });

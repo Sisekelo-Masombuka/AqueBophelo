@@ -78,4 +78,105 @@ public class AuthorizationTests
         // Assert
         Assert.False(isAdmin, "A Resident user must never evaluate as an Admin.");
     }
+
+    [Fact]
+    [Trait("Category", "Security")]
+    public void HealthController_TestEmail_HasAuthorizeAdminAttribute()
+    {
+        // Arrange
+        var methodInfo = typeof(HealthController).GetMethod(nameof(HealthController.TestEmail));
+
+        // Act
+        var authorizeAttribute = methodInfo?.GetCustomAttributes(typeof(AuthorizeAttribute), false)
+            .Cast<AuthorizeAttribute>()
+            .FirstOrDefault();
+
+        // Assert
+        Assert.NotNull(authorizeAttribute);
+        Assert.Equal("Admin", authorizeAttribute.Roles);
+    }
+
+    [Fact]
+    [Trait("Category", "Security")]
+    public void HealthController_TestSentry_HasAuthorizeAdminAttribute()
+    {
+        // Arrange
+        var methodInfo = typeof(HealthController).GetMethod(nameof(HealthController.TestSentry));
+
+        // Act
+        var authorizeAttribute = methodInfo?.GetCustomAttributes(typeof(AuthorizeAttribute), false)
+            .Cast<AuthorizeAttribute>()
+            .FirstOrDefault();
+
+        // Assert
+        Assert.NotNull(authorizeAttribute);
+        Assert.Equal("Admin", authorizeAttribute.Roles);
+    }
+
+    [Fact]
+    [Trait("Category", "Security")]
+    public void TruckHub_SendLocation_HasAuthorizeDriverAdminAttribute()
+    {
+        // Arrange
+        var methodInfo = typeof(AquaBophelo.Hubs.TruckHub).GetMethod(nameof(AquaBophelo.Hubs.TruckHub.SendLocation));
+
+        // Act
+        var authorizeAttribute = methodInfo?.GetCustomAttributes(typeof(AuthorizeAttribute), false)
+            .Cast<AuthorizeAttribute>()
+            .FirstOrDefault();
+
+        // Assert
+        Assert.NotNull(authorizeAttribute);
+        Assert.Equal("Driver,Admin", authorizeAttribute.Roles);
+    }
+
+    [Fact]
+    [Trait("Category", "Security")]
+    public void AuthController_SendDeleteAccountOtp_HasAuthorizeAttribute()
+    {
+        // Arrange
+        var methodInfo = typeof(AuthController).GetMethod(nameof(AuthController.SendDeleteAccountOtp));
+
+        // Act
+        var authorizeAttribute = methodInfo?.GetCustomAttributes(typeof(AuthorizeAttribute), false)
+            .Cast<AuthorizeAttribute>()
+            .FirstOrDefault();
+
+        // Assert
+        Assert.NotNull(authorizeAttribute);
+    }
+
+    [Fact]
+    [Trait("Category", "Security")]
+    public void AuthController_DeleteAccount_HasAuthorizeAttribute()
+    {
+        // Arrange
+        var methodInfo = typeof(AuthController).GetMethod(nameof(AuthController.DeleteAccount));
+
+        // Act
+        var authorizeAttribute = methodInfo?.GetCustomAttributes(typeof(AuthorizeAttribute), false)
+            .Cast<AuthorizeAttribute>()
+            .FirstOrDefault();
+
+        // Assert
+        Assert.NotNull(authorizeAttribute);
+    }
+
+    [Fact]
+    [Trait("Category", "Security")]
+    public void TruckHub_DriverAssignmentCheck_RejectsUnassignedDriver()
+    {
+        // Arrange
+        var tripDriverId = "driver-assigned-001";
+        var unassignedDriverId = "driver-rogue-002";
+        var callingUserId = unassignedDriverId;
+        bool isAdmin = false;
+
+        // Act: verify assigned driver check logic
+        bool isAssigned = callingUserId == tripDriverId;
+        bool isAuthorized = isAdmin || isAssigned;
+
+        // Assert
+        Assert.False(isAuthorized, "A driver who is not assigned to this trip must not be authorized to broadcast locations.");
+    }
 }

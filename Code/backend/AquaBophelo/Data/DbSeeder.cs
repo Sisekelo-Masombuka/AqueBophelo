@@ -13,21 +13,13 @@ public static class DbSeeder
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        // Ensure DB schema is created or migrated
-        try
+        // Ensure DB schema is created or migrated cleanly
+        if (context.Database.IsRelational())
         {
-            if (context.Database.IsRelational())
-            {
-                await context.Database.MigrateAsync();
-            }
-            else
-            {
-                await context.Database.EnsureCreatedAsync();
-            }
+            await context.Database.MigrateAsync();
         }
-        catch (Exception ex)
+        else
         {
-            Console.WriteLine($"DB Migration notice: {ex.Message}");
             await context.Database.EnsureCreatedAsync();
         }
 

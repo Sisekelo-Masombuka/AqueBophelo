@@ -145,10 +145,8 @@ export function ProfilePage() {
       }
       setDeleteStep(2);
     } catch (err) {
-      console.warn('Backend send-delete-otp notice:', err);
-      const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
-      setDemoDeleteOtp(generatedCode);
-      setDeleteStep(2);
+      const msg = err.response?.data?.message || 'Failed to dispatch account deletion OTP. Please try again.';
+      setDeleteError(msg);
     } finally {
       setIsSendingDeleteOtp(false);
     }
