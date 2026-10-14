@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Truck,
@@ -9,18 +9,9 @@ import {
   Navigation,
   Gauge,
   Compass,
-  ListOrdered,
   AlertTriangle,
   X,
-  MapPin,
   Clock,
-  Send,
-  Droplet,
-  ShieldAlert,
-  Car,
-  FlaskConical,
-  Camera,
-  UploadCloud,
   Check,
 } from 'lucide-react';
 import apiClient from '../../api/client';
@@ -62,22 +53,16 @@ export function DriverTripScreen() {
   // GPS Broadcast Hook
   const {
     isBroadcasting,
-    isSimulating,
     connectionStatus,
     currentLocation,
     startBroadcast,
     stopBroadcast,
-    toggleSimulation,
   } = useGeolocationBroadcast({
     tripId: activeTrip?.id,
     initialActive: true,
   });
 
-  useEffect(() => {
-    loadTodayTrip();
-  }, []);
-
-  const loadTodayTrip = async () => {
+  const loadTodayTrip = useCallback(async () => {
     try {
       setLoading(true);
       const res = await apiClient.get('/api/v1/driver/today-trip');
@@ -92,7 +77,11 @@ export function DriverTripScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadTodayTrip();
+  }, [loadTodayTrip]);
 
   const currentPendingStop = activeTrip?.stops?.find((s) => !s.completed);
   const completedStopsCount = activeTrip?.stops?.filter((s) => s.completed).length || 0;
@@ -146,17 +135,6 @@ export function DriverTripScreen() {
     setProofPhotoPreview(null);
     setProofPhotoUrl(null);
     setIsDeliveryModalOpen(true);
-  };
-
-  const handleProofPhotoCapture = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setProofPhotoFile(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setProofPhotoPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleConfirmDeliveryCompletion = async (e) => {
@@ -402,7 +380,7 @@ export function DriverTripScreen() {
           <div className="flex items-center justify-between flex-wrap gap-1">
             <span className="font-bold text-[#1d70b8]">SignalR Live Telemetry Hub (/hubs/trucks)</span>
             <span className="font-mono text-[10px] bg-white px-2 py-0.5 rounded border border-[#b9d8ee] text-[#152e52]">
-              {isBroadcasting ? (isSimulating ? 'Simulating Drive' : 'Live GPS') : 'Standby'}
+              {isBroadcasting ? 'Live GPS Active' : 'Standby'}
             </span>
           </div>
           <p className="mt-1 text-slate-600">
@@ -589,26 +567,6 @@ export function DriverTripScreen() {
             <span>End Trip &amp; Return to Depot</span>
           </button>
         )}
-      </div>
-
-      {/* Demo Simulation Toggle */}
-      <div className="pt-2 text-center">
-        <button
-          onClick={toggleSimulation}
-          className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#1d70b8] font-medium underline cursor-pointer"
-        >
-          {isSimulating ? (
-            <>
-              <Car className="w-4 h-4 text-[#1d70b8] shrink-0" />
-              <span>Simulated Kimberley Driving Active (Click to Stop)</span>
-            </>
-          ) : (
-            <>
-              <FlaskConical className="w-4 h-4 text-slate-500 shrink-0" />
-              <span>Click to Simulate Live Driving for Demo</span>
-            </>
-          )}
-        </button>
       </div>
 
       {/* DELIVERY COMPLETION MODAL */}

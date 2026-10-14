@@ -130,10 +130,11 @@ public static class DbSeeder
         var adminEmail = configuration["Admin:Email"] ?? configuration["ADMIN_EMAIL"] ?? "admin@aquabophelo.app";
         var adminPassword = configuration["Admin:InitialPassword"] ?? configuration["ADMIN_INITIAL_PASSWORD"];
 
-        // In local development only, provide a fallback if unset
+        // In local development only, dynamically generate a temporary random password if unset
         if (string.IsNullOrWhiteSpace(adminPassword) && hostEnvironment.IsDevelopment())
         {
-            adminPassword = "SolPlaatje2026!";
+            adminPassword = $"DevAdmin!{Guid.NewGuid().ToString("N")[..8]}#";
+            Console.WriteLine($"[DbSeeder] Warning: ADMIN_INITIAL_PASSWORD not set. Generated temporary dev admin password: {adminPassword}");
         }
 
         if (!string.IsNullOrWhiteSpace(adminPassword))

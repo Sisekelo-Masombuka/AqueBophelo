@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, 
 import * as signalR from '@microsoft/signalr';
 import { 
   Truck, MapPin, Droplet, ZoomIn, ZoomOut, RotateCcw, Sun, Moon, X, 
-  Star, AlertTriangle, CheckCircle2, PhoneCall, Clock, ShieldCheck, Check, Info
+  Star, AlertTriangle, CheckCircle2, PhoneCall, Clock
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import mapData from './kimberleyMap.json';
@@ -388,7 +388,7 @@ export function LiveMap({
   onSelectTruck,
   onSelectStop,
   onSelectFacility,
-  readOnly = false,
+  _readOnly = false,
 }) {
   const activeFacilities = useMemo(() => {
     if (dams && Array.isArray(dams) && dams.length > 0) {
@@ -476,11 +476,13 @@ export function LiveMap({
   const routes = useMemo(() => Object.fromEntries(tankers.map((t) => {
     const from = t.from?.lngLat || [24.7712, -28.7033], to = t.to?.lngLat || [24.7319, -28.7183];
     return [regOf(t), t.status === 'OnTrip' ? resolveRoute(regOf(t), from, to) : straightPath(from, to)];
-  })), [tankerKey]);
+  })), [tankers]);
 
-  zoomRef.current = zoom;
-  selectedRef.current = selectedTruckId;
-  cardRef.current = card;
+  useLayoutEffect(() => {
+    zoomRef.current = zoom;
+    selectedRef.current = selectedTruckId;
+    cardRef.current = card;
+  }, [zoom, selectedTruckId, card]);
 
   useEffect(() => {
     const connection = new signalR.HubConnectionBuilder()
@@ -559,7 +561,10 @@ export function LiveMap({
     fittedRef.current = true;
     writeView();
   }, [fitPoints, writeView]);
-  fitRef.current = fitToContent;
+
+  useLayoutEffect(() => {
+    fitRef.current = fitToContent;
+  }, [fitToContent]);
 
   const zoomAt = useCallback((nextZoom, clientX, clientY) => {
     const v = view.current;
@@ -637,7 +642,7 @@ export function LiveMap({
       const prev = simRef.current[reg];
       simRef.current[reg] = { len, samples, p: prev ? prev.p : (t.start ?? 0.2), hold: prev?.hold || 0, heading: prev?.heading || 0, label: '', h0: null };
     });
-  }, [routeSig]);
+  }, [tankers, routeSig]);
 
   useEffect(() => {
     pausedRef.current = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -729,29 +734,35 @@ export function LiveMap({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [tankerKey]);
+  }, [tankers]);
 
   const scale = Math.pow(zoom, 0.2) / u;
   const zf = Math.pow(zoom, 0.55);
 
-  const labelsShown = useMemo(() => {
-    const obstacles = [];
-    activeFacilities.forEach((f) => {
+  const facObstacles = useMemo(() => {
+    return activeFacilities.map((f) => {
       const [x, y] = project(...f.lngLat);
       const w = textWidth(narrow ? `${f.level ?? ''}%` : `${f.name} ${f.level ?? ''}%`, UI_FONT) + 34;
-      obstacles.push({ x: x * u - 14, y: y * u - 14, w: w + 28, h: 28 });
+      return { x: x * u - 14, y: y * u - 14, w: w + 28, h: 28 };
     });
-    facBoxes.current = obstacles.slice(0, activeFacilities.length);
+  }, [u, narrow, activeFacilities]);
+
+  useLayoutEffect(() => {
+    facBoxes.current = facObstacles;
+  }, [facObstacles]);
+
+  const labelsShown = useMemo(() => {
+    const obstacles = [...facObstacles];
     activeStops.forEach((s) => {
       const [x, y] = project(...s.lngLat);
       obstacles.push({ x: x * u - 12, y: y * u - 28, w: 24, h: 32 });
     });
     return layoutLabels(mapData.places || [], u, obstacles);
-  }, [u, narrow, activeFacilities, activeStops]);
+  }, [u, facObstacles, activeStops]);
 
   const orderedTankers = useMemo(
     () => [...tankers].sort((a, b) => (regOf(a) === selectedTruckId) - (regOf(b) === selectedTruckId)),
-    [tankerKey, selectedTruckId],
+    [tankers, selectedTruckId],
   );
 
   const pickTruck = (t) => {

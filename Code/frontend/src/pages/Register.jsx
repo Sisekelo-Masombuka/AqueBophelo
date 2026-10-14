@@ -27,7 +27,6 @@ export function Register() {
   // OTP Step State & 5-minute Countdown Timer (300s)
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otpCode, setOtpCode] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('482915');
   const [otpTimer, setOtpTimer] = useState(300); // 5 minutes in seconds
   const [isOtpExpired, setIsOtpExpired] = useState(false);
   const [otpError, setOtpError] = useState('');
@@ -90,10 +89,7 @@ export function Register() {
     setOtpCode('');
 
     try {
-      const res = await api.post('/api/v1/auth/send-otp', { email, purpose: 'EmailVerification' });
-      if (res.data?.demoCode) {
-        setGeneratedOtp(res.data.demoCode);
-      }
+      await api.post('/api/v1/auth/send-otp', { email, purpose: 'EmailVerification' });
     } catch (err) {
       console.warn('Backend OTP email dispatch notice:', err);
     }
@@ -207,17 +203,6 @@ export function Register() {
                 </p>
 
                 <div className="pt-2 flex items-center justify-center gap-2 flex-wrap">
-                  {generatedOtp && (
-                    <button
-                      type="button"
-                      onClick={() => setOtpCode(generatedOtp)}
-                      className="text-xs font-mono text-[#2e7d32] bg-[#f2f9f3] hover:bg-[#e2f3e4] px-3 py-1 rounded-md border border-[#b8e3bd] font-bold cursor-pointer transition-colors"
-                      title="Click to auto-fill OTP code"
-                    >
-                      Demo OTP: {generatedOtp} (Click to auto-fill)
-                    </button>
-                  )}
-
                   <span
                     className={`text-xs font-mono font-medium px-3 py-1 rounded-md border flex items-center gap-1 ${
                       isOtpExpired

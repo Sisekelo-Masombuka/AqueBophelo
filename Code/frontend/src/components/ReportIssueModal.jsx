@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, AlertCircle, CheckCircle2, Send, MapPin, Upload, Image as ImageIcon, ShieldAlert, User, ShieldCheck } from 'lucide-react';
+import { X, AlertCircle, CheckCircle2, Send, Upload, ShieldAlert, User } from 'lucide-react';
 import apiClient from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 

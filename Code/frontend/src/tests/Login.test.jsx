@@ -17,7 +17,7 @@ describe('Login Component Logic & Authentication Validation', () => {
 
   it('enforces password minimum length requirement (>= 6 characters)', () => {
     const shortPassword = '123';
-    const validPassword = 'SolPlaatje2026!';
+    const validPassword = 'StrongPassword123!';
 
     const isPasswordValid = (pwd) => Boolean(pwd && pwd.length >= 6);
 

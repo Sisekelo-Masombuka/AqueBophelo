@@ -81,7 +81,7 @@ export function LiveCameraCapture({
 
   // Automatically start camera on mount if not already showing a captured preview
   useEffect(() => {
-    if (!capturedPreview) {
+    if (!previewUrl) {
       startCamera();
     }
     return () => {

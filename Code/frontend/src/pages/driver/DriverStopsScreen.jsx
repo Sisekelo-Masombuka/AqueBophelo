@@ -2,19 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   CheckCircle2, Clock, ArrowLeft, Navigation, ShieldCheck, 
-  MapPin, AlertTriangle, Play, Truck, Check, Camera, X
+  MapPin, AlertTriangle, Play, Truck, Check, X
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import LiveCameraCapture from '../../components/LiveCameraCapture';
-import { useLanguage } from '../../context/LanguageContext';
 
 export function DriverStopsScreen() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
 
   const [trip, setTrip] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [feedback, setFeedback] = useState(null);
 
   // Delivery Completion Modal State
@@ -92,17 +89,6 @@ export function DriverStopsScreen() {
     setProofPhotoFile(null);
     setProofPhotoPreview(null);
     setProofPhotoUrl(null);
-  };
-
-  const handleProofPhotoCapture = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setProofPhotoFile(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setProofPhotoPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
   };
 
   // Step 3 Submit: Complete Delivery

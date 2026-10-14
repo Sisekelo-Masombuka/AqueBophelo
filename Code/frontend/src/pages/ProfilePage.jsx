@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { User, MapPin, Phone, Lock, ShieldCheck, CheckCircle2, AlertCircle, Upload, Eye, EyeOff, Truck, ShieldAlert, Key, Activity, Clock, Trash2, Mail, RefreshCw, X } from 'lucide-react';
+import { User, Lock, ShieldCheck, CheckCircle2, AlertCircle, Upload, Eye, EyeOff, Truck, Key, Clock, Trash2, Mail, X } from 'lucide-react';
 import apiClient from '../api/client';
-import { useLanguage } from '../context/LanguageContext';
 import { StatusBadge } from '../components/StatusBadge';
 
 export function ProfilePage() {
   const { user, logout, updateUser } = useAuth();
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const currentRole = user?.role || 'Resident';
 
@@ -18,15 +16,15 @@ export function ProfilePage() {
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
   const [avatarSrc, setAvatarSrc] = useState(user?.profilePictureUrl || null);
 
-  // Sync state whenever user in AuthContext updates
-  React.useEffect(() => {
-    if (user) {
-      if (user.fullName) setFullName(user.fullName);
-      if (user.phoneNumber) setPhoneNumber(user.phoneNumber);
-      if (user.area) setArea(user.area);
-      if (user.profilePictureUrl) setAvatarSrc(user.profilePictureUrl);
-    }
-  }, [user]);
+  // Adjust local form state if user changes
+  const [prevUserId, setPrevUserId] = useState(user?.id);
+  if (user?.id !== prevUserId) {
+    setPrevUserId(user?.id);
+    setFullName(user?.fullName || '');
+    setPhoneNumber(user?.phoneNumber || '');
+    setArea(user?.area || 'Galeshewe');
+    setAvatarSrc(user?.profilePictureUrl || null);
+  }
 
   // Privacy Settings state
   const [optInEmailAlerts, setOptInEmailAlerts] = useState(true);
@@ -38,7 +36,6 @@ export function ProfilePage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteStep, setDeleteStep] = useState(1); // 1 = Confirm, 2 = Enter Email OTP
   const [deleteOtp, setDeleteOtp] = useState('');
-  const [demoDeleteOtp, setDemoDeleteOtp] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [isSendingDeleteOtp, setIsSendingDeleteOtp] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
@@ -63,7 +60,6 @@ export function ProfilePage() {
   const [residentOtp, setResidentOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [demoOtp, setDemoOtp] = useState('');
 
   const [profileSuccess, setProfileSuccess] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
@@ -139,10 +135,7 @@ export function ProfilePage() {
     setIsSendingDeleteOtp(true);
     setDeleteError('');
     try {
-      const response = await apiClient.post('/api/v1/auth/send-delete-otp');
-      if (response.data && response.data.demoCode) {
-        setDemoDeleteOtp(response.data.demoCode);
-      }
+      await apiClient.post('/api/v1/auth/send-delete-otp');
       setDeleteStep(2);
     } catch (err) {
       const msg = err.response?.data?.message || 'Failed to dispatch account deletion OTP. Please try again.';
@@ -205,12 +198,11 @@ export function ProfilePage() {
     setPasswordError('');
     setPasswordSuccess('');
     try {
-      const res = await apiClient.post('/api/v1/auth/send-otp', {
+      await apiClient.post('/api/v1/auth/send-otp', {
         email: user?.email,
         purpose: 'PasswordReset',
       });
       setOtpSent(true);
-      if (res.data?.demoCode) setDemoOtp(res.data.demoCode);
       setPasswordSuccess(`A 6-digit verification code has been dispatched to ${user?.email}.`);
     } catch (err) {
       setPasswordError(err.response?.data?.message || 'Failed to dispatch verification OTP. Please try again.');
@@ -1047,16 +1039,6 @@ export function ProfilePage() {
                   <p className="text-xs text-slate-600 leading-relaxed">
                     A 6-digit confirmation OTP has been dispatched to <strong>{email}</strong>.
                   </p>
-
-                  {demoDeleteOtp && (
-                    <button
-                      type="button"
-                      onClick={() => setDeleteOtp(demoDeleteOtp)}
-                      className="text-xs font-mono text-[#2e7d32] bg-[#f2f9f3] px-3 py-1 rounded-md border border-[#b8e3bd] font-bold cursor-pointer"
-                    >
-                      Demo Deletion OTP: {demoDeleteOtp} (Click to auto-fill)
-                    </button>
-                  )}
                 </div>
 
                 {deleteError && (
