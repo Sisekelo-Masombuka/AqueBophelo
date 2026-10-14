@@ -1,0 +1,11 @@
+Group: VibeTech (Group 1)
+Project: AquaBophelo — Municipal Water Distribution & Tanker Tracking System
+
+Team Members:
+1. Nosipho Mbatha     - 202406965
+2. Nomcebo Nkosi      - 202402024
+3. Sisekelo Masombuka - 202448576
+4. Jabulile Shabalala - 202324579
+
+GitHub Repository:
+https://github.com/Sisekelo-Masombuka/AqueBophelo

@@ -1,279 +1,223 @@
 # AquaBophelo
 
-**A water monitoring and truck tracking web system for Sol Plaatje Municipality, Kimberley, Northern Cape.**
-
-Project · Diploma in ICT · Sol Plaatje University · `PROJECT(20262FNPRT630)`
-Phase 4 (Implementation & Presentation) due **1 October 2026**.
-
----
-
-## What is AquaBophelo?
-
-*Bophelo* means "life", and water is exactly that. AquaBophelo helps a municipality and its residents answer two everyday questions:
-
-1. **How much water do we have?** Dam levels are recorded, charted over time and colour-coded by status, with automatic alerts when levels drop.
-2. **Where is the water truck?** Drivers broadcast their live GPS position while delivering water, and residents and admins watch the trucks move on a map in real time.
-
-### User roles
-
-| Role | What they do |
-|---|---|
-| **Resident** | View dam levels and trends, see live water trucks and schedules, subscribe to area Email alerts, report water fault tickets |
-| **Driver** | See the assigned truck and route, start/end trips, broadcast GPS, mark stops complete |
-| **Admin** | Manage dams, readings, trucks, drivers, routes, users, driver/staff accounts, and broadcast email alerts |
+**Smart Municipal Water Monitoring, Tanker Telemetry, and Resident Alerting Platform**  
+*Sol Plaatje Municipality · Kimberley, Northern Cape, South Africa*  
+*Developed by Group 1 (VibeTech) · Sol Plaatje University*
 
 ---
 
-## Tech stack & Design Grounding
+## 📌 Executive Summary
 
-| Layer | Technology |
-|---|---|
-| Frontend | React (JavaScript) · Vite · Tailwind CSS · React Router · **MapLibre GL JS (maps)** · OpenStreetMap · TanStack React Query · Chart.js |
-| Backend | ASP.NET Core Web API (C#) · Entity Framework Core · SQL Server / Azure SQL |
-| Auth | ASP.NET Core Identity + JWT, role-based (Resident / Driver / Admin) + Email OTP verification |
-| Real-time | SignalR |
-| API docs | OpenAPI + Scalar |
-| Notifications | **Email Notifications & Email OTP Verification** *(Pivoted 100% from SMS to Email for zero-cost operation and higher reliability)* · CAT (Central Africa Time, UTC+2) |
-| Hosting | Vercel / Netlify (frontend) · Azure App Service + Azure SQL (backend) |
-| **UX & HCI** | **Human-Computer Interaction (HCI) Principles · Nielsen's 10 Usability Heuristics · WCAG 2.1 AA Accessibility** |
+*AquaBophelo* (from Latin *Aqua* for water and Sesotho/Setswana *Bophelo* for life) is an enterprise-grade municipal water monitoring and emergency tanker telemetry platform designed for the Sol Plaatje Local Municipality. It addresses two critical municipal crises:
+1. **Water Reservoir Depletion & Outages:** Continuous tracking of dam storage levels, historical replenishment trends, scheduled maintenance outages, and citizen fault reporting.
+2. **Emergency Water Delivery Distribution:** Real-time GPS tracking and live WebSocket broadcasting of municipal water tankers, digital delivery manifests, and live photo Proof of Delivery (POD).
 
 ---
 
-## Team
+## 👥 VibeTech Team (Group 1)
 
-| Member | Role |
-|---|---|
-| Sisekelo Masombuka | Backend |
-| Nosipho Mbatha | Backend |
-| Nomcebo Nkosi | Frontend |
-| Jabulile Shabalala | Frontend |
+| Student Name | Student Number | Primary Role |
+| :--- | :--- | :--- |
+| **Nosipho Mbatha** | `202406965` | Backend & Database Engineering |
+| **Nomcebo Nkosi** | `202402024` | Frontend & User Interface Engineering |
+| **Sisekelo Masombuka** | `202448576` | Architecture, Security & Full-Stack Integration |
+| **Jabulile Shabalala** | `202324579` | Frontend, Testing & Documentation |
 
 ---
 
-## Repository structure
+## 🗂️ Clean Repository Structure
 
-```
+As required for submission and professional deployment, all source code, media, and academic documentation are organized into clean top-level directories:
+
+```text
 AquaBophelo/
-├── backend/
-│   ├── AquaBophelo.slnx              Solution file (open this in Visual Studio)
-│   └── AquaBophelo/                  ASP.NET Core Web API project
-├── frontend/                         React + Vite + Tailwind app
-├── docs/                             Project documentation, ER diagram, task briefs
-├── .gitignore
-├── .gitattributes
-└── README.md
+├── Code/
+│   ├── backend/                      ASP.NET Core 10 Web API + Entity Framework Core + SignalR
+│   │   ├── AquaBophelo.slnx          Modern solution file (open in Visual Studio / VS Code)
+│   │   ├── AquaBophelo/              Controllers, DTOs, Hubs, Migrations, Models & Services
+│   │   └── AquaBophelo.Tests/        xUnit unit and integration test suite (20/20 passing)
+│   └── frontend/                     React 19 + Vite + Tailwind CSS Single-Page Application
+│       ├── src/                      UI components, pages, hooks, context & state management
+│       ├── public/                   Static assets, icons, and Firebase service workers
+│       └── package.json              Vite build scripts and client dependency specifications
+├── Demo/
+│   ├── AquaBophelo_System_Demonstration.webm   Official video demonstration (Git LFS)
+│   └── AquaBophelo_Video_Demo_Recording_Script.md  5-minute timed presentation script
+├── Dox/
+│   ├── Project Proposal.pdf          Phase 1: Project Proposal & Scope Definition
+│   ├── Requirements Specifications.pdf Phase 2: Software Requirements Specification (SRS)
+│   ├── Phase 3 PROJECT FINAL .pdf    Phase 3: System Design, ERDs & Architecture
+│   └── Final Phase Four 4.pdf        Phase 4: Implementation, Testing & Evaluation Report
+├── Group1-Names.txt                  Group VibeTech student roster & repository link
+├── README.md                         Comprehensive project documentation & run instructions
+├── .gitignore                        Multi-stack repository ignore rules (.NET + Node)
+└── .gitattributes                    Line endings & Git LFS large asset configuration
 ```
 
 ---
 
-## Getting started
+## 🛠️ Technology Stack & Cloud Ecosystem
+
+### 1. Frontend Client
+- **Framework:** React 19 (JavaScript SPA) powered by Vite 8
+- **Styling:** Tailwind CSS with responsive mobile-first municipal design system
+- **Mapping & Telemetry:** Leaflet / MapLibre GL JS with custom SVG tanker pins and reservoir markers
+- **Real-Time Client:** `@microsoft/signalr` WebSocket client with automatic reconnection and fallback
+- **State & Data Fetching:** TanStack React Query + Axios with RFC 7807 problem details parsing
+- **UI & Icons:** Lucide React icons, Radix UI accessible primitives, and customized camera capture components
+- **Monitoring:** Sentry React SDK (session replay, error reporting, and performance vitals)
+
+### 2. Backend API & Services
+- **Runtime & Framework:** .NET 10 (C# 14) ASP.NET Core Web API
+- **ORM & Data Access:** Entity Framework Core 10 with Code-First Migrations and composite performance indexes
+- **Authentication:** ASP.NET Core Identity + JWT Bearer Tokens with role-based access control (`Admin`, `Driver`, `Resident`)
+- **Real-Time Engine:** SignalR Hubs (`/hubs/trucks` for sub-second GPS telemetry and `/hubs/ping` for heartbeat monitoring)
+- **Background Processing:** System `Channel<T>` asynchronous email queue background service
+- **API Documentation:** OpenAPI 3.0 with Scalar interactive API viewer
+
+### 3. Database
+- **Engine:** PostgreSQL / SQL Server LocalDB compatible via EF Core
+- **Performance:** Composite B-tree indexes for truck location telemetry, OTP verification codes, emergency alerts, and audit logs
+- **Compliance:** POPIA-compliant soft deletion with a 30-day permanent deletion cleanup cycle
+
+### 4. Cloudflare Ecosystem (Turnstile & R2 Storage)
+- **Cloudflare Turnstile (Bot & Anti-Abuse Defense):**
+  - Integrated into resident registration and password recovery forms.
+  - Replaces traditional friction-heavy CAPTCHAs with invisible, privacy-preserving cryptographic challenges.
+  - Backend verifies tokens directly against Cloudflare's `/turnstile/v0/siteverify` API endpoint.
+- **Cloudflare R2 Object Storage (High-Performance Zero-Egress Media):**
+  - High-availability, S3-compatible distributed object storage.
+  - Handles citizen water fault photo uploads (e.g. burst pipes, leaks) and driver live Proof of Delivery (POD) photo captures.
+  - Enforces strict 5MB upload limits and image MIME-type validation.
+  - **Graceful Local Fallback:** When R2 credentials are unset, the system automatically persists uploads to disk under `uploads/reports` and streams them to the admin panel via secure proxy endpoints (`/api/v1/reports/photos/{key}`).
+
+### 5. Notifications & Telemetry
+- **Brevo Transactional Email:** High-reliability municipal communications sending 6-digit SHA-256 hashed OTPs, emergency water interruption alerts, and ticket confirmations.
+- **Firebase Cloud Messaging (FCM):** Web push notifications for instant critical water alerts.
+- **Sentry Application Performance Monitoring:** Dual-tier error reporting across frontend and backend.
+
+---
+
+## 🔒 Master Credentials for Demonstration & Evaluation
+
+The database is seeded with a clean, out-of-the-box state containing the Master Administrator account, foundational municipal reservoirs (Newton Reservoir, Riverton Water Works), and available municipal tankers (`NC-542-KM`, `NC-882-KM`, `NC-104-KM`):
+
+| Role | Email Address | Password | Privileges |
+| :--- | :--- | :--- | :--- |
+| **Master Admin** | `admin@aquabophelo.gov.za` | `SolPlaatje2026!` | Full Municipal Control Center, Fleet & Route Management, User Administration, Outage Scheduling, Fault Ticket Review |
+
+*Residents and drivers can be registered dynamically via the web interface or created by the Administrator.*
+
+---
+
+## 🚀 Getting Started & Local Development
 
 ### 1. Prerequisites
+- **.NET SDK 10.0** (or .NET 9.0+)
+- **Node.js** (v20+ recommended) & **npm**
+- **Git** & **Git LFS** (`git lfs install`)
 
-Install these once:
-
-- **Git**
-- **.NET SDK** matching the `TargetFramework` in `backend/AquaBophelo/AquaBophelo.csproj` (for example .NET 9 for `net9.0`)
-- **Node.js** (current LTS)
-- **Visual Studio 2022** with the *ASP.NET and web development* workload and *SQL Server Express LocalDB* (or use VS Code with the C# extension)
-- **EF Core CLI tool:** `dotnet tool install --global dotnet-ef`
-
-### 2. Clone
-
-```
+### 2. Clone the Repository
+```bash
 git clone https://github.com/Sisekelo-Masombuka/AqueBophelo.git
 cd AqueBophelo
+git lfs pull
 ```
 
-(The GitHub repo name is spelled *Aque*; the project and folder names inside are spelled *Aqua*. That's expected.)
-
-### 3. Trust the local HTTPS certificate (once per machine)
-
+### 3. Run the Backend API
+In your first terminal:
+```bash
+dotnet run --project Code/backend/AquaBophelo --launch-profile https
 ```
-dotnet dev-certs https --trust
-```
+- API Base URL: `https://localhost:7154` (HTTP: `http://localhost:5094`)
+- Health Check: `GET http://localhost:5094/api/v1/health` -> `{"status":"ok"}`
+- Interactive Scalar API Docs: `https://localhost:7154/scalar/v1`
 
-Click **Yes** on the Windows dialog. Without this, your browser will block calls from the frontend to the local API.
-
-### 4. Run the backend
-
-```
-cd backend\AquaBophelo
-dotnet run --launch-profile https
-```
-
-Or open `backend/AquaBophelo.slnx` in Visual Studio and press **F5** using the `https` profile.
-
-- The API port is defined in `backend/AquaBophelo/Properties/launchSettings.json`.
-- Interactive API docs (Scalar) open from the same address; check `Program.cs` for the exact route.
-- Quick check: `GET /api/v1/health` should return `200` with `"status": "ok"`.
-
-### 5. Run the frontend
-
-In a **second** terminal:
-
-```
-cd frontend
+### 4. Run the Frontend Application
+In your second terminal:
+```bash
+cd Code/frontend
 npm install
 npm run dev
 ```
+- Frontend Web App: `http://localhost:5173`
 
-The app runs at **http://localhost:5173**. The URL of the API is set in `frontend/.env.development` (`VITE_API_BASE_URL`); it must match the port from step 4.
-
-### 6. Check that everything is connected
-
-Open http://localhost:5173. The **System Check** page should show **API: Online** and **Live: Connected**. If not:
-
-| Symptom | Likely fix |
-|---|---|
-| API Offline, certificate error in the console | Run `dotnet dev-certs https --trust` (step 3) and restart the browser |
-| API Offline, CORS error in the console | Make sure the frontend is on port `5173` and `Cors:AllowedOrigins` in `appsettings.Development.json` contains `http://localhost:5173` |
-| API Offline, connection refused | The API isn't running, or `VITE_API_BASE_URL` has the wrong port |
-| Port 5173 already in use | Close the other process; the port is fixed on purpose so CORS stays predictable |
+### 5. Running Automated Tests
+Run the automated xUnit unit and integration test suite:
+```bash
+dotnet test Code/backend/AquaBophelo.slnx
+```
+**Test Results:** `20 Passed, 0 Failed, 0 Skipped` (100% pass rate).
 
 ---
 
-## Production Integrations & Security Architecture
-
-AquaBophelo integrates six core external services to deliver enterprise-grade performance, bot protection, telemetry, and reliable citizen communications:
+## 🏗️ System Architecture & Data Flow
 
 ```mermaid
 flowchart TD
-    subgraph Client["Frontend Client (React 19 + MapLibre)"]
-        SPA["React SPA (Vite + Tailwind v4)"]
-        Map["MapLibre Live Telemetry Map"]
-        SentryFE["Sentry Session Replay & Web Vitals"]
+    subgraph Client["Frontend Client (React 19 + Leaflet)"]
+        SPA["React SPA (Vite + Tailwind)"]
+        Map["Live Telemetry Map & Camera POD"]
+        SentryFE["Sentry Session Replay & Error Tracking"]
     end
 
     subgraph Backend["Backend API (ASP.NET Core 10)"]
-        API["Controllers (REST Web API)"]
+        API["REST Controllers (/api/v1/*)"]
         SignalR["SignalR Hubs (/hubs/trucks, /hubs/ping)"]
-        Auth["Identity + JWT (RBAC + Lockout)"]
-        RateLimit["RateLimiter (AuthStrictPolicy 5/min)"]
+        Auth["ASP.NET Core Identity + JWT (RBAC)"]
         Queue["Background Email Queue (Channel<T>)"]
         EF["Entity Framework Core 10"]
     end
 
-    subgraph Storage["Data Tier"]
-        DB[("SQL Server / Azure SQL")]
-        R2["Cloudflare R2 Object Storage (5MB Photos)"]
+    subgraph Storage["Data & Storage Tier"]
+        DB[("PostgreSQL / SQL Server LocalDB")]
+        R2["Cloudflare R2 Storage (Fault Photos & PODs)"]
     end
 
-    subgraph External["External Cloud Integrations"]
-        Brevo["Brevo Transactional Email (Daily Cap 300)"]
-        Turnstile["Cloudflare Turnstile Bot Defense"]
+    subgraph External["Cloud Integrations"]
+        Turnstile["Cloudflare Turnstile (Bot Defense)"]
+        Brevo["Brevo Email Service (OTPs & Outage Alerts)"]
         FCM["Firebase Cloud Messaging (Web Push)"]
-        SentryBE["Sentry Error Monitoring"]
+        SentryBE["Sentry Backend Monitoring"]
     end
 
-    SPA -->|HTTPS REST| RateLimit
-    RateLimit --> API
+    SPA -->|HTTPS REST| API
     SPA -->|WSS WebSockets| SignalR
     API --> Auth
     API --> EF
     SignalR --> EF
     EF --> DB
-    API -->|Presigned PUT / Multipart| R2
+    API -->|Upload / Stream Photos| R2
     API --> Queue
-    Queue -->|HTTP API| Brevo
-    API -->|Verify Token| Turnstile
-    API -->|Critical Alerts| FCM
-    API -.->|Telemetry Scrubbed| SentryBE
-    SPA -.->|Client Errors| SentryFE
+    Queue -->|Transactional Delivery| Brevo
+    API -->|Validate Captcha| Turnstile
+    API -->|Push Critical Alerts| FCM
+    API -.->|Unhandled Exceptions| SentryBE
+    SPA -.->|Client Crashes| SentryFE
 ```
 
 ---
 
-## Technical Documentation & Architecture Guides
+## 📑 Academic Documentation Breakdown
 
-Detailed system documentation is available in the [`docs/`](docs/) directory:
+All official phase submission documents are located in [`Dox/`](Dox/):
 
-| Guide | Description |
-| :--- | :--- |
-| [**Authentication Guide (`docs/AUTH.md`)**](docs/AUTH.md) | Identity architecture, JWT tokens, RBAC roles, 6-digit SHA-256 OTP verification, 5-strike brute-force lockout, and soft-delete grace periods. |
-| [**Alerts & Notifications (`docs/ALERTS.md`)**](docs/ALERTS.md) | Reservoir capacity thresholds (Healthy/Watch/Warning/Critical), state-transition deduplication, asynchronous queue pipeline, and Brevo daily cap protection. |
-| [**Error Handling Guide (`docs/ERROR-HANDLING.md`)**](docs/ERROR-HANDLING.md) | RFC 7807 ProblemDetails responses, standard HTTP status codes, external service fail-safes, and Axios network failover. |
-| [**Security & POPIA Guide (`docs/SECURITY.md`)**](docs/SECURITY.md) | South African POPIA compliance, IDOR ownership controls, Cloudflare R2 upload restrictions, rate limiting, and HTTP security headers. |
+1. **[`Phase 1: Project Proposal.pdf`](Dox/Project%20Proposal.pdf)** — Problem statement, stakeholder analysis, project scope, and initial timeline.
+2. **[`Phase 2: Requirements Specifications.pdf`](Dox/Requirements%20Specifications.pdf)** — Functional and non-functional requirements, use case diagrams, and user stories.
+3. **[`Phase 3: Phase 3 PROJECT FINAL .pdf`](Dox/Phase%203%20PROJECT%20FINAL%20.pdf)** — Architectural design, database Entity-Relationship Diagrams (ERDs), API specifications, and wireframes.
+4. **[`Phase 4: Final Phase Four 4.pdf`](Dox/Final%20Phase%20Four%204.pdf)** — Final implementation report, test matrices, evaluation against the rubric, and deployment architecture.
 
 ---
 
-## Master Environment Variables & Secrets Reference
+## 🎥 Demonstration Video & Script
 
-### 1. Backend Secrets (`dotnet user-secrets` in Dev / Azure App Settings in Prod)
-
-| Variable Name | Description | Example Value / Source |
-|---|---|---|
-| `ConnectionStrings__DefaultConnection` | SQL Server / Azure SQL Connection String | `Server=...;Database=AquaBopheloDb;...` |
-| `Jwt__Key` | Secret key used to sign JWT Tokens | 64-character hex string |
-| `Jwt__Issuer` | JWT Token Issuer | `AquaBopheloApi` |
-| `Jwt__Audience` | JWT Token Audience | `AquaBopheloClient` |
-| `Brevo__ApiKey` | Brevo Transactional Email HTTP API Key | `xkeysib-123456...` |
-| `Brevo__SenderEmail` | Verified Municipal Sender Email Address | `notifications@solplaatje.gov.za` |
-| `Brevo__SenderName` | Sender Display Name | `Sol Plaatje Water Care` |
-| `R2__AccountId` | Cloudflare R2 Account ID | `32-character hex ID` |
-| `R2__AccessKeyId` | Cloudflare R2 API Access Key ID | R2 Access Key |
-| `R2__SecretAccessKey` | Cloudflare R2 API Secret Access Key | R2 Secret Key |
-| `R2__BucketName` | Cloudflare R2 Bucket Name | `aquabophelo-uploads` |
-| `Turnstile__SecretKey` | Cloudflare Turnstile Bot Protection Secret Key | `0x4AAAAAA...` |
-| `Sentry__Dsn` | Sentry ASP.NET Core Project DSN | `https://...@...ingest.sentry.io/...` |
-| `Firebase__ServiceAccountPath` | Relative path to Firebase Admin Private Key JSON | `firebase-service-account.json` |
-
-### 2. Frontend Configuration (`frontend/.env`)
-
-| Variable Name | Description | Example Value / Source |
-|---|---|---|
-| `VITE_API_BASE_URL` | Backend API Base Endpoint | `https://localhost:7153` |
-| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile CAPTCHA Public Site Key | `0x4AAAAAA...` |
-| `VITE_SENTRY_DSN` | Sentry React Project DSN | `https://...@...ingest.sentry.io/...` |
-| `VITE_FIREBASE_API_KEY` | Firebase Web Project API Key | `AIzaSy...` |
-| `VITE_FIREBASE_PROJECT_ID` | Firebase Project ID | `aquabophelo-notifications` |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase Sender ID | `1234567890` |
-| `VITE_FIREBASE_APP_ID` | Firebase Web App ID | `1:1234567890:web:1234567890` |
-| `VITE_FIREBASE_VAPID_KEY` | FCM Web Push Certificate Public VAPID Key | `B...` |
-| `VITE_GA_MEASUREMENT_ID` | Google Analytics Measurement ID | `G-XXXXXXXXXX` |
+Located in [`Demo/`](Demo/):
+- **Video:** `AquaBophelo_System_Demonstration.webm` (tracked via Git LFS).
+- **Script:** [`AquaBophelo_Video_Demo_Recording_Script.md`](Demo/AquaBophelo_Video_Demo_Recording_Script.md) — Timed 5-minute walkthrough covering Resident, Driver, and Administrator workflows.
 
 ---
 
-## Step-by-Step Integration Setup Guide
+## ⚖️ License & Academic Declaration
 
-### 📧 1. Brevo Transactional Email Service
-1. Create a free account at [brevo.com](https://www.brevo.com).
-2. Verify your municipal sender email address under **Senders & IP**.
-3. Generate an API Key under **SMTP & API** -> **API Keys**.
-4. Configure `Brevo:ApiKey`, `Brevo:SenderEmail`, and `Brevo:SenderName` in backend secrets.
-
-### ☁️ 2. Cloudflare R2 Object Storage
-1. Log in to [dash.cloudflare.com](https://dash.cloudflare.com) and navigate to **R2**.
-2. Create a bucket named `aquabophelo-uploads`.
-3. Go to **Manage R2 API Tokens** -> **Create API Token** (Permissions: *Object Read & Write*).
-4. Configure CORS on the bucket for your frontend origin (`http://localhost:5173`).
-5. Configure `R2:AccountId`, `R2:AccessKeyId`, `R2:SecretAccessKey`, and `R2:BucketName` in backend secrets.
-
-### 🤖 3. Cloudflare Turnstile Bot Protection
-1. In Cloudflare Dashboard, navigate to **Turnstile** -> **Add Site**.
-2. Set Domain to `localhost` (or your production domain).
-3. Copy **Site Key** to `VITE_TURNSTILE_SITE_KEY` in `frontend/.env`.
-4. Copy **Secret Key** to `Turnstile:SecretKey` in backend secrets.
-
-### 📊 4. Sentry Application Monitoring & Telemetry
-1. Create a free account at [sentry.io](https://sentry.io).
-2. Create project `aquabophelo-backend` (ASP.NET Core) -> Copy DSN to `Sentry:Dsn` in backend secrets.
-3. Create project `aquabophelo-frontend` (React) -> Copy DSN to `VITE_SENTRY_DSN` in `frontend/.env`.
-
-### 🔔 5. Firebase Cloud Messaging (Web Push)
-1. Create a project at [console.firebase.google.com](https://console.firebase.google.com).
-2. Add a Web App (`</>`) and copy config values to `frontend/.env`.
-3. Under **Project settings** -> **Cloud Messaging**, click **Generate keypair** under Web Push certificates -> copy VAPID key to `VITE_FIREBASE_VAPID_KEY`.
-4. Under **Service accounts**, click **Generate new private key** -> download JSON file to `backend/AquaBophelo/firebase-service-account.json`.
-
-### 📈 6. Google Analytics (POPIA Compliant)
-1. In Firebase Console or [analytics.google.com](https://analytics.google.com), copy your Web Stream **Measurement ID** (`G-XXXXXXXXXX`).
-2. Add `VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX` to `frontend/.env`.
-3. Google Analytics script is dynamically blocked until the resident clicks *"Accept All"* on the POPIA cookie banner.
-
----
-
-## Academic note
-
-AquaBophelo is a student capstone project developed at Sol Plaatje University. Sol Plaatje Municipality is the client context for the design; this is not an official municipal system.
-
+This project was developed for the **Diploma in Information and Communication Technology (ICT)** at **Sol Plaatje University**.  
+*Sol Plaatje Municipality is the client context for the design; this is an academic capstone project.*
