@@ -19,20 +19,38 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Configure SPA fallback routing and static asset caching
+# Configure SPA fallback routing, gzip compression, security headers and static asset caching
 RUN echo 'server { \
     listen 80; \
     server_name localhost; \
+    root /usr/share/nginx/html; \
+    \
+    # Enable Gzip Compression \
+    gzip on; \
+    gzip_vary on; \
+    gzip_proxied any; \
+    gzip_comp_level 6; \
+    gzip_min_length 1024; \
+    gzip_types text/plain text/css text/xml application/json application/javascript application/xml+rss application/atom+xml image/svg+xml; \
+    \
+    # Security Headers \
+    add_header X-Frame-Options "DENY" always; \
+    add_header X-Content-Type-Options "nosniff" always; \
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always; \
+    \
+    # HTML and dynamic files: never cache index.html \
     location / { \
-        root /usr/share/nginx/html; \
         index index.html index.htm; \
         try_files $uri $uri/ /index.html; \
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always; \
     } \
+    \
+    # Static Assets: 1-year immutable caching \
     location ~* \.(js|css|png|jpg|jpeg|svg|ico|woff|woff2)$ { \
-        root /usr/share/nginx/html; \
         expires 1y; \
-        add_header Cache-Control "public, max-age=31536000, immutable"; \
+        add_header Cache-Control "public, max-age=31536000, immutable" always; \
     } \
+    \
     error_page 500 502 503 504 /50x.html; \
     location = /50x.html { \
         root /usr/share/nginx/html; \

@@ -17,42 +17,49 @@ export function AuthProvider({ children }) {
   // Load saved session from localStorage on app startup and sync with backend
   useEffect(() => {
     try {
-      const savedToken = localStorage.getItem('aquabophelo_token');
-      const savedUser = localStorage.getItem('aquabophelo_user');
-      if (savedToken && savedUser) {
-        setToken(savedToken);
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        if (parsedUser?.preferredLanguage) {
-          localStorage.setItem('aquabophelo_lang', parsedUser.preferredLanguage);
-        }
-
-        // Fetch live server profile in background to keep data fresh across tabs/refreshes
-        apiClient.get('/api/v1/auth/me')
-          .then((res) => {
-            if (res.data) {
-              const freshProfile = {
-                ...parsedUser,
-                id: res.data.id || parsedUser.id,
-                email: res.data.email || parsedUser.email,
-                fullName: res.data.fullName || parsedUser.fullName,
-                role: res.data.role || parsedUser.role,
-                phoneNumber: res.data.phoneNumber || parsedUser.phoneNumber || '',
-                area: res.data.areaName || parsedUser.area || 'Galeshewe',
-                areaId: res.data.areaId || parsedUser.areaId,
-                profilePictureUrl: res.data.profilePictureUrl || parsedUser.profilePictureUrl || null,
-                preferredLanguage: res.data.preferredLanguage || parsedUser.preferredLanguage || 'EN',
-              };
-              setUser(freshProfile);
-              localStorage.setItem('aquabophelo_user', JSON.stringify(freshProfile));
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const savedToken = localStorage.getItem('aquabophelo_token');
+        const savedUser = localStorage.getItem('aquabophelo_user');
+        if (savedToken && savedUser) {
+          setToken(savedToken);
+          let parsedUser = null;
+          try {
+            parsedUser = JSON.parse(savedUser);
+            setUser(parsedUser);
+            if (parsedUser?.preferredLanguage) {
+              localStorage.setItem('aquabophelo_lang', parsedUser.preferredLanguage);
             }
-          })
-          .catch((err) => {
-            console.warn('Backend profile sync note:', err);
-          });
-      } else {
-        setUser(null);
-        setToken(null);
+          } catch {
+            localStorage.removeItem('aquabophelo_user');
+          }
+
+          // Fetch live server profile in background to keep data fresh across tabs/refreshes
+          apiClient.get('/api/v1/auth/me')
+            .then((res) => {
+              if (res.data) {
+                const freshProfile = {
+                  ...(parsedUser || {}),
+                  id: res.data.id || parsedUser?.id,
+                  email: res.data.email || parsedUser?.email,
+                  fullName: res.data.fullName || parsedUser?.fullName,
+                  role: res.data.role || parsedUser?.role,
+                  phoneNumber: res.data.phoneNumber || parsedUser?.phoneNumber || '',
+                  area: res.data.areaName || parsedUser?.area || 'Galeshewe',
+                  areaId: res.data.areaId || parsedUser?.areaId,
+                  profilePictureUrl: res.data.profilePictureUrl || parsedUser?.profilePictureUrl || null,
+                  preferredLanguage: res.data.preferredLanguage || parsedUser?.preferredLanguage || 'EN',
+                };
+                setUser(freshProfile);
+                localStorage.setItem('aquabophelo_user', JSON.stringify(freshProfile));
+              }
+            })
+            .catch((err) => {
+              console.warn('Backend profile sync note:', err);
+            });
+        } else {
+          setUser(null);
+          setToken(null);
+        }
       }
     } catch (err) {
       console.error('Failed to load auth state:', err);

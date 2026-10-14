@@ -42,45 +42,68 @@ public class BrevoEmailSender : IEmailSender, INotificationService
             return await _fallbackService.SendEmailAsync(toEmail, subject, plainTextContent ?? htmlContent);
         }
 
-        try
+        var requestPayload = new
         {
-            var requestPayload = new
+            sender = new
             {
-                sender = new
-                {
-                    name = string.IsNullOrWhiteSpace(_options.SenderName) ? "Sol Plaatje Municipal Water Desk" : _options.SenderName,
-                    email = _options.SenderEmail
-                },
-                to = new[]
-                {
-                    new { email = toEmail }
-                },
-                subject = subject,
-                htmlContent = htmlContent,
-                textContent = plainTextContent ?? htmlContent
-            };
-
-            var jsonContent = new StringContent(JsonSerializer.Serialize(requestPayload), Encoding.UTF8, "application/json");
-
-            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
-            request.Headers.Add("api-key", _options.ApiKey);
-            request.Headers.Add("accept", "application/json");
-            request.Content = jsonContent;
-
-            var response = await _httpClient.SendAsync(request);
-
-            if (response.IsSuccessStatusCode)
+                name = string.IsNullOrWhiteSpace(_options.SenderName) ? "Sol Plaatje Municipal Water Desk" : _options.SenderName,
+                email = _options.SenderEmail
+            },
+            to = new[]
             {
-                _logger.LogInformation("[BrevoEmailSender] Transactional email successfully dispatched via Brevo API to recipient domain.");
-                return true;
+                new { email = toEmail }
+            },
+            subject = subject,
+            htmlContent = htmlContent,
+            textContent = plainTextContent ?? htmlContent
+        };
+
+        const int maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                var jsonContent = new StringContent(JsonSerializer.Serialize(requestPayload), Encoding.UTF8, "application/json");
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
+                request.Headers.Add("api-key", _options.ApiKey);
+                request.Headers.Add("accept", "application/json");
+                request.Content = jsonContent;
+
+                var response = await _httpClient.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("[BrevoEmailSender] Transactional email successfully dispatched via Brevo API to {Recipient}.", toEmail);
+                    return true;
+                }
+
+                var statusCode = (int)response.StatusCode;
+                var errorResponseBody = await response.Content.ReadAsStringAsync();
+
+                // Non-retriable client errors (400, 401, 403, 404): log structured error and break
+                if (statusCode >= 400 && statusCode < 500 && statusCode != 429)
+                {
+                    _logger.LogWarning("[BrevoEmailSender] Brevo API rejected request with client status {StatusCode}. Details: {Details}", statusCode, errorResponseBody);
+                    break;
+                }
+
+                // Retriable errors (429 Too Many Requests or 5xx Server Errors)
+                _logger.LogWarning("[BrevoEmailSender] Brevo API attempt {Attempt}/{MaxRetries} failed with {StatusCode}. Backing off...", attempt, maxRetries, statusCode);
+                if (attempt < maxRetries)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(500 * Math.Pow(2, attempt - 1)));
+                }
             }
-
-            var errorResponseBody = await response.Content.ReadAsStringAsync();
-            _logger.LogError("[BrevoEmailSender] Brevo API returned status code {StatusCode}. Error details: {Error}", response.StatusCode, errorResponseBody);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[BrevoEmailSender] Exception occurred while calling Brevo Transactional Email API.");
+            catch (Exception ex) when (attempt < maxRetries)
+            {
+                _logger.LogWarning(ex, "[BrevoEmailSender] Transient exception on Brevo API attempt {Attempt}/{MaxRetries}. Retrying...", attempt, maxRetries);
+                await Task.Delay(TimeSpan.FromMilliseconds(500 * Math.Pow(2, attempt - 1)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[BrevoEmailSender] Final exception occurred while calling Brevo Transactional Email API for recipient {Recipient}.", toEmail);
+            }
         }
 
         return await _fallbackService.SendEmailAsync(toEmail, subject, plainTextContent ?? htmlContent);

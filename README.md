@@ -76,7 +76,7 @@ AquaBophelo/
 - **API Documentation:** OpenAPI 3.0 with Scalar interactive API viewer
 
 ### 3. Database
-- **Engine:** PostgreSQL / SQL Server LocalDB compatible via EF Core
+- **Engine:** Microsoft SQL Server 2022 / Azure SQL Database (LocalDB compatible in dev) via EF Core 10
 - **Performance:** Composite B-tree indexes for truck location telemetry, OTP verification codes, emergency alerts, and audit logs
 - **Compliance:** POPIA-compliant soft deletion with a 30-day permanent deletion cleanup cycle
 
@@ -189,7 +189,7 @@ flowchart TD
     end
 
     subgraph Storage["Data & Storage Tier"]
-        DB[("PostgreSQL / SQL Server LocalDB")]
+        DB[("Microsoft SQL Server / Azure SQL")]
         R2["Cloudflare R2 Storage (Fault Photos & PODs)"]
     end
 

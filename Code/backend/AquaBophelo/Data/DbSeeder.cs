@@ -126,6 +126,7 @@ public static class DbSeeder
         // 4. Seed Master Administrator Account from Protected Configuration
         var configuration = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
         var hostEnvironment = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Hosting.IHostEnvironment>();
+        var logger = scope.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger("DbSeeder");
 
         var adminEmail = configuration["Admin:Email"] ?? configuration["ADMIN_EMAIL"] ?? "admin@aquabophelo.app";
         var adminPassword = configuration["Admin:InitialPassword"] ?? configuration["ADMIN_INITIAL_PASSWORD"];
@@ -134,7 +135,7 @@ public static class DbSeeder
         if (string.IsNullOrWhiteSpace(adminPassword) && hostEnvironment.IsDevelopment())
         {
             adminPassword = $"DevAdmin!{Guid.NewGuid().ToString("N")[..8]}#";
-            Console.WriteLine($"[DbSeeder] Warning: ADMIN_INITIAL_PASSWORD not set. Generated temporary dev admin password: {adminPassword}");
+            logger?.LogInformation("[DbSeeder] ADMIN_INITIAL_PASSWORD not set. Generated temporary dev admin account for local development.");
         }
 
         if (!string.IsNullOrWhiteSpace(adminPassword))
@@ -143,7 +144,7 @@ public static class DbSeeder
         }
         else
         {
-            Console.WriteLine("[DbSeeder] Notice: 'ADMIN_INITIAL_PASSWORD' environment variable is not configured. Skipping automatic admin provisioning in production.");
+            logger?.LogInformation("[DbSeeder] Notice: 'ADMIN_INITIAL_PASSWORD' environment variable is not configured. Skipping automatic admin provisioning in production.");
         }
 
         // 5. Destructive Demo Data Cleanup (STRICT SAFETY GATE: strictly isolated to local development with explicit PURGE_DEMO_DATA=true flag)

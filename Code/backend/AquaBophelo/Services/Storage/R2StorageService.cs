@@ -89,15 +89,46 @@ public class R2StorageService : IR2StorageService
         return (presignedUrl, fileUrl, objectKey);
     }
 
+    private static void ValidateImageSignature(Stream stream)
+    {
+        if (!stream.CanSeek || stream.Length < 4) return;
+        var originalPos = stream.Position;
+        byte[] header = new byte[12];
+        int bytesRead = stream.Read(header, 0, Math.Min(header.Length, (int)stream.Length));
+        stream.Position = originalPos;
+
+        if (bytesRead < 4)
+        {
+            throw new BadHttpRequestException("Invalid or corrupted image payload.");
+        }
+
+        // JPEG: FF D8 FF
+        bool isJpeg = header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
+        // PNG: 89 50 4E 47
+        bool isPng = header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47;
+        // GIF: 47 49 46 38 ("GIF8")
+        bool isGif = header[0] == 0x47 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x38;
+        // WebP: 52 49 46 46 ("RIFF" ... "WEBP")
+        bool isWebp = bytesRead >= 12 && header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46 &&
+                      header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50;
+
+        if (!isJpeg && !isPng && !isGif && !isWebp)
+        {
+            throw new BadHttpRequestException("File content does not match a valid image signature (JPEG, PNG, GIF, WebP). Potential file spoofing detected.");
+        }
+    }
+
     public async Task<(string fileUrl, string objectKey)> UploadFileAsync(Stream fileStream, string fileName, string contentType)
     {
         ValidateFileMetadata(fileName, contentType);
 
-        const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB maximum allowed image payload
+        const long MaxFileSizeBytes = 5 * 1024 * 1024; // 5 MB maximum allowed image payload
         if (fileStream.CanSeek && fileStream.Length > MaxFileSizeBytes)
         {
-            throw new BadHttpRequestException("Uploaded image exceeds the 10 MB maximum allowed file size.");
+            throw new BadHttpRequestException("Uploaded image exceeds the 5 MB maximum allowed file size.");
         }
+
+        ValidateImageSignature(fileStream);
 
         string safeFileName = Path.GetFileName(fileName).Replace(" ", "_");
         string objectKey = $"reports/{Guid.NewGuid()}_{safeFileName}";

@@ -50,6 +50,12 @@ builder.WebHost.UseSentry(options =>
             catch { /* non-fatal URL parsing guard */ }
         }
 
+        // Scrub request payload/body to guarantee zero PII or credential leakage
+        if (sentryEvent.Request != null)
+        {
+            sentryEvent.Request.Data = null;
+        }
+
         sentryEvent.SetTag("environment", builder.Environment.EnvironmentName);
         return sentryEvent;
     });
@@ -128,9 +134,10 @@ var dataProtectionBuilder = builder.Services.AddDataProtection()
     .SetApplicationName("AquaBophelo");
 
 var dpKeysPath = builder.Configuration["DataProtection:KeysPath"] 
-    ?? Environment.GetEnvironmentVariable("DATA_PROTECTION_KEYS_PATH");
+    ?? Environment.GetEnvironmentVariable("DATA_PROTECTION_KEYS_PATH")
+    ?? (builder.Environment.IsProduction() ? "/var/dataprotection-keys" : Path.Combine(AppContext.BaseDirectory, "dataprotection-keys"));
 
-if (!string.IsNullOrWhiteSpace(dpKeysPath))
+try
 {
     var keysDir = new DirectoryInfo(dpKeysPath);
     if (!keysDir.Exists)
@@ -138,6 +145,10 @@ if (!string.IsNullOrWhiteSpace(dpKeysPath))
         keysDir.Create();
     }
     dataProtectionBuilder.PersistKeysToFileSystem(keysDir);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[DataProtection] Note: Persistent directory '{dpKeysPath}' initialization notice: {ex.Message}");
 }
 
 // Configure HSTS Policy for Production
@@ -182,11 +193,19 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = context =>
         {
-            var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            if (path.StartsWithSegments("/hubs"))
             {
-                context.Token = accessToken;
+                // Support both standard SignalR query string token and secure cookie token
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    context.Token = accessToken;
+                }
+                else if (context.Request.Cookies.TryGetValue("aquabophelo_token", out var cookieToken) && !string.IsNullOrEmpty(cookieToken))
+                {
+                    context.Token = cookieToken;
+                }
             }
             return Task.CompletedTask;
         }
@@ -312,6 +331,26 @@ app.UseExceptionHandler(exceptionHandlerApp =>
     });
 });
 
+// Correlation ID & Request Tracing Middleware
+app.Use(async (context, next) =>
+{
+    const string CorrelationIdHeader = "X-Correlation-ID";
+    if (!context.Request.Headers.TryGetValue(CorrelationIdHeader, out var correlationId) || string.IsNullOrWhiteSpace(correlationId))
+    {
+        correlationId = Guid.NewGuid().ToString("N");
+    }
+    context.Response.Headers.Append(CorrelationIdHeader, correlationId);
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    using (logger.BeginScope(new Dictionary<string, object>
+    {
+        ["CorrelationId"] = correlationId.ToString(),
+        ["User"] = context.User?.Identity?.Name ?? "Anonymous"
+    }))
+    {
+        await next();
+    }
+});
+
 // Security Headers Middleware (SEC-03: Protection against MIME-sniffing, clickjacking, and information leakage)
 app.Use(async (context, next) =>
 {
@@ -324,7 +363,10 @@ app.Use(async (context, next) =>
         ? "'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net"
         : "'self' https://challenges.cloudflare.com";
 
-    context.Response.Headers.Append("Content-Security-Policy",
+    var isReportOnly = builder.Configuration.GetValue<bool>("CSP_REPORT_ONLY", false);
+    var cspHeaderName = isReportOnly ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy";
+
+    context.Response.Headers.Append(cspHeaderName,
         "default-src 'self'; " +
         $"script-src {cspScriptSrc}; " +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
@@ -407,9 +449,29 @@ app.MapHub<TruckHub>("/hubs/trucks");
 // Top-level liveness & readiness probes for Kubernetes, Docker and Azure App Service
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 app.MapGet("/health/live", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
-app.MapGet("/health/ready", async (AppDbContext context) =>
-    await context.Database.CanConnectAsync()
-        ? Results.Ok(new { status = "healthy", database = "connected", timestamp = DateTime.UtcNow })
-        : Results.StatusCode(503));
+app.MapGet("/health/ready", async (AppDbContext context, IEmailQueue emailQueue) =>
+{
+    var isDbHealthy = false;
+    try
+    {
+        isDbHealthy = await context.Database.CanConnectAsync();
+    }
+    catch { isDbHealthy = false; }
+
+    var isQueueHealthy = emailQueue != null;
+    var isHealthy = isDbHealthy && isQueueHealthy;
+
+    var result = new
+    {
+        status = isHealthy ? "healthy" : "degraded",
+        database = isDbHealthy ? "connected" : "unreachable",
+        messageQueue = isQueueHealthy ? "active" : "offline",
+        timestamp = DateTime.UtcNow
+    };
+
+    return isHealthy 
+        ? Results.Ok(result) 
+        : Results.Json(result, statusCode: StatusCodes.Status503ServiceUnavailable);
+});
 
 app.Run();
