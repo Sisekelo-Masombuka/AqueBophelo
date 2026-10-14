@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const PRIMARY_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5094';
+const PRIMARY_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.PROD ? 'https://api.aquabophelo.app' : 'http://localhost:5094');
 const FALLBACK_BASE_URL = 'https://localhost:7154';
 
 /**

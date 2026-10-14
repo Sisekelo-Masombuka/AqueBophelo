@@ -19,10 +19,18 @@ public class TruckHub : Hub
     }
 
     /// <summary>
-    /// Subscribe to real-time updates for a specific truck
+    /// Subscribe to real-time updates for a specific truck.
+    /// Validates truck existence in database before adding connection to group.
     /// </summary>
     public async Task JoinTruckGroup(int truckId)
     {
+        var exists = await _context.Trucks.AnyAsync(t => t.Id == truckId);
+        if (!exists)
+        {
+            _logger.LogWarning("Connection {ConnectionId} attempted to join non-existent truck-{TruckId}", Context.ConnectionId, truckId);
+            return;
+        }
+
         await Groups.AddToGroupAsync(Context.ConnectionId, $"truck-{truckId}");
         _logger.LogInformation("Connection {ConnectionId} joined truck-{TruckId}", Context.ConnectionId, truckId);
     }
@@ -36,10 +44,18 @@ public class TruckHub : Hub
     }
 
     /// <summary>
-    /// Subscribe to real-time updates for all trucks in a municipal area (e.g. Galeshewe)
+    /// Subscribe to real-time updates for all trucks in a municipal area (e.g. Galeshewe).
+    /// Validates municipal area existence before adding connection to group.
     /// </summary>
     public async Task JoinAreaGroup(int areaId)
     {
+        var exists = await _context.Areas.AnyAsync(a => a.Id == areaId);
+        if (!exists)
+        {
+            _logger.LogWarning("Connection {ConnectionId} attempted to join non-existent area-{AreaId}", Context.ConnectionId, areaId);
+            return;
+        }
+
         await Groups.AddToGroupAsync(Context.ConnectionId, $"area-{areaId}");
         _logger.LogInformation("Connection {ConnectionId} joined area-{AreaId}", Context.ConnectionId, areaId);
     }

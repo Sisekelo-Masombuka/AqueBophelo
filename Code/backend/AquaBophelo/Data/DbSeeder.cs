@@ -13,16 +13,6 @@ public static class DbSeeder
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        // Ensure DB schema is created or migrated cleanly
-        if (context.Database.IsRelational())
-        {
-            await context.Database.MigrateAsync();
-        }
-        else
-        {
-            await context.Database.EnsureCreatedAsync();
-        }
-
         // 1. Seed Identity Roles
         string[] roles = { "Admin", "Driver", "Resident" };
         foreach (var role in roles)
@@ -133,8 +123,27 @@ public static class DbSeeder
             }
         }
 
-        // 4. Seed Single Pristine Master Admin Account
-        await SeedUser("admin@aquabophelo.app", "Sol Plaatje Municipal Admin", "Admin", "SolPlaatje2026!");
+        // 4. Seed Master Administrator Account from Protected Configuration
+        var configuration = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
+        var hostEnvironment = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Hosting.IHostEnvironment>();
+
+        var adminEmail = configuration["Admin:Email"] ?? configuration["ADMIN_EMAIL"] ?? "admin@aquabophelo.app";
+        var adminPassword = configuration["Admin:InitialPassword"] ?? configuration["ADMIN_INITIAL_PASSWORD"];
+
+        // In local development only, provide a fallback if unset
+        if (string.IsNullOrWhiteSpace(adminPassword) && hostEnvironment.IsDevelopment())
+        {
+            adminPassword = "SolPlaatje2026!";
+        }
+
+        if (!string.IsNullOrWhiteSpace(adminPassword))
+        {
+            await SeedUser(adminEmail, "Sol Plaatje Municipal Admin", "Admin", adminPassword);
+        }
+        else
+        {
+            Console.WriteLine("[DbSeeder] Notice: 'ADMIN_INITIAL_PASSWORD' environment variable is not configured. Skipping automatic admin provisioning in production.");
+        }
 
         // Purge legacy mock/test resident accounts if present
         string[] testEmailsToPurge = { "admin@aquabophelo.gov.za", "nomcebo.resident@gmail.com", "resident@aquabophelo.gov.za", "driver@aquabophelo.gov.za", "sipho.driver@aquabophelo.gov.za" };

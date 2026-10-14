@@ -86,15 +86,27 @@ public class AuthService : IAuthService
         }
         await _userManager.AddToRoleAsync(user, "Resident");
 
-        // Send Email Verification OTP
-        try
+        // Check if user already verified their email during the registration flow (e.g. Step 2 OTP in Register.jsx)
+        var hasVerifiedOtp = await _context.EmailOtps.AnyAsync(o =>
+            o.Email == normalizedEmail &&
+            o.Purpose == "EmailVerification" &&
+            o.IsUsed &&
+            o.CreatedAt >= DateTime.UtcNow.AddMinutes(-30));
+
+        user.EmailConfirmed = hasVerifiedOtp;
+        await _userManager.UpdateAsync(user);
+
+        if (!hasVerifiedOtp)
         {
-            await SendEmailOtpAsync(dto.Email, "EmailVerification");
-        }
-        catch (Exception ex)
-        {
-            // Log notice, allow registration completion
-            System.Diagnostics.Debug.WriteLine($"Initial OTP send notice: {ex.Message}");
+            // Send initial Email Verification OTP if not yet verified
+            try
+            {
+                await SendEmailOtpAsync(dto.Email, "EmailVerification");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Initial OTP send notice: {ex.Message}");
+            }
         }
 
         return await GenerateJwtTokenAsync(user);
@@ -147,6 +159,14 @@ public class AuthService : IAuthService
             }
 
             throw new BadHttpRequestException("Invalid email or password.");
+        }
+
+        // Enforce Email Verification on Resident Accounts
+        var roles = await _userManager.GetRolesAsync(user);
+        var isAdminOrDriver = roles.Contains("Admin") || roles.Contains("Driver");
+        if (!user.EmailConfirmed && !isAdminOrDriver)
+        {
+            throw new BadHttpRequestException("Please verify your email address before signing in. Check your inbox for your 6-digit verification code.");
         }
 
         // Reset failed count on successful login

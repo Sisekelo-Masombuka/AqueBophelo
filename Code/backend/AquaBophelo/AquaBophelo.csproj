@@ -24,6 +24,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
     <PackageReference Include="RestSharp" Version="114.0.0" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.16.20" />
     <PackageReference Include="Sentry.AspNetCore" Version="6.12.0" />

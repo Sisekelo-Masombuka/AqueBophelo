@@ -242,7 +242,21 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Seed Database (Gated for safety and resiliency)
+// 1. Apply Database Migrations (Essential prerequisite - fails fast if relational schema cannot be migrated)
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (context.Database.IsRelational())
+    {
+        await context.Database.MigrateAsync();
+    }
+    else
+    {
+        await context.Database.EnsureCreatedAsync();
+    }
+}
+
+// 2. Seed Reference Data (Gated for safety and resiliency)
 var shouldSeed = app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("SEED_DATABASE", false);
 if (shouldSeed)
 {
@@ -254,7 +268,7 @@ if (shouldSeed)
     catch (Exception ex)
     {
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Non-fatal warning: Database seeding encountered an error on startup.");
+        logger.LogError(ex, "Non-fatal warning: Database reference data seeding encountered an error on startup.");
     }
 }
 

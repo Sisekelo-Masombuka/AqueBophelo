@@ -102,11 +102,11 @@ AquaBophelo/
 
 The database is seeded with a clean, out-of-the-box state containing the Master Administrator account, foundational municipal reservoirs (Newton Reservoir, Riverton Water Works), and available municipal tankers (`NC-542-KM`, `NC-882-KM`, `NC-104-KM`):
 
-| Role | Email Address | Initial Password | Privileges |
+| Role | Email Address | Initial Password Provisioning | Privileges |
 | :--- | :--- | :--- | :--- |
-| **Master Admin** | `admin@aquabophelo.app` | `SolPlaatje2026!` *(Configurable via `ADMIN_INITIAL_PASSWORD` in production)* | Full Municipal Control Center, Fleet & Route Management, User Administration, Outage Scheduling, Fault Ticket Review |
+| **Master Admin** | `admin@aquabophelo.app` | *Configured securely via `ADMIN_INITIAL_PASSWORD` (Local dev fallback: `SolPlaatje2026!`)* | Full Municipal Control Center, Fleet & Route Management, User Administration, Outage Scheduling, Fault Ticket Review |
 
-*Note: For production deployments, rotate `ADMIN_INITIAL_PASSWORD` and set `SEED_DATABASE=false` after initial database setup.*
+*Note: For production deployments, define `ADMIN_INITIAL_PASSWORD` in your hosting environment variables or Azure App Service Application Settings. If unset in production, automatic administrator provisioning is safely skipped to prevent unauthorized access.*
 
 ---
 

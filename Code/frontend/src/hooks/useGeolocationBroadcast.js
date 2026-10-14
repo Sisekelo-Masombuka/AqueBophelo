@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as signalR from '@microsoft/signalr';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5094';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.PROD ? 'https://api.aquabophelo.app' : 'http://localhost:5094');
 
 // Default Kimberley route waypoints for demo simulation
 const KIMBERLEY_WAYPOINTS = [
