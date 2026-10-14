@@ -41,8 +41,7 @@ AquaBophelo/
 │       ├── public/                   Static assets, icons, and Firebase service workers
 │       └── package.json              Vite build scripts and client dependency specifications
 ├── Demo/
-│   ├── AquaBophelo_System_Demonstration.webm   Official video demonstration (Git LFS)
-│   └── AquaBophelo_Video_Demo_Recording_Script.md  5-minute timed presentation script
+│   └── AquaBophelo_System_Demonstration.mp4    Official system demonstration video (Git LFS)
 ├── Dox/
 │   ├── Project Proposal.pdf          Phase 1: Project Proposal & Scope Definition
 │   ├── Requirements Specifications.pdf Phase 2: Software Requirements Specification (SRS)
@@ -209,11 +208,10 @@ All official phase submission documents are located in [`Dox/`](Dox/):
 
 ---
 
-## 🎥 Demonstration Video & Script
+## 🎥 Demonstration Video
 
 Located in [`Demo/`](Demo/):
-- **Video:** `AquaBophelo_System_Demonstration.webm` (tracked via Git LFS).
-- **Script:** [`AquaBophelo_Video_Demo_Recording_Script.md`](Demo/AquaBophelo_Video_Demo_Recording_Script.md) — Timed 5-minute walkthrough covering Resident, Driver, and Administrator workflows.
+- **Video:** `AquaBophelo_System_Demonstration.mp4` (tracked via Git LFS) — Walkthrough covering Resident, Driver, and Administrator workflows.
 
 ---
 
