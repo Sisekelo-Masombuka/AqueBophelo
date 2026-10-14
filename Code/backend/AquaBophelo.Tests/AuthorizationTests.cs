@@ -132,6 +132,23 @@ public class AuthorizationTests
 
     [Fact]
     [Trait("Category", "Security")]
+    public void TruckHub_JoinTruckGroup_HasAuthorizeDriverAdminAttribute()
+    {
+        // Arrange
+        var methodInfo = typeof(AquaBophelo.Hubs.TruckHub).GetMethod(nameof(AquaBophelo.Hubs.TruckHub.JoinTruckGroup));
+
+        // Act
+        var authorizeAttribute = methodInfo?.GetCustomAttributes(typeof(AuthorizeAttribute), false)
+            .Cast<AuthorizeAttribute>()
+            .FirstOrDefault();
+
+        // Assert
+        Assert.NotNull(authorizeAttribute);
+        Assert.Equal("Driver,Admin", authorizeAttribute.Roles);
+    }
+
+    [Fact]
+    [Trait("Category", "Security")]
     public void AuthController_SendDeleteAccountOtp_HasAuthorizeAttribute()
     {
         // Arrange

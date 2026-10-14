@@ -160,8 +160,23 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
-        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-            ?? new[] { "http://localhost:5173", "https://localhost:5173", "https://aquabophelo.app", "https://www.aquabophelo.app" };
+        var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+        string[] allowedOrigins;
+
+        if (builder.Environment.IsProduction())
+        {
+            // In Production, strictly require production origins and never fallback to localhost
+            allowedOrigins = configuredOrigins != null && configuredOrigins.Length > 0
+                ? configuredOrigins
+                : new[] { "https://aquabophelo.app", "https://www.aquabophelo.app" };
+        }
+        else
+        {
+            // In Development, permit local Vite & Docker dev servers
+            allowedOrigins = configuredOrigins != null && configuredOrigins.Length > 0
+                ? configuredOrigins
+                : new[] { "http://localhost:5173", "https://localhost:5173", "http://localhost:3000", "https://aquabophelo.app", "https://www.aquabophelo.app" };
+        }
 
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
@@ -242,8 +257,10 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// 1. Apply Database Schema Migrations (gated by MIGRATE_ON_START, default true in Development, configurable in Production)
-var shouldMigrate = app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("MIGRATE_ON_START", true);
+// 1. Apply Database Schema Migrations (default true in Development, strictly false in Production unless explicitly commanded)
+var shouldMigrate = app.Environment.IsDevelopment()
+    ? builder.Configuration.GetValue<bool>("MIGRATE_ON_START", true)
+    : builder.Configuration.GetValue<bool>("MIGRATE_ON_START", false);
 if (shouldMigrate)
 {
     try

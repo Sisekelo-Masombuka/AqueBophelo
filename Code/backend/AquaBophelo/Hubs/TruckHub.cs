@@ -53,8 +53,9 @@ public class TruckHub : Hub
 
     /// <summary>
     /// Subscribe to real-time updates for a specific truck.
-    /// Secured: Validates truck existence and verifies authorization.
+    /// Strictly restricted to Drivers and Administrators. Residents receive public fleet telemetry via public-fleet or area groups.
     /// </summary>
+    [Authorize(Roles = "Driver,Admin")]
     public async Task JoinTruckGroup(int truckId)
     {
         var truck = await _context.Trucks.FirstOrDefaultAsync(t => t.Id == truckId);
@@ -69,7 +70,7 @@ public class TruckHub : Hub
         var isAdmin = user?.IsInRole("Admin") ?? false;
         var isDriver = user?.IsInRole("Driver") ?? false;
 
-        // Drivers can only join their assigned truck; Admins can join any truck; Residents can join active fleet tankers
+        // Drivers can only join their assigned truck; Admins can join any truck
         if (isDriver && !isAdmin && truck.DriverId != userId)
         {
             _logger.LogWarning("Driver {DriverId} attempted to join unauthorized truck-{TruckId}", userId, truckId);
@@ -83,6 +84,7 @@ public class TruckHub : Hub
     /// <summary>
     /// Unsubscribe from a truck's updates
     /// </summary>
+    [Authorize(Roles = "Driver,Admin")]
     public async Task LeaveTruckGroup(int truckId)
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"truck-{truckId}");
@@ -90,7 +92,7 @@ public class TruckHub : Hub
 
     /// <summary>
     /// Subscribe to real-time updates for all trucks in a municipal area (e.g. Galeshewe).
-    /// Validates municipal area existence before adding connection to group.
+    /// Validates municipal area existence and ensures residents subscribe only to their registered area.
     /// </summary>
     public async Task JoinAreaGroup(int areaId)
     {
@@ -99,6 +101,23 @@ public class TruckHub : Hub
         {
             _logger.LogWarning("Connection {ConnectionId} attempted to join non-existent area-{AreaId}", Context.ConnectionId, areaId);
             return;
+        }
+
+        var user = Context.User;
+        var userId = user?.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = user?.IsInRole("Admin") ?? false;
+        var isDriver = user?.IsInRole("Driver") ?? false;
+
+        // For residents with a registered area, enforce that they subscribe to their registered area
+        if (!isAdmin && !isDriver && userId != null)
+        {
+            var appUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (appUser?.AreaId.HasValue == true && appUser.AreaId.Value != areaId)
+            {
+                _logger.LogWarning("Resident {UserId} attempted to join unauthorized area-{AreaId} (Registered Area: {RegisteredArea})",
+                    userId, areaId, appUser.AreaId.Value);
+                return;
+            }
         }
 
         await Groups.AddToGroupAsync(Context.ConnectionId, $"area-{areaId}");

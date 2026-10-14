@@ -4,7 +4,7 @@ services:
     container_name: aquabophelo-sql
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD:-AquaBophelo_Dev_Mssql_Pass_2026!}
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
     ports:
       - "1433:1433"
     volumes:
@@ -17,14 +17,15 @@ services:
     container_name: aquabophelo-api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=db;Database=AquaBopheloDb;User Id=sa;Password=${MSSQL_SA_PASSWORD:-AquaBophelo_Dev_Mssql_Pass_2026!};TrustServerCertificate=True;
-      - Jwt__Key=${JWT_KEY:-AquaBopheloDevelopmentKeyForLocalDockerComposeEnvironmentOnly2026!}
-      - Jwt__Issuer=AquaBopheloAPI
-      - Jwt__Audience=AquaBopheloClient
-      - Jwt__ExpiryMinutes=120
+      - ConnectionStrings__DefaultConnection=Server=db;Database=AquaBopheloDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=${JWT_ISSUER:-AquaBopheloAPI}
+      - Jwt__Audience=${JWT_AUDIENCE:-AquaBopheloClient}
+      - Jwt__ExpiryMinutes=${JWT_EXPIRY_MINUTES:-120}
       - SEED_DATABASE=${SEED_DATABASE:-false}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@aquabophelo.app}
-      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD:-}
+      - MIGRATE_ON_START=${MIGRATE_ON_START:-true}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD}
     ports:
       - "5094:8080"
     depends_on:
@@ -35,7 +36,7 @@ services:
       context: ./Code/frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:5094}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
     container_name: aquabophelo-spa
     ports:
       - "3000:80"

@@ -98,15 +98,15 @@ AquaBophelo/
 
 ---
 
-## 🔒 Master Credentials for Demonstration & Evaluation
+## 🔒 Administrator Provisioning & Operational Security
 
-The database is seeded with a clean, out-of-the-box state containing the Master Administrator account, foundational municipal reservoirs (Newton Reservoir, Riverton Water Works), and available municipal tankers (`NC-542-KM`, `NC-882-KM`, `NC-104-KM`):
+Administrator accounts are provisioned **strictly when explicitly configured via protected environment variables** (`ADMIN_EMAIL` and `ADMIN_INITIAL_PASSWORD`). Production deployments must never rely on repository defaults.
 
-| Role | Email Address | Initial Password Provisioning | Privileges |
+| Role | Administrative Identity Provisioning | Initial Credential Setup | Privileges |
 | :--- | :--- | :--- | :--- |
-| **Master Admin** | `admin@aquabophelo.app` | *Configured securely via `ADMIN_INITIAL_PASSWORD` environment variable or `.NET user-secrets`* | Full Municipal Control Center, Fleet & Route Management, User Administration, Outage Scheduling, Fault Ticket Review |
+| **Municipal Admin** | Configured via `ADMIN_EMAIL` (e.g., `admin@aquabophelo.app`) | Configured securely via `ADMIN_INITIAL_PASSWORD` environment variable or `.NET user-secrets` | Full Municipal Control Center, Fleet & Route Management, User Administration, Outage Scheduling, Fault Ticket Review |
 
-*Note: For production and local environments, define `ADMIN_INITIAL_PASSWORD` in your hosting environment variables, `.env` file, or `.NET user-secrets` (`dotnet user-secrets set "Admin:InitialPassword" "YourStrongSecretPassword!"`). If unset in production, automatic administrator provisioning is safely skipped to prevent unauthorized access.*
+*Note: For production and local environments, define `ADMIN_INITIAL_PASSWORD` and `ADMIN_EMAIL` in your hosting environment variables, Azure App Service configuration, or `.NET user-secrets` (`dotnet user-secrets set "Admin:InitialPassword" "YourStrongSecretPassword!"`). If unset in production, automatic administrator provisioning is safely skipped to prevent unauthorized access.*
 
 ---
 
