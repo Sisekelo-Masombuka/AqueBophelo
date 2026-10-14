@@ -52,15 +52,14 @@ public class R2StorageService : IR2StorageService
     {
         ValidateFileMetadata(fileName, contentType);
 
+        string safeFileName = Path.GetFileName(fileName).Replace(" ", "_");
+        string objectKey = $"reports/{Guid.NewGuid()}_{safeFileName}";
+
         if (string.IsNullOrWhiteSpace(_options.AccountId) || string.IsNullOrWhiteSpace(_options.AccessKeyId) || string.IsNullOrWhiteSpace(_options.SecretAccessKey))
         {
             _logger.LogWarning("[R2StorageService] Cloudflare R2 credentials are not fully set in local secrets. Returning fallback upload path.");
-            string fallbackKey = $"reports/{Guid.NewGuid()}_{Path.GetFileName(fileName)}";
-            return ("http://localhost/mock-upload", "/pipe_leak.jpg", fallbackKey);
+            return ("/api/v1/reports/upload-photo", $"/api/v1/reports/photos/{objectKey}", objectKey);
         }
-
-        string safeFileName = Path.GetFileName(fileName).Replace(" ", "_");
-        string objectKey = $"reports/{Guid.NewGuid()}_{safeFileName}";
 
         var s3Config = new AmazonS3Config
         {
@@ -94,15 +93,21 @@ public class R2StorageService : IR2StorageService
     {
         ValidateFileMetadata(fileName, contentType);
 
-        if (string.IsNullOrWhiteSpace(_options.AccountId) || string.IsNullOrWhiteSpace(_options.AccessKeyId) || string.IsNullOrWhiteSpace(_options.SecretAccessKey))
-        {
-            _logger.LogWarning("[R2StorageService] Cloudflare R2 credentials are not fully set in local secrets. Returning fallback upload path.");
-            string fallbackKey = $"reports/{Guid.NewGuid()}_{Path.GetFileName(fileName)}";
-            return ("/pipe_leak.jpg", fallbackKey);
-        }
-
         string safeFileName = Path.GetFileName(fileName).Replace(" ", "_");
         string objectKey = $"reports/{Guid.NewGuid()}_{safeFileName}";
+
+        if (string.IsNullOrWhiteSpace(_options.AccountId) || string.IsNullOrWhiteSpace(_options.AccessKeyId) || string.IsNullOrWhiteSpace(_options.SecretAccessKey))
+        {
+            _logger.LogWarning("[R2StorageService] Cloudflare R2 credentials are not fully set in local secrets. Saving to local uploads directory.");
+            string localDir = Path.Combine(AppContext.BaseDirectory, "uploads", "reports");
+            Directory.CreateDirectory(localDir);
+            string localFilePath = Path.Combine(localDir, Path.GetFileName(objectKey));
+            using (var fileStreamDest = new FileStream(localFilePath, FileMode.Create))
+            {
+                await fileStream.CopyToAsync(fileStreamDest);
+            }
+            return ($"/api/v1/reports/photos/{objectKey}", objectKey);
+        }
 
         var s3Config = new AmazonS3Config
         {
@@ -136,7 +141,22 @@ public class R2StorageService : IR2StorageService
     {
         if (string.IsNullOrWhiteSpace(_options.AccountId) || string.IsNullOrWhiteSpace(_options.AccessKeyId) || string.IsNullOrWhiteSpace(_options.SecretAccessKey))
         {
-            _logger.LogWarning("[R2StorageService] Credentials not configured. Unable to fetch object stream for {ObjectKey}", objectKey);
+            string cleanObjKey = objectKey.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
+            string localFilePath = Path.Combine(AppContext.BaseDirectory, "uploads", cleanObjKey);
+            if (File.Exists(localFilePath))
+            {
+                var fs = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                string ext = Path.GetExtension(localFilePath).ToLowerInvariant();
+                string mime = ext switch
+                {
+                    ".png" => "image/png",
+                    ".webp" => "image/webp",
+                    ".gif" => "image/gif",
+                    _ => "image/jpeg"
+                };
+                return (fs, mime);
+            }
+            _logger.LogWarning("[R2StorageService] Credentials not configured and local file not found at {LocalPath}", localFilePath);
             return (null, "image/jpeg");
         }
 

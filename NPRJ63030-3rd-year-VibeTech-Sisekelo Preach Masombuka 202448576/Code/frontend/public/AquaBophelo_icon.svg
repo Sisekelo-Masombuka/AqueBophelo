@@ -1,0 +1,31 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="abIconNavy" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#152e52"/>
+      <stop offset="100%" stop-color="#0f223d"/>
+    </linearGradient>
+    <linearGradient id="abIconBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d70b8"/>
+    </linearGradient>
+    <linearGradient id="abIconGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ea83a"/>
+      <stop offset="100%" stop-color="#2e7d32"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base Badge -->
+  <rect x="4" y="4" width="92" height="92" rx="22" fill="url(#abIconNavy)"/>
+  
+  <!-- Outer Green Motto Ring/Arc -->
+  <path d="M 22 72 C 14 55, 18 35, 34 22 C 42 16, 52 14, 62 16" fill="none" stroke="url(#abIconGreen)" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Water Droplet Mark -->
+  <path d="M 50 20 C 50 20, 74 52, 74 64 C 74 77.2, 63.2 88, 50 88 C 36.8 88, 26 77.2, 26 64 C 26 52, 50 20, 50 20 Z" fill="url(#abIconBlue)"/>
+  
+  <!-- Inner Droplet Reflection Highlight -->
+  <path d="M 42 36 C 42 36, 34 52, 34 62 C 34 68, 38 72, 42 74" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.65"/>
+  
+  <!-- Green Growth Leaf Accent on Droplet -->
+  <path d="M 62 58 C 72 56, 78 46, 78 46 C 78 46, 68 48, 62 58 Z" fill="url(#abIconGreen)"/>
+</svg>

@@ -1,0 +1,10 @@
+Name and Surname Student Number
+
+1. Sisekelo Preach Masombuka 202448576 (Team Leader)
+2. Nomcebo Nkosi 202402024
+3. Nosipho Mbatha 202406965
+4. Jabulile Shabalala 202324579
+
+Link to git repo:
+
+https://github.com/Sisekelo-Masombuka/AqueBophelo

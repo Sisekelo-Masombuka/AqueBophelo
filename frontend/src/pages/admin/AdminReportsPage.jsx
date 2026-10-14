@@ -17,35 +17,24 @@ export function AdminReportsPage() {
   const [report, setReport] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Mock reporting data fallback matching backend ReportsController.cs
-  const mockReport = {
-    totalTrucks: 3,
-    availableTrucks: 1,
-    onTripTrucks: 2,
+  const defaultEmptyReport = {
+    totalTrucks: 0,
+    availableTrucks: 0,
+    onTripTrucks: 0,
     maintenanceTrucks: 0,
-    totalFleetCapacityLitres: 35000,
-
-    totalTrips: 12,
-    activeTrips: 2,
-    completedTrips: 10,
-    totalStopsCompleted: 48,
-    totalLitresDelivered: 120000,
-
-    totalDams: 2,
-    averageDamLevelPercent: 72.3,
+    totalFleetCapacityLitres: 0,
+    totalTrips: 0,
+    activeTrips: 0,
+    completedTrips: 0,
+    totalStopsCompleted: 0,
+    totalLitresDelivered: 0,
+    totalDams: 0,
+    averageDamLevelPercent: 0,
     criticalDamsCount: 0,
-    activeAlertsCount: 2,
-    totalMunicipalAreas: 3,
-
-    areasSummary: [
-      { areaId: 1, areaName: 'Galeshewe', routesCount: 3, activeTripsCount: 1 },
-      { areaId: 2, areaName: 'Kimberley Central', routesCount: 2, activeTripsCount: 1 },
-      { areaId: 3, areaName: 'Roodepan', routesCount: 2, activeTripsCount: 0 },
-    ],
-    damsSummary: [
-      { damId: 1, damName: 'Newton Reservoir', capacityMegaLitres: 92.5, latestLevelPercent: 62.5, statusBand: 'Healthy', statusColor: 'Green' },
-      { damId: 2, damName: 'Riverton Water Works', capacityMegaLitres: 150.0, latestLevelPercent: 82.0, statusBand: 'Healthy', statusColor: 'Green' },
-    ],
+    activeAlertsCount: 0,
+    totalMunicipalAreas: 0,
+    areasSummary: [],
+    damsSummary: [],
   };
 
   const fetchReports = async () => {
@@ -55,11 +44,11 @@ export function AdminReportsPage() {
       if (res.data) {
         setReport(res.data);
       } else {
-        setReport(mockReport);
+        setReport(defaultEmptyReport);
       }
     } catch (err) {
-      console.warn('Using local reporting analytics fallback:', err);
-      setReport(mockReport);
+      console.warn('API reporting summary error:', err);
+      setReport(defaultEmptyReport);
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +59,7 @@ export function AdminReportsPage() {
   }, []);
 
   const handleExportCSV = () => {
-    const reportData = report || mockReport;
+    const reportData = report || defaultEmptyReport;
     const dateStr = new Date().toISOString().split('T')[0];
 
     let csvContent = `Sol Plaatje Local Municipality - Water Operations Analytics Report\n`;
@@ -107,7 +96,7 @@ export function AdminReportsPage() {
   };
 
   const handleExportPDF = () => {
-    const reportData = report || mockReport;
+    const reportData = report || defaultEmptyReport;
     const dateStr = new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
 
     const printWindow = window.open('', '_blank');
@@ -220,7 +209,7 @@ export function AdminReportsPage() {
     printWindow.document.close();
   };
 
-  const data = report || mockReport;
+  const data = report || defaultEmptyReport;
 
   return (
     <div className="space-y-6">

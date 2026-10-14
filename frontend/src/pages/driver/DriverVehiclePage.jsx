@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Truck, ShieldCheck, AlertTriangle, CheckCircle2, ClipboardCheck, Clock } from 'lucide-react';
 import apiClient from '../../api/client';
 import StatusBadge from '../../components/StatusBadge';
+import { useAuth } from '../../auth/AuthContext';
 
 export function DriverDriverVehiclePage() {
+  const { user } = useAuth();
+
   const [vehicle, setVehicle] = useState({
     registration: '542-KM NC',
     model: 'Mercedes-Benz Atego 1529 4x2 Water Tanker',
     capacityLitres: 10000,
     status: 'Available',
-    assignedDriver: 'Sipho Dlamini (DRV-8492)',
-    lastCheckAt: 'Today, 07:30 CAT'
+    assignedDriver: user ? `${user.fullName || user.email}` : 'Assigned Driver',
+    lastCheckAt: 'Shift start (CAT)'
   });
 
   const [brakes, setBrakes] = useState(true);
@@ -30,19 +33,31 @@ export function DriverDriverVehiclePage() {
     async function loadVehicle() {
       try {
         const res = await apiClient.get('/api/v1/driver/today-trip');
-        if (res.data && res.data.truckRegistration) {
+        if (res.data) {
           setVehicle(prev => ({
             ...prev,
-            registration: res.data.truckRegistration,
-            status: res.data.status === 'In Progress' ? 'OnTrip' : 'Available'
+            registration: res.data.vehicle?.registration || res.data.truckRegistration || prev.registration,
+            capacityLitres: res.data.vehicle?.capacityLitres || prev.capacityLitres,
+            status: res.data.status === 'Active' || res.data.status === 'In Progress' ? 'OnTrip' : 'Available',
+            assignedDriver: res.data.driverName || (user?.fullName ? `${user.fullName}` : 'Municipal Driver')
+          }));
+        } else if (user) {
+          setVehicle(prev => ({
+            ...prev,
+            assignedDriver: `${user.fullName || user.email}`
           }));
         }
       } catch (err) {
-        console.warn('Backend unavailable, using default vehicle settings', err);
+        if (user) {
+          setVehicle(prev => ({
+            ...prev,
+            assignedDriver: `${user.fullName || user.email}`
+          }));
+        }
       }
     }
     loadVehicle();
-  }, []);
+  }, [user]);
 
   const handleVehicleCheckSubmit = async (e) => {
     e.preventDefault();

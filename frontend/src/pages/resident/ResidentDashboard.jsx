@@ -17,41 +17,8 @@ export function ResidentDashboard() {
   const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
   const [isReportIssueModalOpen, setIsReportIssueModalOpen] = useState(false);
 
-  const [myIssues, setMyIssues] = useState([
-    {
-      id: 1,
-      ticketId: '#SPM-2026-1042',
-      issueType: 'Low Water Pressure',
-      area: 'Galeshewe Zone 3',
-      streetAddress: '145 Nobengula Avenue',
-      description: 'Low water pressure since early morning.',
-      status: 'In Progress',
-      adminNotes: 'Municipal engineers dispatched to inspect pressure valve.',
-      createdAt: 'Today, 08:30',
-    },
-  ]);
-
-  useEffect(() => {
-    fetchMyIssues();
-  }, []);
-
-  const fetchMyIssues = async () => {
-    try {
-      const response = await apiClient.get('/api/v1/reports/issues/my');
-      if (Array.isArray(response.data) && response.data.length > 0) {
-        setMyIssues(response.data);
-      }
-    } catch (err) {
-      console.warn('API get my issues fallback:', err);
-    }
-  };
-
-  const handleIssueReported = (newIssue) => {
-    setMyIssues((prev) => [newIssue, ...prev]);
-  };
-
-  // Dams data matching backend DbSeeder
-  const dams = [
+  const [myIssues, setMyIssues] = useState([]);
+  const [dams, setDams] = useState([
     {
       id: 1,
       name: 'Newton Reservoir',
@@ -74,60 +41,46 @@ export function ResidentDashboard() {
       latestLevel: 82.0,
       lastUpdated: 'Today at 07:15 (CAT)',
     },
-  ];
+  ]);
+  const [trucks, setTrucks] = useState([]);
+  const [alerts, setAlerts] = useState([]);
 
-  // Active water trucks matching backend seeded fleet
-  const trucks = [
-    {
-      id: 1,
-      registrationNumber: '542-KM NC',
-      capacityLitres: 10000,
-      status: 'OnTrip',
-      lastLatitude: -28.7183,
-      lastLongitude: 24.7319,
-      driverName: 'Sipho Dlamini',
-      route: 'Galeshewe Zone 3 Morning Route',
-    },
-    {
-      id: 2,
-      registrationNumber: '882-KM NC',
-      capacityLitres: 15000,
-      status: 'OnTrip',
-      lastLatitude: -28.7419,
-      lastLongitude: 24.7719,
-      driverName: 'Lerato Motsepe',
-      route: 'Kimberley Central Bulk Delivery',
-    },
-    {
-      id: 3,
-      registrationNumber: '104-KM NC',
-      capacityLitres: 10000,
-      status: 'Available',
-      lastLatitude: -28.6921,
-      lastLongitude: 24.7088,
-      driverName: 'Tshepo Khumalo',
-      route: 'Roodepan Depot Standby',
-    },
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const alerts = [
-    {
-      id: 'alt-1',
-      title: 'Water Tanker Dispatched to Galeshewe',
-      message: 'Tanker 542-KM NC has departed for Galeshewe Zone 3. Scheduled stops: Community Hall and Kagisho Clinic.',
-      severity: 'Healthy',
-      area: 'Galeshewe',
-      timestamp: 'Today, 09:15 CAT',
-    },
-    {
-      id: 'alt-2',
-      title: 'Newton Reservoir Scheduled Evening Pressure Management',
-      message: 'Nightly pressure management between 21:00 and 04:00 to conserve Newton Reservoir reserves.',
-      severity: 'Watch',
-      area: 'Kimberley Central',
-      timestamp: 'Today, 06:00 CAT',
-    },
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      const [issuesRes, damsRes, trucksRes, alertsRes] = await Promise.allSettled([
+        apiClient.get('/api/v1/reports/issues/my'),
+        apiClient.get('/api/v1/dams'),
+        apiClient.get('/api/v1/trucks'),
+        apiClient.get('/api/v1/alerts'),
+      ]);
+
+      if (issuesRes.status === 'fulfilled' && Array.isArray(issuesRes.value.data)) {
+        setMyIssues(issuesRes.value.data);
+      }
+      if (damsRes.status === 'fulfilled' && Array.isArray(damsRes.value.data) && damsRes.value.data.length > 0) {
+        setDams(damsRes.value.data.map(d => ({
+          ...d,
+          latestLevel: d.latestLevelPercent ?? d.latestLevel ?? 50
+        })));
+      }
+      if (trucksRes.status === 'fulfilled' && Array.isArray(trucksRes.value.data)) {
+        setTrucks(trucksRes.value.data);
+      }
+      if (alertsRes.status === 'fulfilled' && Array.isArray(alertsRes.value.data)) {
+        setAlerts(alertsRes.value.data);
+      }
+    } catch (err) {
+      console.warn('Error loading resident dashboard data:', err);
+    }
+  };
+
+  const handleIssueReported = (newIssue) => {
+    setMyIssues((prev) => [newIssue, ...prev]);
+  };
 
   return (
     <div className="space-y-8 pb-12">

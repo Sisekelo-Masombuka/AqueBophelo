@@ -6,65 +6,9 @@ export function DriverActivityPage() {
   const [activeTab, setActiveTab] = useState('trips'); // 'trips' | 'deliveries' | 'problems'
   const [loading, setLoading] = useState(true);
   const [activityData, setActivityData] = useState({
-    completedTrips: [
-      {
-        id: 101,
-        routeName: 'Galeshewe Zone 3 Morning Route',
-        truckRegistration: '542-KM NC',
-        dateCompleted: '2026-09-28 14:30 CAT',
-        totalStops: 3,
-        totalLitres: 9500,
-        status: 'Completed'
-      },
-      {
-        id: 100,
-        routeName: 'Roodepan Emergency Water Supply',
-        truckRegistration: '542-KM NC',
-        dateCompleted: '2026-09-27 16:15 CAT',
-        totalStops: 4,
-        totalLitres: 12000,
-        status: 'Completed'
-      }
-    ],
-    previousDeliveries: [
-      {
-        id: 501,
-        locationName: 'Galeshewe Police Station Water Tank',
-        litres: 3500,
-        completedAt: '2026-09-28 08:45 CAT',
-        notes: 'Full tank fill. Flow rate normal.'
-      },
-      {
-        id: 502,
-        locationName: 'Tshwarelela Primary Drop Point',
-        litres: 3000,
-        completedAt: '2026-09-28 10:20 CAT',
-        notes: 'Delivered to school reservoir.'
-      },
-      {
-        id: 503,
-        locationName: 'Mayibuye Community Centre',
-        litres: 3000,
-        completedAt: '2026-09-28 14:10 CAT',
-        notes: 'Community hydrants serviced.'
-      }
-    ],
-    reportedProblems: [
-      {
-        id: 801,
-        category: 'Road-access problem',
-        description: 'Road construction block on Galeshewe main road detour required.',
-        reportedAt: '2026-09-28 09:10 CAT',
-        status: 'Acknowledged'
-      },
-      {
-        id: 802,
-        category: 'Vehicle problem',
-        description: 'Low pressure tire warning light on front left tire.',
-        reportedAt: '2026-09-25 07:45 CAT',
-        status: 'Resolved'
-      }
-    ]
+    completedTrips: [],
+    previousDeliveries: [],
+    reportedProblems: []
   });
 
   useEffect(() => {
@@ -80,7 +24,7 @@ export function DriverActivityPage() {
           });
         }
       } catch (err) {
-        console.warn('Backend unavailable, using initial driver activity history', err);
+        console.info('No driver activity logs found or backend offline:', err?.response?.status || err.message);
       } finally {
         setLoading(false);
       }

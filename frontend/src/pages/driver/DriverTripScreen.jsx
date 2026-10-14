@@ -35,21 +35,9 @@ export function DriverTripScreen() {
   const { t } = useLanguage();
 
   // Active Trip State
-  const [activeTrip, setActiveTrip] = useState({
-    id: 1,
-    vehicle: { registration: '542-KM NC', capacityLitres: 10000, status: 'OnTrip' },
-    route: { id: 1, name: 'Galeshewe Zone 3 Morning Route' },
-    status: 'Active',
-    nextDestination: 'Galeshewe Police Station Water Point',
-    nextStopEta: '8 mins (1.2 km)',
-    stops: [
-      { id: 101, sequence: 1, stopName: 'Galeshewe Police Station Water Point', stopStatus: 'Pending', completed: false },
-      { id: 102, sequence: 2, stopName: 'Tshwarelela Primary Drop Point', stopStatus: 'Pending', completed: false },
-      { id: 103, sequence: 3, stopName: 'Mayibuye Community Centre', stopStatus: 'Pending', completed: false },
-    ],
-  });
+  const [activeTrip, setActiveTrip] = useState(null);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState(null);
   const [isEndTripModalOpen, setIsEndTripModalOpen] = useState(false);
 
@@ -95,9 +83,12 @@ export function DriverTripScreen() {
       const res = await apiClient.get('/api/v1/driver/today-trip');
       if (res.data) {
         setActiveTrip(res.data);
+      } else {
+        setActiveTrip(null);
       }
     } catch (err) {
-      console.warn('Backend unavailable, using initial seeded driver trip.', err);
+      console.info('No active driver trip scheduled currently:', err?.response?.status || err.message);
+      setActiveTrip(null);
     } finally {
       setLoading(false);
     }
@@ -317,6 +308,45 @@ export function DriverTripScreen() {
     startBroadcast();
     setFeedback({ type: 'success', message: 'New delivery trip commenced! GPS streaming active.' });
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 text-center text-slate-500">
+        <div className="animate-spin w-8 h-8 border-4 border-[#152e52] border-t-transparent rounded-full mx-auto mb-3"></div>
+        <p className="text-sm font-medium">Checking today&apos;s assigned delivery run...</p>
+      </div>
+    );
+  }
+
+  if (!activeTrip) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-5 pb-12 font-sans text-slate-800">
+        <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-xs text-center">
+          <div className="w-14 h-14 bg-blue-50 text-[#152e52] rounded-full flex items-center justify-center mx-auto mb-4">
+            <Truck className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-bold text-[#152e52] font-serif">No Active Delivery Run Assigned</h2>
+          <p className="text-sm text-slate-600 mt-2 max-w-md mx-auto">
+            You currently have no scheduled water distribution trip assigned for this shift. When Sol Plaatje Municipal Dispatch assigns a route, your tanker itinerary, stops, and live GPS broadcast will activate automatically here.
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <button
+              onClick={loadTodayTrip}
+              className="px-4 py-2 bg-[#152e52] hover:bg-[#0f223d] text-white text-xs md:text-sm font-semibold rounded-md transition-colors cursor-pointer"
+            >
+              Refresh Trip Status
+            </button>
+            <button
+              onClick={() => navigate('/driver/activity')}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs md:text-sm font-medium rounded-md transition-colors cursor-pointer"
+            >
+              View Activity History
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-5 pb-12 font-sans text-slate-800">

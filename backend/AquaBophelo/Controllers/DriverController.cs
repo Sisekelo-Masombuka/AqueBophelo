@@ -261,8 +261,8 @@ public class DriverController : ControllerBase
     [HttpPost("report-problem")]
     public async Task<IActionResult> ReportProblem([FromBody] CreateDriverProblemDto dto)
     {
-        var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "drv-demo";
-        var driverName = User.FindFirstValue(ClaimTypes.Name) ?? "Sipho Dlamini";
+        var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "drv-staff";
+        var driverName = User.FindFirstValue("fullName") ?? User.FindFirstValue(ClaimTypes.Name) ?? User.FindFirstValue(ClaimTypes.Email) ?? "Municipal Driver";
 
         var problem = new DriverProblemReport
         {
@@ -284,14 +284,30 @@ public class DriverController : ControllerBase
     }
 
     /// <summary>
+    /// GET: api/v1/driver/problems
+    /// Admin retrieves all reported driver problems/incidents.
+    /// </summary>
+    [HttpGet("problems")]
+    public async Task<IActionResult> GetDriverProblems()
+    {
+        var problems = await _context.DriverProblems
+            .OrderByDescending(p => p.ReportedAt)
+            .Take(50)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Ok(problems);
+    }
+
+    /// <summary>
     /// POST: api/v1/driver/vehicle-check
     /// Section 2.3.2: Perform a pre-trip vehicle check
     /// </summary>
     [HttpPost("vehicle-check")]
     public async Task<IActionResult> PerformVehicleCheck([FromBody] CreateVehicleCheckDto dto)
     {
-        var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "drv-demo";
-        var driverName = User.FindFirstValue(ClaimTypes.Name) ?? "Sipho Dlamini";
+        var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "drv-staff";
+        var driverName = User.FindFirstValue("fullName") ?? User.FindFirstValue(ClaimTypes.Name) ?? User.FindFirstValue(ClaimTypes.Email) ?? "Municipal Driver";
 
         bool allPass = dto.BrakesOk && dto.TiresOk && dto.WaterSealOk && dto.LightsOk;
         string overall = allPass ? "Pass" : "PassWithWarnings";
@@ -343,7 +359,7 @@ public class DriverController : ControllerBase
 
         var previousDeliveries = await _context.TripStops
             .Include(ts => ts.RouteStop)
-            .Include(ts => ts.Trip)
+            .Include(ts => ts.Trip!)
                 .ThenInclude(t => t.Truck)
             .Where(ts => ts.Completed)
             .OrderByDescending(ts => ts.CompletedAt)
@@ -351,7 +367,7 @@ public class DriverController : ControllerBase
             .Select(ts => new
             {
                 ts.Id,
-                LocationName = ts.DeliveryLocation ?? ts.RouteStop.Name,
+                LocationName = ts.DeliveryLocation ?? (ts.RouteStop != null ? ts.RouteStop.Name : "Designated Community Stop"),
                 Litres = ts.LitresDelivered ?? 2500,
                 CompletedAt = ts.CompletedAt.HasValue ? ts.CompletedAt.Value.AddHours(2).ToString("yyyy-MM-dd HH:mm CAT") : "Recently",
                 Notes = ts.Notes ?? "Delivery completed successfully.",

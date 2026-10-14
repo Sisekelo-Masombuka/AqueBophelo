@@ -190,7 +190,7 @@ export function ContactUsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Sipho Nkosi"
+                    placeholder="e.g. Sisekelo Masombuka"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     disabled={isSubmitting}
@@ -205,7 +205,7 @@ export function ContactUsPage() {
                   </label>
                   <input
                     type="email"
-                    placeholder="e.g. sipho@gmail.com"
+                    placeholder="e.g. resident@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isSubmitting}

@@ -56,57 +56,11 @@ export function AdminOverview() {
     return `${base}${photoPath.startsWith('/') ? '' : '/'}${photoPath}`;
   };
 
-  // Resident Issue Reports (Section 3.4.1)
-  const [residentIssues, setResidentIssues] = useState([
-    {
-      id: 1,
-      ticketId: '#SPM-2026-9812',
-      fullName: 'Nomcebo Nkosi',
-      userEmail: 'resident@solplaatje.gov.za',
-      issueType: 'Pipe Leak',
-      area: 'Galeshewe',
-      streetAddress: '142 Main Road',
-      description: 'Major water pipe leak near street curb.',
-      imageUrl: '/pipe_leak.jpg',
-      status: 'Pending',
-      adminNotes: '',
-      createdAt: 'Today 07:15 CAT'
-    },
-    {
-      id: 2,
-      ticketId: '#SPM-2026-4410',
-      fullName: 'David Van Wyk',
-      userEmail: 'david@kimberley.co.za',
-      issueType: 'Low Water Pressure',
-      area: 'Roodepan',
-      streetAddress: '88 Diamond Street',
-      description: 'Water pressure dropped severely since morning.',
-      imageUrl: null,
-      status: 'In Progress',
-      adminNotes: 'Maintenance team dispatched.',
-      createdAt: 'Yesterday 16:30 CAT'
-    }
-  ]);
+  // Resident Issue Reports
+  const [residentIssues, setResidentIssues] = useState([]);
 
-  // Driver Reported Incidents (Section 3.4.5)
-  const [driverIncidents, setDriverIncidents] = useState([
-    {
-      id: 101,
-      category: 'Road-access problem',
-      description: 'Main road block near Galeshewe police station - rerouting required.',
-      reportedBy: 'Sipho Dlamini (DRV-8492)',
-      reportedAt: 'Today 09:10 CAT',
-      status: 'Acknowledged'
-    },
-    {
-      id: 102,
-      category: 'Vehicle problem',
-      description: 'Low air pressure indicator on rear brake line of Tanker 542-KM NC.',
-      reportedBy: 'Sipho Dlamini (DRV-8492)',
-      reportedAt: 'Today 07:45 CAT',
-      status: 'In Maintenance'
-    }
-  ]);
+  // Driver Reported Incidents
+  const [driverIncidents, setDriverIncidents] = useState([]);
 
   const [selectedIssueModal, setSelectedIssueModal] = useState(null);
   const [statusUpdateVal, setStatusUpdateVal] = useState('In Progress');
@@ -137,43 +91,9 @@ export function AdminOverview() {
   ]);
 
   // Water tankers data
-  const [trucks, setTrucks] = useState([
-    {
-      id: 1,
-      registrationNumber: '542-KM NC',
-      capacityLitres: 10000,
-      status: 'OnTrip',
-      lastLatitude: -28.7183,
-      lastLongitude: 24.7319,
-      driverName: 'Sipho Dlamini',
-      route: 'Galeshewe Zone 3 Morning Route',
-      speedKmh: 32,
-    },
-    {
-      id: 2,
-      registrationNumber: '882-KM NC',
-      capacityLitres: 15000,
-      status: 'OnTrip',
-      lastLatitude: -28.7419,
-      lastLongitude: 24.7719,
-      driverName: 'Lerato Motsepe',
-      route: 'Kimberley Central Bulk Delivery',
-      speedKmh: 28,
-    },
-    {
-      id: 3,
-      registrationNumber: '104-KM NC',
-      capacityLitres: 10000,
-      status: 'Available',
-      lastLatitude: -28.6921,
-      lastLongitude: 24.7088,
-      driverName: 'Tshepo Khumalo',
-      route: 'Roodepan Depot Standby',
-      speedKmh: 0,
-    },
-  ]);
+  const [trucks, setTrucks] = useState([]);
 
-  const [activeAlertsCount, setActiveAlertsCount] = useState(2);
+  const [activeAlertsCount, setActiveAlertsCount] = useState(0);
   const [signalrConnected, setSignalrConnected] = useState(false);
   const [isRefreshingIssues, setIsRefreshingIssues] = useState(false);
 
@@ -194,10 +114,12 @@ export function AdminOverview() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [damsRes, trucksRes, issuesRes] = await Promise.allSettled([
+        const [damsRes, trucksRes, issuesRes, incidentsRes, alertsRes] = await Promise.allSettled([
           apiClient.get('/api/v1/dams'),
           apiClient.get('/api/v1/trucks'),
           apiClient.get('/api/v1/reports/issues'),
+          apiClient.get('/api/v1/driver/problems'),
+          apiClient.get('/api/v1/alerts'),
         ]);
 
         if (damsRes.status === 'fulfilled' && Array.isArray(damsRes.value.data) && damsRes.value.data.length > 0) {
@@ -209,15 +131,23 @@ export function AdminOverview() {
           );
         }
 
-        if (trucksRes.status === 'fulfilled' && Array.isArray(trucksRes.value.data) && trucksRes.value.data.length > 0) {
+        if (trucksRes.status === 'fulfilled' && Array.isArray(trucksRes.value.data)) {
           setTrucks(trucksRes.value.data);
         }
 
         if (issuesRes.status === 'fulfilled' && Array.isArray(issuesRes.value.data)) {
           setResidentIssues(issuesRes.value.data);
         }
+
+        if (incidentsRes.status === 'fulfilled' && Array.isArray(incidentsRes.value.data)) {
+          setDriverIncidents(incidentsRes.value.data);
+        }
+
+        if (alertsRes.status === 'fulfilled' && Array.isArray(alertsRes.value.data)) {
+          setActiveAlertsCount(alertsRes.value.data.length);
+        }
       } catch (err) {
-        console.warn('Backend unavailable, using initial seeded state.', err);
+        console.warn('Error loading admin overview data:', err);
       }
     }
     loadData();
@@ -598,9 +528,7 @@ export function AdminOverview() {
                                 alt="Fault attachment"
                                 className="w-8 h-8 rounded object-cover border border-slate-200 group-hover:opacity-90 shadow-2xs"
                                 onError={(e) => {
-                                  if (e.currentTarget.src !== window.location.origin + '/pipe_leak.jpg') {
-                                    e.currentTarget.src = '/pipe_leak.jpg';
-                                  }
+                                  e.currentTarget.style.display = 'none';
                                 }}
                               />
                               <span className="text-[11px] text-[#1d70b8] font-bold group-hover:underline flex items-center gap-0.5">
@@ -645,18 +573,26 @@ export function AdminOverview() {
           </div>
 
           <div className="space-y-3">
-            {driverIncidents.map((inc) => (
-              <div key={inc.id} className="p-3 bg-[#f8fafc] border border-slate-200 rounded-md space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
-                    {inc.category}
-                  </span>
-                  <span className="text-[11px] text-slate-500">{inc.reportedAt}</span>
+            {driverIncidents.length === 0 ? (
+              <p className="text-xs text-slate-500 italic py-6 text-center">
+                No active driver incident reports in inbox.
+              </p>
+            ) : (
+              driverIncidents.map((inc) => (
+                <div key={inc.id} className="p-3 bg-[#f8fafc] border border-slate-200 rounded-md space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                      {inc.category}
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      {inc.reportedAt ? new Date(inc.reportedAt).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-800 font-medium pt-1">{inc.description}</p>
+                  <p className="text-[11px] text-slate-500">Reported by: <strong>{inc.driverName || inc.reportedBy || 'Tanker Driver'}</strong></p>
                 </div>
-                <p className="text-xs text-slate-800 font-medium pt-1">{inc.description}</p>
-                <p className="text-[11px] text-slate-500">Reported by: <strong>{inc.reportedBy}</strong></p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -761,9 +697,7 @@ export function AdminOverview() {
                 src={selectedPhotoModal.url}
                 alt="Fault Evidence"
                 onError={(e) => {
-                  if (e.currentTarget.src !== window.location.origin + '/pipe_leak.jpg') {
-                    e.currentTarget.src = '/pipe_leak.jpg';
-                  }
+                  e.currentTarget.style.opacity = '0.5';
                 }}
                 className="max-h-[460px] max-w-full object-contain rounded shadow"
               />

@@ -41,60 +41,8 @@ export function DriverStopsScreen() {
       setTrip(res.data);
       setError(null);
     } catch (err) {
-      console.warn('Backend unavailable, fallback to mock trip object', err);
-      // Seeded fallback for demonstration
-      setTrip({
-        id: 1,
-        routeName: 'Galeshewe Zone 3 & 4 Water Delivery Line',
-        truckRegistration: '542-KM NC',
-        status: 'In Progress',
-        driverName: 'Sipho Dlamini',
-        driverId: 'DRV-8492',
-        stops: [
-          {
-            id: 101,
-            sequence: 1,
-            stopName: 'Galeshewe Police Station Water Tank',
-            latitude: -28.7183,
-            longitude: 24.7319,
-            stopStatus: 'Completed',
-            arrivedAt: '08:15 CAT',
-            deliveryStartedAt: '08:18 CAT',
-            completedAt: '08:45 CAT',
-            litresDelivered: 3500,
-            deliveryLocation: 'Police Station Reservoir Tank 1',
-            notes: 'Successfully delivered without issues.'
-          },
-          {
-            id: 102,
-            sequence: 2,
-            stopName: 'Tshwarelela Primary Drop Point',
-            latitude: -28.7125,
-            longitude: 24.7291,
-            stopStatus: 'In Delivery',
-            arrivedAt: '09:05 CAT',
-            deliveryStartedAt: '09:08 CAT',
-            completedAt: null,
-            litresDelivered: 0,
-            deliveryLocation: '',
-            notes: ''
-          },
-          {
-            id: 103,
-            sequence: 3,
-            stopName: 'Mayibuye Community Centre Tanker Hub',
-            latitude: -28.7098,
-            longitude: 24.7245,
-            stopStatus: 'Pending',
-            arrivedAt: null,
-            deliveryStartedAt: null,
-            completedAt: null,
-            litresDelivered: 0,
-            deliveryLocation: '',
-            notes: ''
-          }
-        ]
-      });
+      console.info('No active driver trip scheduled currently:', err?.response?.status || err.message);
+      setTrip(null);
     } finally {
       setLoading(false);
     }
@@ -257,6 +205,45 @@ export function DriverStopsScreen() {
     );
   }
 
+  if (!trip) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-5 pb-16">
+        <button
+          onClick={() => navigate('/driver/trip')}
+          style={{ minHeight: '44px' }}
+          className="inline-flex items-center space-x-2 text-xs md:text-sm font-medium text-[#1d70b8] hover:underline cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Driver Cockpit</span>
+        </button>
+
+        <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-xs text-center">
+          <div className="w-14 h-14 bg-blue-50 text-[#152e52] rounded-full flex items-center justify-center mx-auto mb-4">
+            <Truck className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-bold text-[#152e52] font-serif">No Active Route Manifest</h2>
+          <p className="text-sm text-slate-600 mt-2 max-w-md mx-auto">
+            You do not currently have a delivery itinerary or scheduled drop points assigned for this shift. When municipal operations dispatch a tanker route, the stops and manifest details will load here.
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <button
+              onClick={fetchTodayTrip}
+              className="px-4 py-2 bg-[#152e52] hover:bg-[#0f223d] text-white text-xs md:text-sm font-semibold rounded-md transition-colors cursor-pointer"
+            >
+              Check for Assigned Manifest
+            </button>
+            <button
+              onClick={() => navigate('/driver/trip')}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs md:text-sm font-medium rounded-md transition-colors cursor-pointer"
+            >
+              Go to GPS Navigation
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const stops = trip?.stops || [];
   const completedCount = stops.filter(s => s.stopStatus === 'Completed').length;
 
@@ -292,7 +279,7 @@ export function DriverStopsScreen() {
           </div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#eaf4fb] text-[#152e52] border border-[#bcd6ea]">
-              Vehicle: {trip?.truckRegistration || '542-KM NC'}
+              Vehicle: {trip?.truckRegistration || 'Depot Fleet'}
             </span>
             <button
               onClick={() => navigate('/driver/trip')}
@@ -310,7 +297,7 @@ export function DriverStopsScreen() {
           This manifest lists all scheduled community drop points for today&apos;s shift. Mark arrival, discharge water, and capture a live Proof of Delivery photo at each point. For real-time driving navigation, tap &quot;Open GPS Cockpit&quot;.
         </p>
         <p className="text-xs text-slate-500 mt-1">
-          Driver: <strong className="text-slate-800">{trip?.driverName || 'Sipho Dlamini'}</strong> (ID: {trip?.driverId || 'DRV-8492'}) · Serviced <strong>{completedCount}</strong> of <strong>{stops.length}</strong> Stops
+          Driver: <strong className="text-slate-800">{trip?.driverName || 'Municipal Driver'}</strong> (ID: {trip?.driverId || 'DRV-STAFF'}) · Serviced <strong>{completedCount}</strong> of <strong>{stops.length}</strong> Stops
         </p>
       </div>
 

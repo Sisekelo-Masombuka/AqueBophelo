@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import LiveMap from '../components/LiveMap';
@@ -10,6 +10,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useLanguage } from '../context/LanguageContext';
 import ScheduledOutagesComponent from '../components/ScheduledOutagesComponent';
 import { Button } from '../components/ui/Button';
+import apiClient from '../api/client';
 import {
   Droplet,
   Truck,
@@ -57,30 +58,30 @@ export function LandingPage() {
     },
   ];
 
-  const trucks = [
+  const [trucks, setTrucks] = useState([
     {
       id: 1,
       registrationNumber: '542-KM NC',
       capacityLitres: 10000,
-      status: 'OnTrip',
+      status: 'Available',
       lastLatitude: -28.7183,
       lastLongitude: 24.7319,
-      driverName: 'Sipho Dlamini',
-      route: 'Galeshewe Zone 3 Morning Route',
-      estimatedArrival: '12 mins',
-      speedKmh: 36,
+      driverName: 'Assigned Driver',
+      route: 'Galeshewe Distribution Area',
+      estimatedArrival: 'Standby',
+      speedKmh: 0,
     },
     {
       id: 2,
       registrationNumber: '882-KM NC',
       capacityLitres: 15000,
-      status: 'OnTrip',
+      status: 'Available',
       lastLatitude: -28.7419,
       lastLongitude: 24.7719,
-      driverName: 'Lerato Motsepe',
-      route: 'Kimberley Central Bulk Delivery',
-      estimatedArrival: '8 mins',
-      speedKmh: 42,
+      driverName: 'Assigned Driver',
+      route: 'Kimberley Central Fleet Hub',
+      estimatedArrival: 'Standby',
+      speedKmh: 0,
     },
     {
       id: 3,
@@ -89,12 +90,26 @@ export function LandingPage() {
       status: 'Available',
       lastLatitude: -28.6921,
       lastLongitude: 24.7088,
-      driverName: 'Tshepo Khumalo',
-      route: 'Roodepan Depot Standby',
+      driverName: 'Assigned Driver',
+      route: 'Roodepan Municipal Depot',
       estimatedArrival: 'Standby',
       speedKmh: 0,
     },
-  ];
+  ]);
+
+  useEffect(() => {
+    async function fetchFleet() {
+      try {
+        const res = await apiClient.get('/api/v1/trucks');
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+          setTrucks(res.data);
+        }
+      } catch (err) {
+        // Fallback to initial municipal assets
+      }
+    }
+    fetchFleet();
+  }, []);
 
   const handlePortalAction = () => {
     if (user) {

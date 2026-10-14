@@ -1,52 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import AlertSubscriptionsModal from '../../components/AlertSubscriptionsModal';
 import { Bell, ShieldCheck, AlertTriangle, Clock, Filter } from 'lucide-react';
+import apiClient from '../../api/client';
 
 export function AlertsPage() {
   const [selectedArea, setSelectedArea] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const alerts = [
-    {
-      id: 'alt-1',
-      title: 'Water Tanker Dispatched to Galeshewe Zone 3',
-      message: 'Tanker 542-KM NC (10,000L) is en route to Galeshewe Community Hall and Kagisho Clinic. Residents are requested to bring clean storage containers.',
-      severity: 'Healthy',
-      area: 'Galeshewe',
-      timestamp: 'Today, 09:15 CAT',
-    },
-    {
-      id: 'alt-2',
-      title: 'Nightly Water Pressure Reduction (Kimberley Central)',
-      message: 'Sol Plaatje Municipality will implement water throttling between 21:00 and 04:00 to replenish Newton Reservoir levels.',
-      severity: 'Watch',
-      area: 'Kimberley Central',
-      timestamp: 'Today, 06:00 CAT',
-    },
-    {
-      id: 'alt-3',
-      title: 'Emergency Pipe Leak Repair — Barkley Road',
-      message: 'Municipal maintenance crew on site repairing high-pressure mainline near Roodepan. Supply interruption expected for 3 hours.',
-      severity: 'Low',
-      area: 'Roodepan',
-      timestamp: 'Yesterday, 14:20 CAT',
-    },
-    {
-      id: 'alt-4',
-      title: 'Riverton Water Works Purification Update',
-      message: 'Water treatment pumps operating normally with storage level at 82.0%. Water quality tests meet national SANS 241 standards.',
-      severity: 'Healthy',
-      area: 'Sol Plaatje Municipality',
-      timestamp: 'Yesterday, 08:00 CAT',
-    },
-  ];
+  useEffect(() => {
+    async function loadAlerts() {
+      try {
+        setLoading(true);
+        const res = await apiClient.get('/api/v1/alerts');
+        if (Array.isArray(res.data)) {
+          setAlerts(res.data.map(a => ({
+            id: a.id || `alt-${Math.random()}`,
+            title: a.title,
+            message: a.message || a.description || '',
+            severity: a.severity || 'Healthy',
+            area: a.areaName || a.area || 'All Residents',
+            timestamp: a.createdAt ? new Date(a.createdAt).toLocaleString('en-ZA') : 'Recently'
+          })));
+        }
+      } catch (err) {
+        console.warn('Error loading alerts:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAlerts();
+  }, []);
 
   const filteredAlerts =
     selectedArea === 'All'
       ? alerts
-      : alerts.filter((a) => a.area === selectedArea || a.area.includes('Sol Plaatje'));
+      : alerts.filter((a) => a.area === selectedArea || a.area.includes('All') || a.area.includes('Sol Plaatje'));
 
   return (
     <div className="space-y-6">
@@ -117,29 +109,39 @@ export function AlertsPage() {
 
       {/* Alerts Feed */}
       <div className="space-y-3">
-        {filteredAlerts.map((alert) => (
-          <div
-            key={alert.id}
-            className="p-5 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-colors shadow-xs"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-              <div className="flex items-center space-x-2.5">
-                <StatusBadge status={alert.severity} />
-                <h3 className="font-serif font-bold text-base text-[#152e52]">{alert.title}</h3>
-              </div>
-              <div className="flex items-center space-x-2 text-xs text-slate-500 font-normal">
-                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-medium">
-                  {alert.area}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  <span>{alert.timestamp}</span>
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed pl-1">{alert.message}</p>
+        {filteredAlerts.length === 0 ? (
+          <div className="p-8 bg-white border border-slate-200 rounded-lg text-center shadow-xs">
+            <Bell className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <h4 className="font-serif font-bold text-sm text-[#152e52]">No Active Water Alerts</h4>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              There are currently no urgent water interruption warnings or rationing bulletins published for this municipal area.
+            </p>
           </div>
-        ))}
+        ) : (
+          filteredAlerts.map((alert) => (
+            <div
+              key={alert.id}
+              className="p-5 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-colors shadow-xs"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                <div className="flex items-center space-x-2.5">
+                  <StatusBadge status={alert.severity} />
+                  <h3 className="font-serif font-bold text-base text-[#152e52]">{alert.title}</h3>
+                </div>
+                <div className="flex items-center space-x-2 text-xs text-slate-500 font-normal">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-medium">
+                    {alert.area}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-slate-400" />
+                    <span>{alert.timestamp}</span>
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed pl-1">{alert.message}</p>
+            </div>
+          ))
+        )}
       </div>
 
       <AlertSubscriptionsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />

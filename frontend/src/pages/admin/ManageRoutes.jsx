@@ -3,48 +3,13 @@ import { Plus, Trash2, CheckCircle, AlertCircle, Navigation, Layers, X } from 'l
 import apiClient from '../../api/client';
 
 export function ManageRoutes() {
-  const [routes, setRoutes] = useState([
-    {
-      id: 1,
-      name: 'Galeshewe Zone 3 Morning Route',
-      areaId: 1,
-      areaName: 'Galeshewe',
-      isActive: true,
-      stops: [
-        { id: 101, sequence: 1, name: 'Galeshewe Police Station Water Point', latitude: -28.7183, longitude: 24.7319 },
-        { id: 102, sequence: 2, name: 'Tshwarelela Primary Drop Point', latitude: -28.7125, longitude: 24.7291 },
-        { id: 103, sequence: 3, name: 'Mayibuye Community Centre', latitude: -28.7098, longitude: 24.7245 },
-      ],
-    },
-    {
-      id: 2,
-      name: 'Kimberley Central Bulk Delivery',
-      areaId: 2,
-      areaName: 'Kimberley Central',
-      isActive: true,
-      stops: [
-        { id: 201, sequence: 1, name: 'Sol Plaatje Civic Centre Reservoir', latitude: -28.7419, longitude: 24.7719 },
-        { id: 202, sequence: 2, name: 'Kimberley Hospital Water Reserve', latitude: -28.7388, longitude: 24.7645 },
-      ],
-    },
-    {
-      id: 3,
-      name: 'Roodepan Standby & Emergency Grid',
-      areaId: 3,
-      areaName: 'Roodepan',
-      isActive: true,
-      stops: [
-        { id: 301, sequence: 1, name: 'Roodepan Municipal Depot', latitude: -28.6921, longitude: 24.7088 },
-        { id: 302, sequence: 2, name: 'Lerato Park Water Tanks', latitude: -28.6854, longitude: 24.7012 },
-      ],
-    },
-  ]);
+  const [routes, setRoutes] = useState([]);
 
-  const municipalAreas = [
+  const [municipalAreas, setMunicipalAreas] = useState([
     { id: 1, name: 'Galeshewe' },
     { id: 2, name: 'Kimberley Central' },
     { id: 3, name: 'Roodepan' },
-  ];
+  ]);
 
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -57,23 +22,45 @@ export function ManageRoutes() {
     { name: '', latitude: '-28.7419', longitude: '24.7719' },
   ]);
 
-  // Fetch routes from backend
+  // Fetch routes and areas from backend
   useEffect(() => {
-    async function loadRoutes() {
+    async function loadData() {
       try {
         setLoading(true);
-        const res = await apiClient.get('/api/v1/routes');
-        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-          setRoutes(res.data);
+        const [routesRes, areasRes] = await Promise.allSettled([
+          apiClient.get('/api/v1/routes'),
+          apiClient.get('/api/v1/areas'),
+        ]);
+
+        if (routesRes.status === 'fulfilled' && Array.isArray(routesRes.value.data)) {
+          setRoutes(routesRes.value.data);
+        }
+        if (areasRes.status === 'fulfilled' && Array.isArray(areasRes.value.data) && areasRes.value.data.length > 0) {
+          setMunicipalAreas(areasRes.value.data);
+          if (areasRes.value.data[0]?.id) {
+            setSelectedAreaId(String(areasRes.value.data[0].id));
+          }
         }
       } catch (err) {
-        console.warn('Backend unavailable, using initial seeded routes data.', err);
+        console.warn('Backend unavailable, setting empty routes list.', err);
       } finally {
         setLoading(false);
       }
     }
-    loadRoutes();
+    loadData();
   }, []);
+
+  const handleDeleteRoute = async (routeId) => {
+    if (!window.confirm('Are you sure you want to delete this distribution route?')) return;
+    try {
+      await apiClient.delete(`/api/v1/routes/${routeId}`);
+      setRoutes((prev) => prev.filter((r) => r.id !== routeId));
+      setFeedback({ type: 'success', message: 'Distribution route deleted successfully.' });
+    } catch (err) {
+      console.warn('Failed to delete route:', err);
+      setFeedback({ type: 'error', message: 'Failed to delete route from database.' });
+    }
+  };
 
   const handleAddStopField = () => {
     setStops((prev) => [...prev, { name: '', latitude: '-28.7419', longitude: '24.7719' }]);
@@ -192,29 +179,54 @@ export function ManageRoutes() {
       )}
 
       {/* Routes List */}
-      <div className="space-y-4">
-        {routes.map((route) => (
-          <div
-            key={route.id}
-            className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200">
-              <div className="flex items-center space-x-3">
-                <Layers className="w-5 h-5 text-[#152e52] shrink-0" />
-                <div>
-                  <h3 className="font-serif text-base font-bold text-[#152e52]">{route.name}</h3>
-                  <div className="flex items-center space-x-2 mt-0.5 text-xs text-slate-500 font-normal">
-                    <span className="text-[#1d70b8] font-medium">{route.areaName}</span>
-                    <span>·</span>
-                    <span>{route.stops?.length || 0} scheduled drop points</span>
+      {loading ? (
+        <div className="py-12 text-center text-slate-500 text-sm">
+          <div className="animate-spin w-8 h-8 border-4 border-[#152e52] border-t-transparent rounded-full mx-auto mb-3"></div>
+          <p className="font-medium">Loading municipal distribution routes...</p>
+        </div>
+      ) : routes.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-xs text-center">
+          <div className="w-12 h-12 bg-blue-50 text-[#152e52] rounded-full flex items-center justify-center mx-auto mb-3">
+            <Navigation className="w-6 h-6" />
+          </div>
+          <h3 className="font-serif text-lg font-bold text-[#152e52]">No Distribution Routes Configured</h3>
+          <p className="text-xs md:text-sm text-slate-500 mt-1 max-w-md mx-auto">
+            There are currently no scheduled delivery routes in the system. Click &quot;Create New Route&quot; above to register municipal water distribution corridors and sequenced community drop points.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {routes.map((route) => (
+            <div
+              key={route.id}
+              className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200">
+                <div className="flex items-center space-x-3">
+                  <Layers className="w-5 h-5 text-[#152e52] shrink-0" />
+                  <div>
+                    <h3 className="font-serif text-base font-bold text-[#152e52]">{route.name}</h3>
+                    <div className="flex items-center space-x-2 mt-0.5 text-xs text-slate-500 font-normal">
+                      <span className="text-[#1d70b8] font-medium">{route.areaName}</span>
+                      <span>·</span>
+                      <span>{route.stops?.length || 0} scheduled drop points</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-[#f2f9f3] text-[#2e7d32] border border-[#b8e3bd] self-start sm:self-auto">
-                Active Route
-              </span>
-            </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-[#f2f9f3] text-[#2e7d32] border border-[#b8e3bd]">
+                    Active Route
+                  </span>
+                  <button
+                    onClick={() => handleDeleteRoute(route.id)}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                    title="Delete Route"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
 
             {/* Sequence of stops */}
             <div className="mt-4">
@@ -243,6 +255,7 @@ export function ManageRoutes() {
           </div>
         ))}
       </div>
+    )}
 
       {/* Create Route Modal */}
       {isCreateModalOpen && (

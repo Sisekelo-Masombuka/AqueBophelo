@@ -3,33 +3,33 @@ import * as signalR from '@microsoft/signalr';
 
 const HUB_URL = import.meta.env.VITE_SIGNALR_URL || 'http://localhost:5094/hubs/trucks';
 
-// Kimberley sample initial coordinates matching backend seed data
+// Kimberley municipal fleet coordinates matching backend initial assets
 const INITIAL_TRUCKS = [
   {
     id: 1,
     registrationNumber: '542-KM NC',
     capacityLitres: 10000,
-    status: 'OnTrip',
+    status: 'Available',
     lastLatitude: -28.7183,
     lastLongitude: 24.7319,
-    speedKmh: 35,
-    heading: 95,
-    driverName: 'Sipho Dlamini',
-    route: 'Galeshewe Zone 3 Morning Route',
-    lastUpdated: 'Live',
+    speedKmh: 0,
+    heading: 0,
+    driverName: 'Assigned Driver',
+    route: 'Galeshewe Distribution Area',
+    lastUpdated: 'Depot Standby',
   },
   {
     id: 2,
     registrationNumber: '882-KM NC',
     capacityLitres: 15000,
-    status: 'OnTrip',
+    status: 'Available',
     lastLatitude: -28.7419,
     lastLongitude: 24.7719,
-    speedKmh: 42,
-    heading: 180,
-    driverName: 'Lerato Motsepe',
-    route: 'Kimberley Central Bulk Delivery',
-    lastUpdated: 'Live',
+    speedKmh: 0,
+    heading: 0,
+    driverName: 'Assigned Driver',
+    route: 'Kimberley Central Fleet Hub',
+    lastUpdated: 'Depot Standby',
   },
   {
     id: 3,
@@ -40,9 +40,9 @@ const INITIAL_TRUCKS = [
     lastLongitude: 24.7088,
     speedKmh: 0,
     heading: 0,
-    driverName: 'Tshepo Khumalo',
+    driverName: 'Assigned Driver',
     route: 'Roodepan Municipal Depot',
-    lastUpdated: 'Stationary',
+    lastUpdated: 'Depot Standby',
   },
 ];
 

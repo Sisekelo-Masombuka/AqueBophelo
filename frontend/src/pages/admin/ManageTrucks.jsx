@@ -4,50 +4,8 @@ import apiClient from '../../api/client';
 import StatusBadge from '../../components/StatusBadge';
 
 export function ManageTrucks() {
-  const [trucks, setTrucks] = useState([
-    {
-      id: 1,
-      registrationNumber: '542-KM NC',
-      capacityLitres: 10000,
-      status: 'OnTrip',
-      driverId: 'drv-1',
-      driverName: 'Sipho Dlamini',
-      lastLatitude: -28.7183,
-      lastLongitude: 24.7319,
-      lastSeenAtFormatted: 'Today at 08:42 AM (CAT)',
-    },
-    {
-      id: 2,
-      registrationNumber: '882-KM NC',
-      capacityLitres: 15000,
-      status: 'OnTrip',
-      driverId: 'drv-2',
-      driverName: 'Lerato Motsepe',
-      lastLatitude: -28.7419,
-      lastLongitude: 24.7719,
-      lastSeenAtFormatted: 'Today at 08:35 AM (CAT)',
-    },
-    {
-      id: 3,
-      registrationNumber: '104-KM NC',
-      capacityLitres: 10000,
-      status: 'Available',
-      driverId: 'drv-3',
-      driverName: 'Tshepo Khumalo',
-      lastLatitude: -28.6921,
-      lastLongitude: 24.7088,
-      lastSeenAtFormatted: 'Today at 08:10 AM (CAT)',
-    },
-  ]);
-
-  // Municipal drivers available for assignment
-  const municipalDrivers = [
-    { id: 'drv-1', fullName: 'Sipho Dlamini' },
-    { id: 'drv-2', fullName: 'Lerato Motsepe' },
-    { id: 'drv-3', fullName: 'Tshepo Khumalo' },
-    { id: 'drv-4', fullName: 'Kagiso Modise' },
-    { id: 'drv-5', fullName: 'Zanele Ndlovu' },
-  ];
+  const [trucks, setTrucks] = useState([]);
+  const [municipalDrivers, setMunicipalDrivers] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -63,22 +21,30 @@ export function ManageTrucks() {
   const [newCapacity, setNewCapacity] = useState('10000');
   const [selectedDriverId, setSelectedDriverId] = useState('');
 
-  // Fetch trucks from backend
-  useEffect(() => {
-    async function loadTrucks() {
-      try {
-        setLoading(true);
-        const res = await apiClient.get('/api/v1/trucks');
-        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-          setTrucks(res.data);
-        }
-      } catch (err) {
-        console.warn('Backend unavailable, using initial seeded trucks data.', err);
-      } finally {
-        setLoading(false);
+  // Fetch trucks and real drivers from backend
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [trucksRes, driversRes] = await Promise.allSettled([
+        apiClient.get('/api/v1/trucks'),
+        apiClient.get('/api/v1/users?role=Driver')
+      ]);
+
+      if (trucksRes.status === 'fulfilled' && Array.isArray(trucksRes.value.data)) {
+        setTrucks(trucksRes.value.data);
       }
+      if (driversRes.status === 'fulfilled' && Array.isArray(driversRes.value.data)) {
+        setMunicipalDrivers(driversRes.value.data);
+      }
+    } catch (err) {
+      console.warn('Error loading trucks or drivers:', err);
+    } finally {
+      setLoading(false);
     }
-    loadTrucks();
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   const handleRegisterTruck = async (e) => {

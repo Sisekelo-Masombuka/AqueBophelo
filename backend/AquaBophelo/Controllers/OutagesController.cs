@@ -70,11 +70,14 @@ public class OutagesController : ControllerBase
 
         foreach (var email in affectedSubscribers)
         {
-            await _notificationService.SendEmailAsync(
-                email,
-                $"Sol Plaatje Water Notice: {outage.Title}",
-                $"<div style='font-family:sans-serif;'><h2>Scheduled Water Interruption Notice</h2><p><strong>Area:</strong> {outage.AreaName}</p><p><strong>Cut-Off Time:</strong> {outage.CutOffTime:yyyy-MM-dd HH:mm}</p><p><strong>Expected Return Time:</strong> {outage.ExpectedReturnTime:yyyy-MM-dd HH:mm}</p><p>{outage.Description}</p><hr/><p><em>Sol Plaatje Municipality Water Desk</em></p></div>"
-            );
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                await _notificationService.SendEmailAsync(
+                    email,
+                    $"Sol Plaatje Water Notice: {outage.Title}",
+                    $"<div style='font-family:sans-serif;'><h2>Scheduled Water Interruption Notice</h2><p><strong>Area:</strong> {outage.AreaName}</p><p><strong>Cut-Off Time:</strong> {outage.CutOffTime:yyyy-MM-dd HH:mm}</p><p><strong>Expected Return Time:</strong> {outage.ExpectedReturnTime:yyyy-MM-dd HH:mm}</p><p>{outage.Description}</p><hr/><p><em>Sol Plaatje Municipality Water Desk</em></p></div>"
+                );
+            }
         }
 
         return CreatedAtAction(nameof(GetOutages), new { id = outage.Id }, outage);

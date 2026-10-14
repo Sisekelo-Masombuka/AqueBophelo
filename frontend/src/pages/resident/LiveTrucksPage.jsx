@@ -3,71 +3,43 @@ import * as signalR from '@microsoft/signalr';
 import LiveMap from '../../components/LiveMap';
 import StatusBadge from '../../components/StatusBadge';
 import { Truck, Radio, Star, Target } from 'lucide-react';
+import apiClient from '../../api/client';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7154';
 
 export function LiveTrucksPage() {
-  const dams = [
+  const [dams, setDams] = useState([
     { id: 1, name: 'Newton Reservoir', latitude: -28.7511, longitude: 24.7612, capacityMegaLitres: 92.5, latestLevel: 62.5 },
     { id: 2, name: 'Riverton Water Works', latitude: -28.5369, longitude: 24.7061, capacityMegaLitres: 150.0, latestLevel: 82.0 },
-  ];
-
-  const [trucks, setTrucks] = useState([
-    {
-      id: 1,
-      registrationNumber: '542-KM NC',
-      capacityLitres: 10000,
-      status: 'OnTrip',
-      lastLatitude: -28.7183,
-      lastLongitude: 24.7319,
-      driverName: 'Sipho Dlamini',
-      driverRating: 4.8,
-      completedTripsCount: 127,
-      route: 'Galeshewe → Roodepan Delivery Corridor',
-      destination: 'Roodepan Community Hall',
-      estimatedArrival: '15 min',
-      speedKmh: 34,
-      heading: 65,
-      lastSeenAt: new Date(Date.now() - 12000),
-    },
-    {
-      id: 2,
-      registrationNumber: '882-KM NC',
-      capacityLitres: 15000,
-      status: 'OnTrip',
-      lastLatitude: -28.7419,
-      lastLongitude: 24.7719,
-      driverName: 'Lerato Motsepe',
-      driverRating: 4.9,
-      completedTripsCount: 94,
-      route: 'Kimberley Central → Galeshewe Zone 2',
-      destination: 'Galeshewe Primary School Reservoir',
-      estimatedArrival: '25 min',
-      speedKmh: 28,
-      heading: 140,
-      lastSeenAt: new Date(Date.now() - 45000),
-    },
-    {
-      id: 3,
-      registrationNumber: '104-KM NC',
-      capacityLitres: 10000,
-      status: 'Available',
-      lastLatitude: -28.6921,
-      lastLongitude: 24.7088,
-      driverName: 'Tshepo Khumalo',
-      driverRating: 4.7,
-      completedTripsCount: 81,
-      route: 'Roodepan Depot Standby',
-      destination: 'Roodepan Municipal Depot',
-      estimatedArrival: 'Standby',
-      speedKmh: 0,
-      heading: 0,
-      lastSeenAt: new Date(Date.now() - 360000),
-    },
   ]);
 
+  const [trucks, setTrucks] = useState([]);
   const [selectedTruckId, setSelectedTruckId] = useState(null);
   const [signalrConnected, setSignalrConnected] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [trucksRes, damsRes] = await Promise.allSettled([
+          apiClient.get('/api/v1/trucks'),
+          apiClient.get('/api/v1/dams'),
+        ]);
+
+        if (trucksRes.status === 'fulfilled' && Array.isArray(trucksRes.value.data)) {
+          setTrucks(trucksRes.value.data);
+          if (trucksRes.value.data.length > 0) {
+            setSelectedTruckId(trucksRes.value.data[0].id);
+          }
+        }
+        if (damsRes.status === 'fulfilled' && Array.isArray(damsRes.value.data) && damsRes.value.data.length > 0) {
+          setDams(damsRes.value.data);
+        }
+      } catch (err) {
+        console.warn('Error loading trucks or reservoirs:', err);
+      }
+    }
+    loadData();
+  }, []);
 
   // Connect to SignalR /hubs/trucks to stream live vehicle movements
   useEffect(() => {
@@ -152,64 +124,74 @@ export function LiveTrucksPage() {
       </div>
 
       {/* Quick Truck Selector Roster */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {trucks.map((truck) => {
-          const isSelected = selectedTruckId === truck.id;
-          return (
-            <div
-              key={truck.id}
-              onClick={() => setSelectedTruckId(truck.id)}
-              className={`rounded-lg p-4 transition-all cursor-pointer shadow-xs flex flex-col justify-between bg-white border ${
-                isSelected
-                  ? 'border-[#1d70b8] ring-2 ring-[#1d70b8]/20'
-                  : 'border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono text-xs font-bold text-[#152e52] bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                      {truck.registrationNumber}
-                    </span>
-                    <span className="text-[11px] font-normal text-slate-500">
-                      {truck.capacityLitres.toLocaleString()} L
-                    </span>
+      {trucks.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-xs text-center">
+          <Truck className="w-8 h-8 text-[#152e52] mx-auto mb-2 opacity-60" />
+          <p className="text-sm font-semibold text-[#152e52]">No Active Water Tankers Dispatched</p>
+          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+            All municipal relief tankers are currently stationed at the central depot. When water distribution runs commence, tankers will appear here on the telemetry roster.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {trucks.map((truck) => {
+            const isSelected = selectedTruckId === truck.id;
+            return (
+              <div
+                key={truck.id}
+                onClick={() => setSelectedTruckId(truck.id)}
+                className={`rounded-lg p-4 transition-all cursor-pointer shadow-xs flex flex-col justify-between bg-white border ${
+                  isSelected
+                    ? 'border-[#1d70b8] ring-2 ring-[#1d70b8]/20'
+                    : 'border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono text-xs font-bold text-[#152e52] bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                        {truck.registrationNumber}
+                      </span>
+                      <span className="text-[11px] font-normal text-slate-500">
+                        {(truck.capacityLitres || 10000).toLocaleString()} L
+                      </span>
+                    </div>
+                    <StatusBadge status={truck.status || 'Available'} />
                   </div>
-                  <StatusBadge status={truck.status} />
+
+                  <div className="flex items-center justify-between text-xs text-[#152e52] font-semibold mb-1">
+                    <span>{truck.driverName || 'Depot Reserve Tanker'}</span>
+                    {truck.driverRating && (
+                      <span className="flex items-center text-amber-600 text-xs">
+                        <Star className="w-3 h-3 fill-current mr-0.5 text-amber-500" />
+                        {truck.driverRating}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-slate-500 truncate mb-3 font-normal">
+                    {truck.route || 'Municipal Standby Reserve'}
+                  </p>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-[#152e52] font-semibold mb-1">
-                  <span>{truck.driverName}</span>
-                  {truck.driverRating && (
-                    <span className="flex items-center text-amber-600 text-xs">
-                      <Star className="w-3 h-3 fill-current mr-0.5 text-amber-500" />
-                      {truck.driverRating}
-                    </span>
-                  )}
+                <div className="pt-2.5 border-t border-slate-200 flex items-center justify-between text-xs">
+                  <span className="text-[#1d70b8] font-medium">ETA: {truck.estimatedArrival || 'On standby'}</span>
+                  <span className="text-slate-500 font-medium">
+                    {isSelected ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Target className="w-3.5 h-3.5 text-[#1d70b8] shrink-0" />
+                        <span>Selected on map</span>
+                      </span>
+                    ) : (
+                      'Click to focus'
+                    )}
+                  </span>
                 </div>
-
-                <p className="text-xs text-slate-500 truncate mb-3 font-normal">
-                  {truck.route}
-                </p>
               </div>
-
-              <div className="pt-2.5 border-t border-slate-200 flex items-center justify-between text-xs">
-                <span className="text-[#1d70b8] font-medium">ETA: {truck.estimatedArrival}</span>
-                <span className="text-slate-500 font-medium">
-                  {isSelected ? (
-                    <span className="inline-flex items-center gap-1">
-                      <Target className="w-3.5 h-3.5 text-[#1d70b8] shrink-0" />
-                      <span>Selected on map</span>
-                    </span>
-                  ) : (
-                    'Click to focus'
-                  )}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

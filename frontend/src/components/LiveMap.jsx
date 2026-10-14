@@ -44,21 +44,21 @@ const DEFAULT_DELIVERY_STOPS = [
 ];
 
 const DEFAULT_TANKERS = [
-  { id: '542-KM NC', registrationNumber: '542-KM NC', driverName: 'Sipho Dlamini', driverRating: 4.8, completedTripsCount: 124, capacityLitres: 10000, status: 'OnTrip',
+  { id: '542-KM NC', registrationNumber: '542-KM NC', driverName: 'Assigned Driver', driverRating: 5.0, completedTripsCount: 0, capacityLitres: 10000, status: 'Available',
     from: { name: 'Newton Reservoir', lngLat: [24.7712, -28.7033] }, to: { name: 'Galeshewe Zone 3', lngLat: [24.7319, -28.7183] },
-    speedKmh: 38, minutes: 14, secs: 50, start: 0.45 },
-  { id: '882-KM NC', registrationNumber: '882-KM NC', driverName: 'Lerato Motsepe', driverRating: 4.9, completedTripsCount: 96, capacityLitres: 15000, status: 'OnTrip',
+    speedKmh: 0, minutes: 0, secs: 50, start: 0.0 },
+  { id: '882-KM NC', registrationNumber: '882-KM NC', driverName: 'Assigned Driver', driverRating: 5.0, completedTripsCount: 0, capacityLitres: 15000, status: 'Available',
     from: { name: 'Newton Reservoir', lngLat: [24.7712, -28.7033] }, to: { name: 'Roodepan Depot', lngLat: [24.7088, -28.6921] },
-    speedKmh: 42, minutes: 24, secs: 65, start: 0.25 },
-  { id: '104-KM NC', registrationNumber: '104-KM NC', driverName: 'Tshepo Khumalo', driverRating: 4.7, completedTripsCount: 8, capacityLitres: 10000, status: 'Available',
+    speedKmh: 0, minutes: 0, secs: 65, start: 0.0 },
+  { id: '104-KM NC', registrationNumber: '104-KM NC', driverName: 'Assigned Driver', driverRating: 5.0, completedTripsCount: 0, capacityLitres: 10000, status: 'Available',
     from: { name: 'Riverton Water Works', lngLat: [24.8102, -28.6788] }, to: { name: 'Kimberley Central CBD', lngLat: [24.7719, -28.7419] },
-    speedKmh: 0, minutes: 0, secs: 60, start: 0.95 },
+    speedKmh: 0, minutes: 0, secs: 60, start: 0.0 },
 ];
 
 const regOf = (t) => t.registrationNumber || t.id;
 
 function formatFirstName(fullName = '') {
-  if (!fullName) return 'Sipho';
+  if (!fullName) return 'Municipal Driver';
   return fullName.trim().split(/\s+/)[0];
 }
 

@@ -6,6 +6,7 @@ using AquaBophelo.Data;
 using AquaBophelo.Models;
 using AquaBophelo.Services.Interfaces;
 
+#pragma warning disable CS0618 // GoogleCredential and Message.Token deprecation in FirebaseAdmin SDK
 namespace AquaBophelo.Services.Notifications;
 
 public class FirebasePushNotificationService : IPushNotificationService

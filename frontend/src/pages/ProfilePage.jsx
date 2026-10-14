@@ -44,9 +44,9 @@ export function ProfilePage() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Driver Specific State
-  const [driverId] = useState('DRV-8492');
+  const driverId = user?.driverId || (user?.id ? `DRV-${user.id.slice(0, 6).toUpperCase()}` : 'DRV-STAFF');
   const [licenseStatus] = useState('Code EC Heavy Vehicle (Valid)');
-  const [assignedVehicle] = useState('542-KM NC');
+  const assignedVehicle = user?.assignedTruck || 'Depot Fleet';
 
   // Admin Security State
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
@@ -414,7 +414,7 @@ export function ProfilePage() {
                 </div>
                 <div className="bg-white p-3 rounded-md border border-slate-200">
                   <span className="text-slate-500 block">Current Assignment:</span>
-                  <span className="font-medium text-slate-800">Galeshewe Zone 3 &amp; 4</span>
+                  <span className="font-medium text-slate-800">{user?.area || 'Sol Plaatje District'}</span>
                 </div>
               </div>
 

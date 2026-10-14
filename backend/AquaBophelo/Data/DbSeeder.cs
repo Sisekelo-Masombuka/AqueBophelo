@@ -141,18 +141,69 @@ public static class DbSeeder
             }
         }
 
-        // 4. Seed Admin Users (support both SolPlaatje2026! and Admin123!)
+        // 4. Seed Single Pristine Master Admin Account
         await SeedUser("admin@aquabophelo.gov.za", "Sol Plaatje Municipal Admin", "Admin", "SolPlaatje2026!");
 
-        // 5. Seed Driver Users
-        await SeedUser("sipho.driver@aquabophelo.gov.za", "Sipho Dlamini (Driver)", "Driver", "SolPlaatje2026!");
-        await SeedUser("driver@aquabophelo.gov.za", "Sipho Dlamini (Driver)", "Driver", "SolPlaatje2026!");
+        // Purge legacy mock/test resident accounts if present
+        string[] testEmailsToPurge = { "nomcebo.resident@gmail.com", "resident@aquabophelo.gov.za", "driver@aquabophelo.gov.za", "sipho.driver@aquabophelo.gov.za" };
+        foreach (var testEmail in testEmailsToPurge)
+        {
+            var testUser = await userManager.FindByEmailAsync(testEmail);
+            if (testUser != null)
+            {
+                try
+                {
+                    // 1. Unlink trucks
+                    var userTrucks = await context.Trucks.Where(t => t.DriverId == testUser.Id).ToListAsync();
+                    foreach (var ut in userTrucks) { ut.DriverId = null; }
 
-        // 6. Seed Resident Users
-        await SeedUser("nomcebo.resident@gmail.com", "Nomcebo Nkosi", "Resident", "SolPlaatje2026!");
-        await SeedUser("resident@aquabophelo.gov.za", "Kimberley Resident", "Resident", "SolPlaatje2026!");
+                    // 2. Remove Trips associated with this driver
+                    var userTrips = await context.Trips.Where(t => t.DriverId == testUser.Id).ToListAsync();
+                    if (userTrips.Count > 0)
+                    {
+                        var tripIds = userTrips.Select(t => t.Id).ToList();
+                        var locations = await context.TruckLocations.Where(tl => tl.TripId.HasValue && tripIds.Contains(tl.TripId.Value)).ToListAsync();
+                        context.TruckLocations.RemoveRange(locations);
+                        context.Trips.RemoveRange(userTrips);
+                    }
 
-        // 7. Seed Delivery Routes
+                    // 3. Remove AlertSubscriptions for this user
+                    var userSubs = await context.AlertSubscriptions.Where(s => s.UserId == testUser.Id).ToListAsync();
+                    if (userSubs.Count > 0)
+                    {
+                        context.AlertSubscriptions.RemoveRange(userSubs);
+                    }
+
+                    // 4. Remove DeviceTokens for this user
+                    var userTokens = await context.DeviceTokens.Where(dt => dt.UserId == testUser.Id).ToListAsync();
+                    if (userTokens.Count > 0)
+                    {
+                        context.DeviceTokens.RemoveRange(userTokens);
+                    }
+
+                    await context.SaveChangesAsync();
+
+                    await userManager.DeleteAsync(testUser);
+                }
+                catch (Exception ex)
+                {
+                    // If deletion encounters an issue, log and continue safely
+                    Console.WriteLine($"[DbSeeder] Notice purging {testEmail}: {ex.Message}");
+                }
+            }
+        }
+
+        // Purge legacy mock fault tickets if present (#SPM-2026-9812, #SPM-2026-4410)
+        var mockReports = await context.IssueReports
+            .Where(r => r.TicketId == "#SPM-2026-9812" || r.TicketId == "#SPM-2026-4410" || r.ImageUrl == "/pipe_leak.jpg")
+            .ToListAsync();
+        if (mockReports.Count > 0)
+        {
+            context.IssueReports.RemoveRange(mockReports);
+            await context.SaveChangesAsync();
+        }
+
+        // 5. Seed Delivery Routes (Base corridors for Sol Plaatje)
         if (!await context.Routes.AnyAsync())
         {
             var galesheweArea = await context.Areas.FirstOrDefaultAsync(a => a.Name == "Galeshewe") ?? defaultArea;
@@ -190,11 +241,9 @@ public static class DbSeeder
             await context.SaveChangesAsync();
         }
 
-        // 8. Seed Water Tanker Trucks with NC Suffix Plates
+        // 6. Seed Water Tanker Fleet (Available for dispatch, unassigned)
         if (!await context.Trucks.AnyAsync())
         {
-            var driverUser = await userManager.FindByEmailAsync("sipho.driver@aquabophelo.gov.za");
-
             var trucks = new List<Truck>
             {
                 new Truck
@@ -202,7 +251,7 @@ public static class DbSeeder
                     RegistrationNumber = "542-KM NC",
                     CapacityLitres = 10000,
                     Status = "Available",
-                    DriverId = driverUser?.Id,
+                    DriverId = null,
                     LastLatitude = -28.7183,
                     LastLongitude = 24.7319,
                     LastSeenAt = DateTime.UtcNow
@@ -212,6 +261,7 @@ public static class DbSeeder
                     RegistrationNumber = "882-KM NC",
                     CapacityLitres = 15000,
                     Status = "Available",
+                    DriverId = null,
                     LastLatitude = -28.7419,
                     LastLongitude = 24.7719,
                     LastSeenAt = DateTime.UtcNow
@@ -221,6 +271,7 @@ public static class DbSeeder
                     RegistrationNumber = "104-KM NC",
                     CapacityLitres = 10000,
                     Status = "Available",
+                    DriverId = null,
                     LastLatitude = -28.6921,
                     LastLongitude = 24.7088,
                     LastSeenAt = DateTime.UtcNow
@@ -228,44 +279,6 @@ public static class DbSeeder
             };
 
             await context.Trucks.AddRangeAsync(trucks);
-            await context.SaveChangesAsync();
-        }
-
-        // 9. Seed Sample Fault Reports for Sol Plaatje Municipal Operations
-        if (!await context.IssueReports.AnyAsync())
-        {
-            var initialIssues = new List<IssueReport>
-            {
-                new IssueReport
-                {
-                    TicketId = "#SPM-2026-9812",
-                    FullName = "Nomcebo Nkosi",
-                    UserEmail = "resident@solplaatje.gov.za",
-                    IssueType = "Pipe Leak",
-                    Area = "Galeshewe",
-                    StreetAddress = "142 Main Road",
-                    Description = "Major water pipe leak near street curb.",
-                    ImageUrl = "/pipe_leak.jpg",
-                    Status = "Pending",
-                    CreatedAt = DateTime.UtcNow.AddHours(-3)
-                },
-                new IssueReport
-                {
-                    TicketId = "#SPM-2026-4410",
-                    FullName = "David Van Wyk",
-                    UserEmail = "david@kimberley.co.za",
-                    IssueType = "Low Water Pressure",
-                    Area = "Roodepan",
-                    StreetAddress = "88 Diamond Street",
-                    Description = "Water pressure dropped severely since morning.",
-                    ImageUrl = "/pipe_leak.jpg",
-                    Status = "In Progress",
-                    AdminNotes = "Maintenance team dispatched.",
-                    CreatedAt = DateTime.UtcNow.AddDays(-1)
-                }
-            };
-
-            await context.IssueReports.AddRangeAsync(initialIssues);
             await context.SaveChangesAsync();
         }
     }
