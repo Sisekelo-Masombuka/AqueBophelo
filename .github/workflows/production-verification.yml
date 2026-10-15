@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       target_url:
-        description: 'Target API URL (e.g. https://api.aquabophelo.app or https://<app-name>.azurewebsites.net)'
+        description: 'Target API URL (e.g. https://aquabophelo-api-spu-hkahhxcqe0b0c5ek.southafricanorth-01.azurewebsites.net)'
         required: true
-        default: 'https://api.aquabophelo.app'
+        default: 'https://aquabophelo-api-spu-hkahhxcqe0b0c5ek.southafricanorth-01.azurewebsites.net'
       admin_email:
         description: 'Admin email for live authentication verification (optional)'
         required: false
