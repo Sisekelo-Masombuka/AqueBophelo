@@ -21,7 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Configure Sentry Application Monitoring & Crash Telemetry
 builder.WebHost.UseSentry(options =>
 {
-    options.Dsn = builder.Configuration["Sentry:Dsn"];
+    options.Dsn = builder.Configuration["Sentry:Dsn"] ?? string.Empty;
     options.SendDefaultPii = false; // Guarantee privacy compliance (POPIA/GDPR)
     options.TracesSampleRate = builder.Configuration.GetValue<double>("Sentry:TracesSampleRate", builder.Environment.IsDevelopment() ? 1.0 : 0.1);
     options.MinimumEventLevel = LogLevel.Error;

@@ -81,6 +81,7 @@ jobs:
           Jwt__Key: 'SuperSecret64ByteLongJwtSigningKeyForAquaBopheloTestingSuite2026!'
           Jwt__Issuer: 'AquaBopheloAPI'
           Jwt__Audience: 'AquaBopheloClient'
+          Sentry__Dsn: ""
           MIGRATE_ON_START: 'true'
           SEED_DATABASE: 'true'
 
