@@ -53,23 +53,34 @@ jobs:
       - name: Launch Backend Server & Execute Live Deployment Smoke Tests
         run: |
           chmod +x scripts/deployment-smoke-tests.sh
-          dotnet run --project Code/backend/AquaBophelo/AquaBophelo.csproj --no-build --configuration Release &
+          dotnet Code/backend/AquaBophelo/bin/Release/net10.0/AquaBophelo.dll > /tmp/backend.log 2>&1 &
           BACKEND_PID=$!
 
+          READY=false
           for i in $(seq 1 30); do
-            if curl -s -f http://localhost:5094/health > /dev/null 2>&1; then
+            if curl -s -f http://127.0.0.1:5094/health > /dev/null 2>&1; then
               echo "AquaBophelo API is listening and responsive after ${i}s."
+              READY=true
               break
             fi
             sleep 1
           done
 
-          ./scripts/deployment-smoke-tests.sh "http://localhost:5094"
+          if [ "$READY" != "true" ]; then
+            echo "::error::AquaBophelo API failed to start within 30s. Output logs:"
+            cat /tmp/backend.log
+            exit 1
+          fi
+
+          ./scripts/deployment-smoke-tests.sh "http://127.0.0.1:5094"
           kill $BACKEND_PID || true
         env:
           ASPNETCORE_ENVIRONMENT: Development
+          ASPNETCORE_URLS: 'http://127.0.0.1:5094'
           ConnectionStrings__DefaultConnection: 'Server=127.0.0.1,1433;Database=AquaBophelo_Ci_Smoke;User Id=sa;Password=YourStrong!Passw0rd2026;TrustServerCertificate=True;Encrypt=True;MultipleActiveResultSets=true;'
           Jwt__Key: 'SuperSecret64ByteLongJwtSigningKeyForAquaBopheloTestingSuite2026!'
+          Jwt__Issuer: 'AquaBopheloAPI'
+          Jwt__Audience: 'AquaBopheloClient'
           MIGRATE_ON_START: 'true'
           SEED_DATABASE: 'true'
 
