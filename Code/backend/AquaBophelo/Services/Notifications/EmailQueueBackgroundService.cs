@@ -26,81 +26,90 @@ public class EmailQueueBackgroundService : BackgroundService
         _logger.LogInformation("[EmailQueueBackgroundService] Background email processor started.");
         _emailQueue.RecordHeartbeat();
 
-        using var heartbeatCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-        var heartbeatTask = Task.Run(async () =>
+        while (!stoppingToken.IsCancellationRequested)
         {
-            while (!heartbeatCts.Token.IsCancellationRequested)
+            try
             {
+                EmailWorkItem workItem;
                 try
                 {
-                    _emailQueue.RecordHeartbeat();
-                    await Task.Delay(TimeSpan.FromSeconds(15), heartbeatCts.Token);
+                    // Dequeue with a 30s timeout so idle worker loop periodically refreshes its liveness heartbeat
+                    using var dequeueTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                    dequeueTimeoutCts.CancelAfter(TimeSpan.FromSeconds(30));
+                    workItem = await _emailQueue.DequeueAsync(dequeueTimeoutCts.Token);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
                 {
-                    break;
+                    // Queue was empty for 30s; refresh worker liveness heartbeat and wait again
+                    _emailQueue.RecordHeartbeat();
+                    continue;
                 }
-            }
-        }, heartbeatCts.Token);
 
-        try
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
+                _emailQueue.RecordHeartbeat();
+
+                int sentToday = _emailQueue.GetDailySentCount();
+
+                if (sentToday >= DailyBrevoLimit && workItem.Priority != "Critical")
+                {
+                    _logger.LogWarning("[BrevoCapMonitor] Daily free tier limit of {Limit} emails reached ({SentToday} sent today). Skipping non-critical email to {To}.", DailyBrevoLimit, sentToday, workItem.ToEmail);
+                    continue;
+                }
+
+                if (sentToday >= WarningThreshold)
+                {
+                    _logger.LogWarning("[BrevoCapMonitor] Warning: Approaching daily Brevo limit ({SentToday}/{Limit} sent today). Prioritizing Critical alerts.", sentToday, DailyBrevoLimit);
+                }
+
+                using var scope = _serviceProvider.CreateScope();
+                var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+
                 try
                 {
-                    var workItem = await _emailQueue.DequeueAsync(stoppingToken);
-                    _emailQueue.RecordHeartbeat();
-
-                    int sentToday = _emailQueue.GetDailySentCount();
-
-                    if (sentToday >= DailyBrevoLimit && workItem.Priority != "Critical")
-                    {
-                        _logger.LogWarning("[BrevoCapMonitor] Daily free tier limit of {Limit} emails reached ({SentToday} sent today). Skipping non-critical email to {To}.", DailyBrevoLimit, sentToday, workItem.ToEmail);
-                        continue;
-                    }
-
-                    if (sentToday >= WarningThreshold)
-                    {
-                        _logger.LogWarning("[BrevoCapMonitor] Warning: Approaching daily Brevo limit ({SentToday}/{Limit} sent today). Prioritizing Critical alerts.", sentToday, DailyBrevoLimit);
-                    }
-
-                    using var scope = _serviceProvider.CreateScope();
-                    var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
-
-                    bool success = await emailSender.SendEmailAsync(
+                    var sendTask = emailSender.SendEmailAsync(
                         workItem.ToEmail,
                         workItem.Subject,
                         workItem.HtmlContent,
                         workItem.PlainTextContent
                     );
 
+                    // Enforce 30-second maximum send timeout to ensure worker never hangs on stalled sockets
+                    bool success = await sendTask.WaitAsync(TimeSpan.FromSeconds(30), stoppingToken);
+
                     if (success)
                     {
                         _emailQueue.RecordEmailSent();
-                        _logger.LogInformation("[EmailQueueBackgroundService] Background email processed for {To}. Daily total: {DailyCount}", workItem.ToEmail, _emailQueue.GetDailySentCount());
+                        _emailQueue.RecordDeliverySuccess();
+                        _logger.LogInformation("[EmailQueueBackgroundService] Background email successfully delivered to {To}. Daily total: {DailyCount}", workItem.ToEmail, _emailQueue.GetDailySentCount());
+                    }
+                    else
+                    {
+                        _emailQueue.RecordDeliveryFailure("EmailSender returned false");
+                        _logger.LogWarning("[EmailQueueBackgroundService] Email sending returned false for {To}. Consecutive failures: {Failures}", workItem.ToEmail, _emailQueue.ConsecutiveFailureCount);
                     }
                 }
-                catch (OperationCanceledException)
+                catch (TimeoutException)
                 {
-                    break;
+                    _emailQueue.RecordDeliveryFailure("Email delivery timed out after 30 seconds");
+                    _logger.LogError("[EmailQueueBackgroundService] Email delivery to {To} timed out after 30 seconds. Consecutive failures: {Failures}", workItem.ToEmail, _emailQueue.ConsecutiveFailureCount);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
                 {
-                    _logger.LogError(ex, "[EmailQueueBackgroundService] Error processing background email item.");
+                    _emailQueue.RecordDeliveryFailure(ex.Message);
+                    _logger.LogError(ex, "[EmailQueueBackgroundService] Exception occurred delivering email to {To}. Consecutive failures: {Failures}", workItem.ToEmail, _emailQueue.ConsecutiveFailureCount);
+                }
+                finally
+                {
+                    _emailQueue.RecordHeartbeat();
                 }
             }
-        }
-        finally
-        {
-            heartbeatCts.Cancel();
-            try
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
-                await Task.WhenAny(heartbeatTask, Task.Delay(500));
+                break;
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore task teardown exceptions
+                _logger.LogError(ex, "[EmailQueueBackgroundService] Unexpected error in worker loop.");
+                _emailQueue.RecordHeartbeat();
             }
         }
 

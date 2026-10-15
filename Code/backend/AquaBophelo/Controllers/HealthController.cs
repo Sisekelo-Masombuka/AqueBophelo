@@ -64,21 +64,29 @@ public class HealthController : ControllerBase
         }
 
         var isQueueHealthy = false;
+        var isDeliveryHealthy = true;
         try
         {
             isQueueHealthy = emailQueue != null && emailQueue.IsOperational && emailQueue.IsWorkerHealthy;
+            isDeliveryHealthy = emailQueue == null || emailQueue.IsDeliveryHealthy;
         }
         catch
         {
             isQueueHealthy = false;
+            isDeliveryHealthy = false;
         }
 
-        var isHealthy = canConnect && isQueueHealthy;
+        var isHealthy = canConnect && isQueueHealthy && isDeliveryHealthy;
         var responsePayload = new
         {
             status = isHealthy ? "healthy" : "unhealthy",
             database = canConnect ? "connected" : "unavailable",
             messageQueue = isQueueHealthy ? "active" : "offline",
+            deliveryStatus = isDeliveryHealthy ? "healthy" : "failing",
+            consecutiveDeliveryFailures = emailQueue?.ConsecutiveFailureCount ?? 0,
+            lastSuccessfulDeliveryUtc = emailQueue?.LastSuccessfulDeliveryUtc,
+            lastDeliveryFailureUtc = emailQueue?.LastDeliveryFailureUtc,
+            lastDeliveryFailureReason = emailQueue?.LastDeliveryFailureReason,
             lastWorkerHeartbeatUtc = emailQueue?.LastHeartbeatUtc,
             timestamp = DateTime.UtcNow
         };

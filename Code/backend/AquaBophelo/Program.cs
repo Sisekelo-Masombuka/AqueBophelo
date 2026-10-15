@@ -459,19 +459,26 @@ app.MapGet("/health/ready", async (AppDbContext context, IEmailQueue emailQueue)
     catch { isDbHealthy = false; }
 
     var isQueueHealthy = false;
+    var isDeliveryHealthy = true;
     try
     {
         isQueueHealthy = emailQueue != null && emailQueue.IsOperational && emailQueue.IsWorkerHealthy;
+        isDeliveryHealthy = emailQueue == null || emailQueue.IsDeliveryHealthy;
     }
-    catch { isQueueHealthy = false; }
+    catch { isQueueHealthy = false; isDeliveryHealthy = false; }
 
-    var isHealthy = isDbHealthy && isQueueHealthy;
+    var isHealthy = isDbHealthy && isQueueHealthy && isDeliveryHealthy;
 
     var result = new
     {
         status = isHealthy ? "healthy" : "degraded",
         database = isDbHealthy ? "connected" : "unreachable",
         messageQueue = isQueueHealthy ? "active" : "offline",
+        deliveryStatus = isDeliveryHealthy ? "healthy" : "failing",
+        consecutiveDeliveryFailures = emailQueue?.ConsecutiveFailureCount ?? 0,
+        lastSuccessfulDeliveryUtc = emailQueue?.LastSuccessfulDeliveryUtc,
+        lastDeliveryFailureUtc = emailQueue?.LastDeliveryFailureUtc,
+        lastDeliveryFailureReason = emailQueue?.LastDeliveryFailureReason,
         lastWorkerHeartbeatUtc = emailQueue?.LastHeartbeatUtc,
         timestamp = DateTime.UtcNow
     };

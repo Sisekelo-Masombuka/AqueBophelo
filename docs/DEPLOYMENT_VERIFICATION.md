@@ -2,6 +2,31 @@
 
 This runbook provides step-by-step verification commands, curl probes, and validation checklists to confirm that the deployed production system (**https://aquabophelo.app** and **https://api.aquabophelo.app**) is fully functional, secure, and resilient.
 
+## 0. Automated Deployment Smoke Test (One-Command Verification)
+
+Run the automated smoke test script immediately after deployment or container restart to execute all checks sequentially:
+
+**PowerShell (Windows / Azure Cloud Shell):**
+```powershell
+./scripts/deployment-smoke-tests.ps1 -BaseUrl "https://api.aquabophelo.app"
+```
+
+**Bash / Linux / macOS / cURL:**
+```bash
+chmod +x ./scripts/deployment-smoke-tests.sh
+./scripts/deployment-smoke-tests.sh "https://api.aquabophelo.app"
+```
+
+The script automatically executes:
+- [x] Liveness probe (`GET /health/live`)
+- [x] Database & Email Queue readiness probe (`GET /health/ready`)
+- [x] Controller diagnostics (`GET /api/v1/health`)
+- [x] Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`)
+- [x] CORS preflight headers
+- [x] SignalR Fleet hub negotiation (`POST /hubs/trucks/negotiate`)
+- [x] Security gate: rejection of unauthenticated requests (`GET /api/v1/trucks` -> 401)
+- [x] Security gate: rejection of invalid credentials (`POST /api/v1/auth/login` -> 400/401)
+
 ---
 
 ## 1. Automated Health & Container Readiness Probes
