@@ -2,7 +2,29 @@
 
 This runbook provides step-by-step verification commands, curl probes, and validation checklists to confirm that the deployed production system (**https://aquabophelo.app** and **https://api.aquabophelo.app**) is fully functional, secure, and resilient.
 
-## 0. Automated Deployment Smoke Test (One-Command Verification)
+## 0. Architecture: CI Testing vs. Live Production Verification
+
+AquaBophelo employs a two-tier verification strategy to prevent false confidence while protecting production data:
+
+1. **Tier 1: Pre-Merge CI Smoke Testing (`.github/workflows/ci.yml`)**
+   - Runs automatically on every pull request and push to `main`.
+   - Spins up a disposable Microsoft SQL Server 2022 service container.
+   - Launches the built API at `http://127.0.0.1:5094` in the runner.
+   - Executes `./scripts/deployment-smoke-tests.sh` to prove that the compiled binaries, ASP.NET Core routing, Entity Framework Core migrations, security headers, CORS preflight, and SignalR negotiation function correctly before anything is deployed.
+
+2. **Tier 2: Post-Deployment Production Verification (`.github/workflows/production-verification.yml`)**
+   - Triggered after deployment to Azure App Service, Kubernetes, or cloud VPS.
+   - Can be triggered manually with **one click** under the **Actions** tab on GitHub:
+     - Select **Live Production & Staging Verification** -> Click **Run workflow**.
+     - Enter target URL (e.g. `https://api.aquabophelo.app` or `https://<app-name>.azurewebsites.net`).
+   - Executes both:
+     - `./scripts/deployment-smoke-tests.sh` (Health, readiness, headers, CORS, SignalR, auth gates).
+     - `./scripts/verify-e2e-workflows.sh` (Resident dam telemetry, area discovery, alert feed, Brevo OTP dispatch pipeline, and admin analytics summary).
+   - **Non-Destructive Guarantee:** Strictly read-only checks; does not create fake accounts, modify database records, or trigger destructive operations on live resident data.
+
+---
+
+## 1. Automated Deployment Smoke Test (CLI Commands)
 
 Run the automated smoke test script immediately after deployment or container restart to execute all checks sequentially:
 
@@ -22,9 +44,11 @@ The script automatically executes:
 - [x] Database & Email Queue readiness probe (`GET /health/ready`)
 - [x] Controller diagnostics (`GET /api/v1/health`)
 - [x] Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`)
-- [x] CORS preflight headers
-- [x] SignalR Fleet hub negotiation (`POST /hubs/trucks/negotiate`)
-- [x] Security gate: rejection of unauthenticated requests (`GET /api/v1/trucks` -> 401)
+- [x] CORS preflight headers (`OPTIONS /api/v1/auth/login`)
+- [x] SignalR Ping hub negotiation (`POST /hubs/ping/negotiate`)
+- [x] SignalR Fleet telemetry auth gate (`POST /hubs/trucks/negotiate` -> 401)
+- [x] Security gate: rejection of unauthenticated requests (`GET /api/v1/subscriptions` -> 401)
+- [x] Security gate: rejection of unauthenticated fleet modification (`POST /api/v1/trucks` -> 401)
 - [x] Security gate: rejection of invalid credentials (`POST /api/v1/auth/login` -> 400/401)
 
 ---

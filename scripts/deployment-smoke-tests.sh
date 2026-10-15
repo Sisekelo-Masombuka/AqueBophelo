@@ -48,23 +48,27 @@ run_check "API Controller Health Diagnostics (GET /api/v1/health)" \
 run_check "HTTP Security Headers Enforcement" \
     "curl -s -I '${BASE_URL}/api/v1/health' | grep -i -E 'X-Content-Type-Options: nosniff|X-Frame-Options: DENY|Referrer-Policy: strict-origin-when-cross-origin'"
 
-# 5. SignalR Ping Hub Negotiation
+# 5. CORS Preflight Headers Verification
+run_check "CORS Preflight Headers Verification" \
+    "curl -s -I -X OPTIONS '${BASE_URL}/api/v1/auth/login' -H 'Origin: https://aquabophelo.app' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: Authorization,Content-Type' | grep -i -E 'Access-Control-Allow-Origin|HTTP/.* 204|HTTP/.* 200'"
+
+# 6. SignalR Ping Hub Negotiation
 run_check "SignalR Connectivity Negotiation (POST /hubs/ping/negotiate)" \
     "curl -s -X POST '${BASE_URL}/hubs/ping/negotiate?negotiateVersion=1' | grep -q 'connectionId'"
 
-# 6. SignalR Fleet Telemetry Authorization Gate
+# 7. SignalR Fleet Telemetry Authorization Gate
 run_check "SignalR Live Fleet Telemetry Requires Auth (POST /hubs/trucks/negotiate)" \
     "curl -s -o /dev/null -w '%{http_code}' -X POST '${BASE_URL}/hubs/trucks/negotiate?negotiateVersion=1' | grep -q '401'"
 
-# 7. Authentication Gate: Protected Endpoint Requires Authentication
+# 8. Authentication Gate: Protected Endpoint Requires Authentication
 run_check "Security Gate: Protected Endpoint Rejection (GET /api/v1/subscriptions)" \
     "curl -s -o /dev/null -w '%{http_code}' '${BASE_URL}/api/v1/subscriptions' | grep -q '401'"
 
-# 8. Administrative Gate: Modifying Fleet Requires Authentication
+# 9. Administrative Gate: Modifying Fleet Requires Authentication
 run_check "Security Gate: Modifying Municipal Fleet Rejection (POST /api/v1/trucks)" \
     "curl -s -o /dev/null -w '%{http_code}' -X POST '${BASE_URL}/api/v1/trucks' -H 'Content-Type: application/json' -d '{\"licensePlate\":\"NC123456\"}' | grep -q '401'"
 
-# 9. Authentication Gate: Rejection of Invalid Credentials
+# 10. Authentication Gate: Rejection of Invalid Credentials
 run_check "Security Gate: Rejection of Invalid Login (POST /api/v1/auth/login)" \
     "curl -s -o /dev/null -w '%{http_code}' -X POST '${BASE_URL}/api/v1/auth/login' -H 'Content-Type: application/json' -d '{\"email\":\"bad@invalid.test\",\"password\":\"WrongPassword!\"}' | grep -E -q '400|401'"
 
