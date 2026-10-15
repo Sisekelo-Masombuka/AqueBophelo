@@ -50,6 +50,29 @@ jobs:
       - name: Run Backend Unit & Security Tests
         run: dotnet test Code/backend/AquaBophelo.slnx --configuration Release --no-build --verbosity normal
 
+      - name: Launch Backend Server & Execute Live Deployment Smoke Tests
+        run: |
+          chmod +x scripts/deployment-smoke-tests.sh
+          dotnet run --project Code/backend/AquaBophelo/AquaBophelo.csproj --no-build --configuration Release &
+          BACKEND_PID=$!
+
+          for i in $(seq 1 30); do
+            if curl -s -f http://localhost:5094/health > /dev/null 2>&1; then
+              echo "AquaBophelo API is listening and responsive after ${i}s."
+              break
+            fi
+            sleep 1
+          done
+
+          ./scripts/deployment-smoke-tests.sh "http://localhost:5094"
+          kill $BACKEND_PID || true
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ConnectionStrings__DefaultConnection: 'Server=127.0.0.1,1433;Database=AquaBophelo_Ci_Smoke;User Id=sa;Password=YourStrong!Passw0rd2026;TrustServerCertificate=True;Encrypt=True;MultipleActiveResultSets=true;'
+          Jwt__Key: 'SuperSecret64ByteLongJwtSigningKeyForAquaBopheloTestingSuite2026!'
+          MIGRATE_ON_START: 'true'
+          SEED_DATABASE: 'true'
+
       - name: Scan Backend NuGet Packages for Known Vulnerabilities
         run: dotnet list Code/backend/AquaBophelo.slnx package --vulnerable --include-transitive
 
