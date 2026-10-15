@@ -131,9 +131,9 @@ Run-Test "CORS Preflight Headers Verification" {
     return @{ Success = $false; Error = "CORS preflight failed with HTTP $($res.StatusCode)" }
 }
 
-# 6. SignalR Hub Negotiation
-Run-Test "SignalR Live Fleet Hub Negotiation (POST /hubs/trucks/negotiate)" {
-    $res = Invoke-WebRequest -Uri "$BaseUrl/hubs/trucks/negotiate?negotiateVersion=1" -Method Post -TimeoutSec 10 -UseBasicParsing
+# 6. SignalR Connectivity Negotiation (Ping Hub)
+Run-Test "SignalR Connectivity Negotiation (POST /hubs/ping/negotiate)" {
+    $res = Invoke-WebRequest -Uri "$BaseUrl/hubs/ping/negotiate?negotiateVersion=1" -Method Post -TimeoutSec 10 -UseBasicParsing
     if ($res.StatusCode -eq 200) {
         $json = $res.Content | ConvertFrom-Json
         $hasConnId = [bool]$json.connectionId
@@ -145,14 +145,41 @@ Run-Test "SignalR Live Fleet Hub Negotiation (POST /hubs/trucks/negotiate)" {
     return @{ Success = $false; Error = "SignalR negotiation returned HTTP $($res.StatusCode)" }
 }
 
-# 7. Authentication Gate: Protected Endpoint Access Without Token
-Run-Test "Security Gate: Protected Endpoint Requires Authentication (GET /api/v1/trucks)" {
+# 7. SignalR Fleet Telemetry Authorization Gate
+Run-Test "SignalR Live Fleet Telemetry Requires Auth (POST /hubs/trucks/negotiate)" {
     try {
-        $res = Invoke-WebRequest -Uri "$BaseUrl/api/v1/trucks" -Method Get -TimeoutSec 10 -UseBasicParsing
+        $res = Invoke-WebRequest -Uri "$BaseUrl/hubs/trucks/negotiate?negotiateVersion=1" -Method Post -TimeoutSec 10 -UseBasicParsing
+        return @{ Success = $false; Error = "Expected HTTP 401 but received HTTP $($res.StatusCode)" }
+    } catch {
+        if ($_.Exception.Response.StatusCode -eq 401) {
+            return @{ Success = $true; Details = "Correctly rejected unauthenticated SignalR hub connection with HTTP 401 Unauthorized" }
+        }
+        return @{ Success = $false; Error = "Unexpected status code: $($_.Exception.Message)" }
+    }
+}
+
+# 8. Authentication Gate: Protected Endpoint Access Without Token
+Run-Test "Security Gate: Protected Endpoint Requires Authentication (GET /api/v1/subscriptions)" {
+    try {
+        $res = Invoke-WebRequest -Uri "$BaseUrl/api/v1/subscriptions" -Method Get -TimeoutSec 10 -UseBasicParsing
         return @{ Success = $false; Error = "Endpoint returned HTTP 200 instead of 401 Unauthorized" }
     } catch {
         if ($_.Exception.Response.StatusCode -eq 401) {
-            return @{ Success = $true; Details = "Correctly rejected unauthenticated request with HTTP 401 Unauthorized" }
+            return @{ Success = $true; Details = "Correctly rejected unauthenticated request to /api/v1/subscriptions with HTTP 401 Unauthorized" }
+        }
+        return @{ Success = $false; Error = "Unexpected status code: $($_.Exception.Message)" }
+    }
+}
+
+# 9. Administrative Gate: Modifying Fleet Requires Authentication
+Run-Test "Security Gate: Modifying Municipal Fleet Requires Authentication (POST /api/v1/trucks)" {
+    try {
+        $body = @{ licensePlate = "NC123456"; capacityLiters = 10000 } | ConvertTo-Json
+        $res = Invoke-WebRequest -Uri "$BaseUrl/api/v1/trucks" -Method Post -Body $body -ContentType "application/json" -TimeoutSec 10 -UseBasicParsing
+        return @{ Success = $false; Error = "Endpoint returned HTTP $($res.StatusCode) instead of 401 Unauthorized" }
+    } catch {
+        if ($_.Exception.Response.StatusCode -eq 401) {
+            return @{ Success = $true; Details = "Correctly rejected unauthenticated write to /api/v1/trucks with HTTP 401 Unauthorized" }
         }
         return @{ Success = $false; Error = "Unexpected status code: $($_.Exception.Message)" }
     }
