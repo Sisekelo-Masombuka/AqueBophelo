@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, AlertTriangle, Plus, CheckCircle2, X, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, AlertTriangle, Plus, X, Trash2 } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import apiClient from '../api/client';
 import { useLanguage } from '../context/LanguageContext';
@@ -45,19 +45,22 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchOutages();
-  }, []);
-
-  const fetchOutages = async () => {
-    try {
-      const response = await apiClient.get('/api/v1/outages');
-      if (Array.isArray(response.data) && response.data.length > 0) {
-        setOutages(response.data);
+    let isCurrent = true;
+    const loadOutages = async () => {
+      try {
+        const response = await apiClient.get('/api/v1/outages');
+        if (isCurrent && Array.isArray(response.data) && response.data.length > 0) {
+          setOutages(response.data);
+        }
+      } catch (err) {
+        console.warn('Live API outages fallback to initial state:', err);
       }
-    } catch (err) {
-      console.warn('Live API outages fallback to initial state:', err);
-    }
-  };
+    };
+    loadOutages();
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
 
   const handleAddOutage = async (e) => {
     e.preventDefault();
@@ -123,7 +126,7 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
         hour: '2-digit',
         minute: '2-digit',
       });
-    } catch (e) {
+    } catch {
       return dateStr;
     }
   };

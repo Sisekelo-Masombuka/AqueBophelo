@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, CheckCircle2, UserPlus, Search, X, Settings, Shield, Activity, Bell, Server, Clock, Lock, RefreshCw, Trash2 } from 'lucide-react';
+import { Users, CheckCircle2, UserPlus, Search, X, Settings, Activity, Bell, Server, Trash2 } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import apiClient from '../../api/client';
 
@@ -8,13 +8,13 @@ export function ManageUsers() {
 
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Section 3.7.4 & 3.7.5: System Settings State
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
   const [dryRunModeEnabled, setDryRunModeEnabled] = useState(false);
   const [apiBaseUrl, setApiBaseUrl] = useState('https://localhost:7154');
-  const [systemTimezone, setSystemTimezone] = useState('CAT (UTC+2)');
+  const systemTimezone = 'CAT (UTC+2)';
   const [settingsSuccess, setSettingsSuccess] = useState('');
 
   const [roleFilter, setRoleFilter] = useState('All');
@@ -33,15 +33,12 @@ export function ManageUsers() {
 
   const fetchUsers = async () => {
     try {
-      setLoading(true);
       const res = await apiClient.get('/api/v1/users');
       if (Array.isArray(res.data)) {
         setUsers(res.data);
       }
     } catch (err) {
       console.warn('Error fetching users:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -64,8 +61,35 @@ export function ManageUsers() {
   };
 
   useEffect(() => {
-    fetchUsers();
-    fetchAuditLogs();
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const [usersRes, auditRes] = await Promise.allSettled([
+          apiClient.get('/api/v1/users'),
+          apiClient.get('/api/v1/auditlogs'),
+        ]);
+        if (!isMounted) return;
+        if (usersRes.status === 'fulfilled' && Array.isArray(usersRes.value.data)) {
+          setUsers(usersRes.value.data);
+        }
+        if (auditRes.status === 'fulfilled' && Array.isArray(auditRes.value.data)) {
+          setAuditLogs(auditRes.value.data.map(l => ({
+            id: l.id || `log-${Math.random()}`,
+            action: l.action || 'System Event',
+            actor: l.userFullName || l.userEmail || 'System',
+            details: l.details || '',
+            timestamp: l.timestampUtc ? new Date(l.timestampUtc).toLocaleString('en-ZA') : 'Recently',
+            type: l.category || 'Operations'
+          })));
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleAddUser = async (e) => {
@@ -73,7 +97,7 @@ export function ManageUsers() {
     if (!newFullName.trim() || !newEmail.trim()) return;
 
     try {
-      const res = await apiClient.post('/api/v1/users', {
+      await apiClient.post('/api/v1/users', {
         fullName: newFullName.trim(),
         email: newEmail.trim().toLowerCase(),
         phoneNumber: newPhone.trim(),
@@ -108,7 +132,7 @@ export function ManageUsers() {
       setFeedback({ type: 'success', text: `User ${userName} deactivated successfully.` });
       await fetchUsers();
       await fetchAuditLogs();
-    } catch (err) {
+    } catch {
       setFeedback({ type: 'error', text: 'Failed to deactivate user.' });
     }
   };
@@ -563,6 +587,19 @@ export function ManageUsers() {
                     <option value="104-KM NC (10,000L)">104-KM NC (10,000L)</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">Municipal Suburb</label>
+                <select
+                  value={newArea}
+                  onChange={(e) => setNewArea(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs md:text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
+                >
+                  <option value="Galeshewe">Galeshewe</option>
+                  <option value="Kimberley Central">Kimberley Central</option>
+                  <option value="Roodepan">Roodepan</option>
+                </select>
               </div>
 
               <div>

@@ -8,7 +8,10 @@ public interface IEmailQueue
     ValueTask<EmailWorkItem> DequeueAsync(CancellationToken cancellationToken);
     int GetDailySentCount();
     void RecordEmailSent();
+    void RecordHeartbeat(DateTime? timestamp = null);
+    DateTime LastHeartbeatUtc { get; }
     bool IsOperational { get; }
+    bool IsWorkerHealthy { get; }
 }
 
 public class EmailQueue : IEmailQueue
@@ -16,9 +19,17 @@ public class EmailQueue : IEmailQueue
     private readonly Channel<EmailWorkItem> _channel;
     private int _dailySentCount = 0;
     private DateTime _lastResetDate = DateTime.UtcNow.Date;
+    private DateTime _lastHeartbeatUtc = DateTime.UtcNow;
     private readonly object _counterLock = new();
 
     public bool IsOperational => !_channel.Reader.Completion.IsCompleted;
+    public DateTime LastHeartbeatUtc => _lastHeartbeatUtc;
+    public bool IsWorkerHealthy => IsOperational && (DateTime.UtcNow - _lastHeartbeatUtc) < TimeSpan.FromMinutes(2);
+
+    public void RecordHeartbeat(DateTime? timestamp = null)
+    {
+        _lastHeartbeatUtc = timestamp ?? DateTime.UtcNow;
+    }
 
     public EmailQueue()
     {

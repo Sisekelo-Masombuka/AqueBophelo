@@ -461,7 +461,7 @@ app.MapGet("/health/ready", async (AppDbContext context, IEmailQueue emailQueue)
     var isQueueHealthy = false;
     try
     {
-        isQueueHealthy = emailQueue != null && emailQueue.IsOperational;
+        isQueueHealthy = emailQueue != null && emailQueue.IsOperational && emailQueue.IsWorkerHealthy;
     }
     catch { isQueueHealthy = false; }
 
@@ -472,6 +472,7 @@ app.MapGet("/health/ready", async (AppDbContext context, IEmailQueue emailQueue)
         status = isHealthy ? "healthy" : "degraded",
         database = isDbHealthy ? "connected" : "unreachable",
         messageQueue = isQueueHealthy ? "active" : "offline",
+        lastWorkerHeartbeatUtc = emailQueue?.LastHeartbeatUtc,
         timestamp = DateTime.UtcNow
     };
 

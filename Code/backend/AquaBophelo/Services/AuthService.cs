@@ -87,8 +87,9 @@ public class AuthService : IAuthService
         await _userManager.AddToRoleAsync(user, "Resident");
 
         // Check if user already verified their email during the registration flow (e.g. Step 2 OTP in Register.jsx)
+        var lowerEmail = dto.Email.Trim().ToLowerInvariant();
         var hasVerifiedOtp = await _context.EmailOtps.AnyAsync(o =>
-            o.Email == normalizedEmail &&
+            (o.Email.ToLower() == lowerEmail || o.Email == normalizedEmail) &&
             o.Purpose == "EmailVerification" &&
             o.IsUsed &&
             o.CreatedAt >= DateTime.UtcNow.AddMinutes(-30));

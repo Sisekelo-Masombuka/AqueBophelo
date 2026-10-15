@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Droplet, ShieldCheck, MapPin, Truck, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Droplet, Truck, AlertTriangle } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import Footer from '../components/Footer';

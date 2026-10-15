@@ -58,8 +58,8 @@ export function ManageDams() {
         if (res.data && Array.isArray(res.data) && res.data.length > 0) {
           setDams(res.data);
         }
-      } catch (err) {
-        console.warn('Backend unavailable, using initial seeded dams data.', err);
+      } catch {
+        // Backend unavailable, fallback to initial seeded data
       } finally {
         setLoading(false);
       }
@@ -224,7 +224,12 @@ export function ManageDams() {
 
       {/* Dams Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {dams.map((dam) => {
+        {loading && dams.length === 0 ? (
+          <div className="col-span-full p-8 text-center bg-white border border-slate-200 rounded-lg text-slate-500 text-xs">
+            Loading municipal reservoir gauges...
+          </div>
+        ) : (
+          dams.map((dam) => {
           const level = dam.latestLevelPercent ?? 0;
           return (
             <div
@@ -293,7 +298,7 @@ export function ManageDams() {
               </div>
             </div>
           );
-        })}
+        }) )}
       </div>
 
       {/* Record Reading Modal */}

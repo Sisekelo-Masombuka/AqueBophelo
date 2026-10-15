@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { X, Bell, Mail, CheckCircle2, AlertCircle, ShieldCheck, MapPin } from 'lucide-react';
+import { X, Bell, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 
 export function AlertSubscriptionsModal({ isOpen, onClose }) {
   const { user } = useAuth();
 
   const [area, setArea] = useState(user?.area || 'Galeshewe');
-  const [receiveEmail, setReceiveEmail] = useState(true);
   const [email, setEmail] = useState(user?.email || 'resident@solplaatje.gov.za');
   const [lowDamAlerts, setLowDamAlerts] = useState(true);
   const [truckArrivalAlerts, setTruckArrivalAlerts] = useState(true);

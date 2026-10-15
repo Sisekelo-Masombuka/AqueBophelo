@@ -7,7 +7,7 @@ export function ManageTrucks() {
   const [trucks, setTrucks] = useState([]);
   const [municipalDrivers, setMunicipalDrivers] = useState([]);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -22,29 +22,33 @@ export function ManageTrucks() {
   const [selectedDriverId, setSelectedDriverId] = useState('');
 
   // Fetch trucks and real drivers from backend
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [trucksRes, driversRes] = await Promise.allSettled([
-        apiClient.get('/api/v1/trucks'),
-        apiClient.get('/api/v1/users?role=Driver')
-      ]);
-
-      if (trucksRes.status === 'fulfilled' && Array.isArray(trucksRes.value.data)) {
-        setTrucks(trucksRes.value.data);
-      }
-      if (driversRes.status === 'fulfilled' && Array.isArray(driversRes.value.data)) {
-        setMunicipalDrivers(driversRes.value.data);
-      }
-    } catch (err) {
-      console.warn('Error loading trucks or drivers:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadData();
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const [trucksRes, driversRes] = await Promise.allSettled([
+          apiClient.get('/api/v1/trucks'),
+          apiClient.get('/api/v1/users?role=Driver')
+        ]);
+
+        if (!isMounted) return;
+        if (trucksRes.status === 'fulfilled' && Array.isArray(trucksRes.value.data)) {
+          setTrucks(trucksRes.value.data);
+        }
+        if (driversRes.status === 'fulfilled' && Array.isArray(driversRes.value.data)) {
+          setMunicipalDrivers(driversRes.value.data);
+        }
+      } catch (err) {
+        console.warn('Error loading trucks or drivers:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleRegisterTruck = async (e) => {
@@ -221,41 +225,55 @@ export function ManageTrucks() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {filteredTrucks.map((truck) => (
-                <tr key={truck.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="py-3 px-4 font-mono font-bold text-[#152e52]">
-                    {truck.registrationNumber}
-                  </td>
-                  <td className="py-3 px-4 font-medium text-slate-700">
-                    {truck.capacityLitres?.toLocaleString()} L
-                  </td>
-                  <td className="py-3 px-4">
-                    <StatusBadge status={truck.status} />
-                  </td>
-                  <td className="py-3 px-4 text-slate-900">
-                    {truck.driverName ? (
-                      <span className="inline-flex items-center space-x-1.5 font-medium">
-                        <span className="w-2 h-2 rounded-full bg-[#2e7d32]"></span>
-                        <span>{truck.driverName}</span>
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 italic">Unassigned</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-xs text-slate-500 font-normal">
-                    {truck.lastSeenAtFormatted || 'Never seen'}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button
-                      onClick={() => handleOpenAssignModal(truck)}
-                      className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-md border border-slate-300 bg-white text-[#152e52] hover:bg-slate-50 font-medium text-xs transition-colors cursor-pointer"
-                    >
-                      <UserCheck className="w-3.5 h-3.5 text-[#152e52]" />
-                      <span>Assign Driver</span>
-                    </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-500 text-xs">
+                    Loading tankers and fleet telemetry...
                   </td>
                 </tr>
-              ))}
+              ) : filteredTrucks.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-500 text-xs">
+                    No municipal tankers found matching current filter.
+                  </td>
+                </tr>
+              ) : (
+                filteredTrucks.map((truck) => (
+                  <tr key={truck.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-4 font-mono font-bold text-[#152e52]">
+                      {truck.registrationNumber}
+                    </td>
+                    <td className="py-3 px-4 font-medium text-slate-700">
+                      {truck.capacityLitres?.toLocaleString()} L
+                    </td>
+                    <td className="py-3 px-4">
+                      <StatusBadge status={truck.status} />
+                    </td>
+                    <td className="py-3 px-4 text-slate-900">
+                      {truck.driverName ? (
+                        <span className="inline-flex items-center space-x-1.5 font-medium">
+                          <span className="w-2 h-2 rounded-full bg-[#2e7d32]"></span>
+                          <span>{truck.driverName}</span>
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-xs text-slate-500 font-normal">
+                      {truck.lastSeenAtFormatted || 'Never seen'}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => handleOpenAssignModal(truck)}
+                        className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-md border border-slate-300 bg-white text-[#152e52] hover:bg-slate-50 font-medium text-xs transition-colors cursor-pointer"
+                      >
+                        <UserCheck className="w-3.5 h-3.5 text-[#152e52]" />
+                        <span>Assign Driver</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

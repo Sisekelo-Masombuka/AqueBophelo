@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
-import { Phone, Mail, MapPin, CheckCircle2, AlertCircle, Clock, Droplet, Send } from 'lucide-react';
+import { Phone, Mail, MapPin, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import Footer from '../components/Footer';

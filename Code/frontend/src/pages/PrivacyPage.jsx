@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Lock, Eye, MapPin, Database, FileText } from 'lucide-react';
+import { ShieldCheck, Eye, MapPin, Database, FileText } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import Footer from '../components/Footer';
 import LanguageSwitcher from '../components/LanguageSwitcher';

@@ -9,10 +9,8 @@ import Footer from '../components/Footer';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useLanguage } from '../context/LanguageContext';
 import ScheduledOutagesComponent from '../components/ScheduledOutagesComponent';
-import { Button } from '../components/ui/Button';
 import apiClient from '../api/client';
 import {
-  Droplet,
   Truck,
   AlertTriangle,
   ArrowRight,
@@ -104,7 +102,7 @@ export function LandingPage() {
         if (res.data && Array.isArray(res.data) && res.data.length > 0) {
           setTrucks(res.data);
         }
-      } catch (err) {
+      } catch {
         // Fallback to initial municipal assets
       }
     }

@@ -81,13 +81,69 @@ export function LiveCameraCapture({
 
   // Automatically start camera on mount if not already showing a captured preview
   useEffect(() => {
+    let isCurrent = true;
     if (!previewUrl) {
-      startCamera();
+      const initCamera = async () => {
+        setIsInitializing(true);
+        setCameraError(null);
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+        }
+
+        try {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('Your browser does not support in-app camera capture.');
+          }
+
+          const constraints = {
+            video: {
+              facingMode: { ideal: facingMode },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+            audio: false,
+          };
+
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          if (!isCurrent) {
+            stream.getTracks().forEach((t) => t.stop());
+            return;
+          }
+
+          streamRef.current = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            await videoRef.current.play();
+          }
+
+          setIsCameraActive(true);
+        } catch (err) {
+          if (!isCurrent) return;
+          console.warn('Camera initialization error:', err);
+          let msg = 'Unable to access device camera. Please check camera permissions in your browser.';
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            msg = 'Camera permission denied. Please allow camera access in your browser settings.';
+          } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            msg = 'No camera device was detected on your hardware.';
+          }
+          setCameraError(msg);
+          setIsCameraActive(false);
+        } finally {
+          if (isCurrent) {
+            setIsInitializing(false);
+          }
+        }
+      };
+
+      initCamera();
     }
+
     return () => {
+      isCurrent = false;
       stopCamera();
     };
-  }, []);
+  }, [previewUrl, facingMode]);
 
   // Flip front/back camera
   const handleToggleFacingMode = () => {
@@ -304,7 +360,10 @@ export function LiveCameraCapture({
 
             <button
               type="button"
-              onClick={stopCamera}
+              onClick={() => {
+                stopCamera();
+                if (onCancel) onCancel();
+              }}
               title="Close Camera"
               className="p-1.5 bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-full border border-slate-300 cursor-pointer transition-colors shadow-2xs"
             >

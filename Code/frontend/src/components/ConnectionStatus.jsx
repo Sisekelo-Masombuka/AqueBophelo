@@ -15,9 +15,11 @@ export function ConnectionStatus() {
 
   const hubRef = useRef(null);
 
-  const checkRestApi = async () => {
-    setApiStatus('checking');
-    setApiError(null);
+  const checkRestApi = async (isManual = false) => {
+    if (isManual) {
+      setApiStatus('checking');
+      setApiError(null);
+    }
     try {
       const response = await apiClient.get('/api/v1/health');
       if (response.data && response.data.status === 'ok') {
@@ -37,14 +39,16 @@ export function ConnectionStatus() {
     }
   };
 
-  const connectSignalR = async () => {
-    setSignalrStatus('connecting');
+  const connectSignalR = async (isManual = false) => {
+    if (isManual) {
+      setSignalrStatus('connecting');
+    }
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7154';
 
     if (hubRef.current) {
       try {
         await hubRef.current.stop();
-      } catch (e) {
+      } catch {
         // Ignore stop errors
       }
     }
@@ -96,10 +100,72 @@ export function ConnectionStatus() {
   };
 
   useEffect(() => {
-    checkRestApi();
-    connectSignalR();
+    let isCurrent = true;
+
+    const runChecks = async () => {
+      try {
+        const response = await apiClient.get('/api/v1/health');
+        if (!isCurrent) return;
+        if (response.data && response.data.status === 'ok') {
+          setApiStatus('online');
+          setApiTime(response.data.serverTimeUtc);
+        } else {
+          setApiStatus('offline');
+          setApiError('Received invalid health response from server.');
+        }
+      } catch (err) {
+        if (!isCurrent) return;
+        setApiStatus('offline');
+        if (err?.code === 'ERR_NETWORK') {
+          setApiError('Unable to connect to the backend server. Verify the API is running and dev certificates are trusted.');
+        } else {
+          setApiError(err?.message || 'API health check failed.');
+        }
+      }
+
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7154';
+      const connection = new signalR.HubConnectionBuilder()
+        .withUrl(`${baseUrl}/hubs/ping`, {
+          skipNegotiation: false,
+          transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling
+        })
+        .withAutomaticReconnect([0, 2000, 5000, 10000])
+        .configureLogging(signalR.LogLevel.Warning)
+        .build();
+
+      hubRef.current = connection;
+
+      connection.onreconnecting(() => {
+        if (isCurrent) setSignalrStatus('reconnecting');
+      });
+
+      connection.onreconnected(() => {
+        if (isCurrent) {
+          setSignalrStatus('connected');
+          invokePing(connection);
+        }
+      });
+
+      connection.onclose(() => {
+        if (isCurrent) setSignalrStatus('disconnected');
+      });
+
+      try {
+        await connection.start();
+        if (isCurrent) {
+          setSignalrStatus('connected');
+          await invokePing(connection);
+        }
+      } catch (err) {
+        console.error('SignalR Connection Error:', err);
+        if (isCurrent) setSignalrStatus('disconnected');
+      }
+    };
+
+    runChecks();
 
     return () => {
+      isCurrent = false;
       if (hubRef.current) {
         hubRef.current.stop();
       }
@@ -210,8 +276,8 @@ export function ConnectionStatus() {
         <div className="pt-2 flex justify-end">
           <button
             onClick={() => {
-              checkRestApi();
-              connectSignalR();
+              checkRestApi(true);
+              connectSignalR(true);
             }}
             className="px-4 py-2 bg-[#22D3EE] text-[#0B1220] font-semibold text-sm rounded-lg hover:bg-[#22D3EE]/90 transition-colors flex items-center gap-2"
           >

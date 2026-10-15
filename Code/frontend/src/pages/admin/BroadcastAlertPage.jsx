@@ -39,7 +39,7 @@ export function BroadcastAlertPage() {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [severity, setSeverity] = useState('Critical');
-  const [type, setType] = useState('Announcement');
+  const type = 'Announcement';
   const [areaId, setAreaId] = useState('');
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -51,8 +51,8 @@ export function BroadcastAlertPage() {
         if (res.data && Array.isArray(res.data) && res.data.length > 0) {
           setAlerts(res.data);
         }
-      } catch (err) {
-        console.warn('Backend unavailable, using initial seeded alerts.', err);
+      } catch {
+        // Backend unavailable, fallback to initial state
       }
     }
     loadAlerts();

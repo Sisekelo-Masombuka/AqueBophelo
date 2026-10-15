@@ -10,63 +10,94 @@ const AuthContext = createContext(null);
  * @param {{ children: React.ReactNode }} props
  */
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Load saved session from localStorage on app startup and sync with backend
-  useEffect(() => {
+  const [token, setToken] = useState(() => {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
-        const savedToken = localStorage.getItem('aquabophelo_token');
-        const savedUser = localStorage.getItem('aquabophelo_user');
-        if (savedToken && savedUser) {
-          setToken(savedToken);
-          let parsedUser = null;
-          try {
-            parsedUser = JSON.parse(savedUser);
-            setUser(parsedUser);
-            if (parsedUser?.preferredLanguage) {
-              localStorage.setItem('aquabophelo_lang', parsedUser.preferredLanguage);
-            }
-          } catch {
-            localStorage.removeItem('aquabophelo_user');
-          }
+        return localStorage.getItem('aquabophelo_token') || null;
+      }
+    } catch {
+      // Storage access restricted
+    }
+    return null;
+  });
 
-          // Fetch live server profile in background to keep data fresh across tabs/refreshes
-          apiClient.get('/api/v1/auth/me')
-            .then((res) => {
-              if (res.data) {
-                const freshProfile = {
-                  ...(parsedUser || {}),
-                  id: res.data.id || parsedUser?.id,
-                  email: res.data.email || parsedUser?.email,
-                  fullName: res.data.fullName || parsedUser?.fullName,
-                  role: res.data.role || parsedUser?.role,
-                  phoneNumber: res.data.phoneNumber || parsedUser?.phoneNumber || '',
-                  area: res.data.areaName || parsedUser?.area || 'Galeshewe',
-                  areaId: res.data.areaId || parsedUser?.areaId,
-                  profilePictureUrl: res.data.profilePictureUrl || parsedUser?.profilePictureUrl || null,
-                  preferredLanguage: res.data.preferredLanguage || parsedUser?.preferredLanguage || 'EN',
-                };
-                setUser(freshProfile);
-                localStorage.setItem('aquabophelo_user', JSON.stringify(freshProfile));
-              }
-            })
-            .catch((err) => {
-              console.warn('Backend profile sync note:', err);
-            });
-        } else {
-          setUser(null);
-          setToken(null);
+  const [user, setUser] = useState(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const savedUser = localStorage.getItem('aquabophelo_user');
+        if (savedUser) {
+          const parsed = JSON.parse(savedUser);
+          if (parsed?.preferredLanguage) {
+            localStorage.setItem('aquabophelo_lang', parsed.preferredLanguage);
+          }
+          return parsed;
         }
       }
-    } catch (err) {
-      console.error('Failed to load auth state:', err);
-    } finally {
-      setIsLoading(false);
+    } catch {
+      try {
+        localStorage.removeItem('aquabophelo_user');
+      } catch {
+        // Storage access restricted
+      }
     }
-  }, []);
+    return null;
+  });
+
+  const [isLoading, setIsLoading] = useState(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return !!localStorage.getItem('aquabophelo_token');
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  });
+
+  // Verify and sync live profile with backend if token exists
+  useEffect(() => {
+    let isCurrent = true;
+    if (!token) return;
+
+    apiClient
+      .get('/api/v1/auth/me')
+      .then((res) => {
+        if (isCurrent && res.data) {
+          setUser((prev) => {
+            const freshProfile = {
+              ...(prev || {}),
+              id: res.data.id || prev?.id,
+              email: res.data.email || prev?.email,
+              fullName: res.data.fullName || prev?.fullName,
+              role: res.data.role || prev?.role,
+              phoneNumber: res.data.phoneNumber || prev?.phoneNumber || '',
+              area: res.data.areaName || prev?.area || 'Galeshewe',
+              areaId: res.data.areaId || prev?.areaId,
+              profilePictureUrl: res.data.profilePictureUrl || prev?.profilePictureUrl || null,
+              preferredLanguage: res.data.preferredLanguage || prev?.preferredLanguage || 'EN',
+            };
+            try {
+              localStorage.setItem('aquabophelo_user', JSON.stringify(freshProfile));
+            } catch {
+              // Ignore storage errors
+            }
+            return freshProfile;
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('Backend profile sync note:', err);
+      })
+      .finally(() => {
+        if (isCurrent) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [token]);
 
   const saveAuthSession = (authToken, authUser) => {
     setToken(authToken);

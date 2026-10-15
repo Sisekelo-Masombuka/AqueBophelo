@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import TrendChart from '../../components/TrendChart';
@@ -13,49 +13,67 @@ import {
 } from 'lucide-react';
 import apiClient from '../../api/client';
 
+const DEFAULT_EMPTY_REPORT = {
+  totalTrucks: 0,
+  availableTrucks: 0,
+  onTripTrucks: 0,
+  maintenanceTrucks: 0,
+  totalFleetCapacityLitres: 0,
+  totalTrips: 0,
+  activeTrips: 0,
+  completedTrips: 0,
+  totalStopsCompleted: 0,
+  totalLitresDelivered: 0,
+  totalDams: 0,
+  averageDamLevelPercent: 0,
+  criticalDamsCount: 0,
+  activeAlertsCount: 0,
+  totalMunicipalAreas: 0,
+  areasSummary: [],
+  damsSummary: [],
+};
+
 export function AdminReportsPage() {
   const [report, setReport] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const defaultEmptyReport = {
-    totalTrucks: 0,
-    availableTrucks: 0,
-    onTripTrucks: 0,
-    maintenanceTrucks: 0,
-    totalFleetCapacityLitres: 0,
-    totalTrips: 0,
-    activeTrips: 0,
-    completedTrips: 0,
-    totalStopsCompleted: 0,
-    totalLitresDelivered: 0,
-    totalDams: 0,
-    averageDamLevelPercent: 0,
-    criticalDamsCount: 0,
-    activeAlertsCount: 0,
-    totalMunicipalAreas: 0,
-    areasSummary: [],
-    damsSummary: [],
-  };
-
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await apiClient.get('/api/v1/reports/summary');
-      if (res.data) {
-        setReport(res.data);
-      } else {
-        setReport(defaultEmptyReport);
-      }
+      setReport(res.data || DEFAULT_EMPTY_REPORT);
     } catch (err) {
       console.warn('API reporting summary error:', err);
-      setReport(defaultEmptyReport);
+      setReport(DEFAULT_EMPTY_REPORT);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchReports();
+    let isCurrent = true;
+    const loadInitialReport = async () => {
+      try {
+        const res = await apiClient.get('/api/v1/reports/summary');
+        if (isCurrent) {
+          setReport(res.data || DEFAULT_EMPTY_REPORT);
+        }
+      } catch (err) {
+        if (isCurrent) {
+          console.warn('API reporting summary error:', err);
+          setReport(DEFAULT_EMPTY_REPORT);
+        }
+      } finally {
+        if (isCurrent) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadInitialReport();
+    return () => {
+      isCurrent = false;
+    };
   }, []);
 
   const handleExportCSV = () => {

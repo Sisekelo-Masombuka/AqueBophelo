@@ -24,49 +24,83 @@ public class EmailQueueBackgroundService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("[EmailQueueBackgroundService] Background email processor started.");
+        _emailQueue.RecordHeartbeat();
 
-        while (!stoppingToken.IsCancellationRequested)
+        using var heartbeatCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+        var heartbeatTask = Task.Run(async () =>
         {
+            while (!heartbeatCts.Token.IsCancellationRequested)
+            {
+                try
+                {
+                    _emailQueue.RecordHeartbeat();
+                    await Task.Delay(TimeSpan.FromSeconds(15), heartbeatCts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
+        }, heartbeatCts.Token);
+
+        try
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    var workItem = await _emailQueue.DequeueAsync(stoppingToken);
+                    _emailQueue.RecordHeartbeat();
+
+                    int sentToday = _emailQueue.GetDailySentCount();
+
+                    if (sentToday >= DailyBrevoLimit && workItem.Priority != "Critical")
+                    {
+                        _logger.LogWarning("[BrevoCapMonitor] Daily free tier limit of {Limit} emails reached ({SentToday} sent today). Skipping non-critical email to {To}.", DailyBrevoLimit, sentToday, workItem.ToEmail);
+                        continue;
+                    }
+
+                    if (sentToday >= WarningThreshold)
+                    {
+                        _logger.LogWarning("[BrevoCapMonitor] Warning: Approaching daily Brevo limit ({SentToday}/{Limit} sent today). Prioritizing Critical alerts.", sentToday, DailyBrevoLimit);
+                    }
+
+                    using var scope = _serviceProvider.CreateScope();
+                    var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+
+                    bool success = await emailSender.SendEmailAsync(
+                        workItem.ToEmail,
+                        workItem.Subject,
+                        workItem.HtmlContent,
+                        workItem.PlainTextContent
+                    );
+
+                    if (success)
+                    {
+                        _emailQueue.RecordEmailSent();
+                        _logger.LogInformation("[EmailQueueBackgroundService] Background email processed for {To}. Daily total: {DailyCount}", workItem.ToEmail, _emailQueue.GetDailySentCount());
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[EmailQueueBackgroundService] Error processing background email item.");
+                }
+            }
+        }
+        finally
+        {
+            heartbeatCts.Cancel();
             try
             {
-                var workItem = await _emailQueue.DequeueAsync(stoppingToken);
-
-                int sentToday = _emailQueue.GetDailySentCount();
-
-                if (sentToday >= DailyBrevoLimit && workItem.Priority != "Critical")
-                {
-                    _logger.LogWarning("[BrevoCapMonitor] Daily free tier limit of {Limit} emails reached ({SentToday} sent today). Skipping non-critical email to {To}.", DailyBrevoLimit, sentToday, workItem.ToEmail);
-                    continue;
-                }
-
-                if (sentToday >= WarningThreshold)
-                {
-                    _logger.LogWarning("[BrevoCapMonitor] Warning: Approaching daily Brevo limit ({SentToday}/{Limit} sent today). Prioritizing Critical alerts.", sentToday, DailyBrevoLimit);
-                }
-
-                using var scope = _serviceProvider.CreateScope();
-                var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
-
-                bool success = await emailSender.SendEmailAsync(
-                    workItem.ToEmail,
-                    workItem.Subject,
-                    workItem.HtmlContent,
-                    workItem.PlainTextContent
-                );
-
-                if (success)
-                {
-                    _emailQueue.RecordEmailSent();
-                    _logger.LogInformation("[EmailQueueBackgroundService] Background email processed for {To}. Daily total: {DailyCount}", workItem.ToEmail, _emailQueue.GetDailySentCount());
-                }
+                await Task.WhenAny(heartbeatTask, Task.Delay(500));
             }
-            catch (OperationCanceledException)
+            catch
             {
-                break;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[EmailQueueBackgroundService] Error processing background email item.");
+                // Ignore task teardown exceptions
             }
         }
 

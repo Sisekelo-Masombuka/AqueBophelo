@@ -6,7 +6,7 @@ import LiveMap from '../../components/LiveMap';
 import AlertSubscriptionsModal from '../../components/AlertSubscriptionsModal';
 import ReportIssueModal from '../../components/ReportIssueModal';
 import ScheduledOutagesComponent from '../../components/ScheduledOutagesComponent';
-import { Droplet, Truck, AlertTriangle, Bell, Radio, ExternalLink, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Droplet, Truck, Bell, Radio, ExternalLink, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import apiClient from '../../api/client';
 import { useLanguage } from '../../context/LanguageContext';
@@ -43,40 +43,39 @@ export function ResidentDashboard() {
     },
   ]);
   const [trucks, setTrucks] = useState([]);
-  const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
+    let isCurrent = true;
+    const fetchDashboardData = async () => {
+      try {
+        const [issuesRes, damsRes, trucksRes] = await Promise.allSettled([
+          apiClient.get('/api/v1/reports/issues/my'),
+          apiClient.get('/api/v1/dams'),
+          apiClient.get('/api/v1/trucks'),
+        ]);
+
+        if (isCurrent && issuesRes.status === 'fulfilled' && Array.isArray(issuesRes.value.data)) {
+          setMyIssues(issuesRes.value.data);
+        }
+        if (isCurrent && damsRes.status === 'fulfilled' && Array.isArray(damsRes.value.data) && damsRes.value.data.length > 0) {
+          setDams(damsRes.value.data.map(d => ({
+            ...d,
+            latestLevel: d.latestLevelPercent ?? d.latestLevel ?? 50
+          })));
+        }
+        if (isCurrent && trucksRes.status === 'fulfilled' && Array.isArray(trucksRes.value.data)) {
+          setTrucks(trucksRes.value.data);
+        }
+      } catch (err) {
+        console.warn('Error loading resident dashboard data:', err);
+      }
+    };
+
     fetchDashboardData();
+    return () => {
+      isCurrent = false;
+    };
   }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      const [issuesRes, damsRes, trucksRes, alertsRes] = await Promise.allSettled([
-        apiClient.get('/api/v1/reports/issues/my'),
-        apiClient.get('/api/v1/dams'),
-        apiClient.get('/api/v1/trucks'),
-        apiClient.get('/api/v1/alerts'),
-      ]);
-
-      if (issuesRes.status === 'fulfilled' && Array.isArray(issuesRes.value.data)) {
-        setMyIssues(issuesRes.value.data);
-      }
-      if (damsRes.status === 'fulfilled' && Array.isArray(damsRes.value.data) && damsRes.value.data.length > 0) {
-        setDams(damsRes.value.data.map(d => ({
-          ...d,
-          latestLevel: d.latestLevelPercent ?? d.latestLevel ?? 50
-        })));
-      }
-      if (trucksRes.status === 'fulfilled' && Array.isArray(trucksRes.value.data)) {
-        setTrucks(trucksRes.value.data);
-      }
-      if (alertsRes.status === 'fulfilled' && Array.isArray(alertsRes.value.data)) {
-        setAlerts(alertsRes.value.data);
-      }
-    } catch (err) {
-      console.warn('Error loading resident dashboard data:', err);
-    }
-  };
 
   const handleIssueReported = (newIssue) => {
     setMyIssues((prev) => [newIssue, ...prev]);

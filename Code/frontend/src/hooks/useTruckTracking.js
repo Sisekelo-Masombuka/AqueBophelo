@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import apiClient from '../api/client';
 import useSignalR from './useSignalR';
 
@@ -7,7 +7,7 @@ import useSignalR from './useSignalR';
  */
 export function useTruckTracking() {
   const { connectionStatus, trucks: signalRTrucks, lastMessageTime } = useSignalR();
-  const [trucks, setTrucks] = useState([]);
+  const [apiTrucks, setApiTrucks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTruckId, setSelectedTruckId] = useState(null);
 
@@ -18,7 +18,7 @@ export function useTruckTracking() {
       try {
         const response = await apiClient.get('/api/v1/trucks');
         if (isMounted && response.data && Array.isArray(response.data)) {
-          setTrucks(response.data);
+          setApiTrucks(response.data);
         }
       } catch (err) {
         console.warn('Backend API unavailable, using initial telemetry state:', err);
@@ -33,25 +33,22 @@ export function useTruckTracking() {
     };
   }, []);
 
-  // 2. Merge incoming SignalR telemetry updates with server state
-  useEffect(() => {
-    if (signalRTrucks && signalRTrucks.length > 0) {
-      setTrucks((prevTrucks) => {
-        if (!prevTrucks || prevTrucks.length === 0) return signalRTrucks;
+  // 2. Derive merged telemetry updates with server state
+  const trucks = useMemo(() => {
+    if (!apiTrucks || apiTrucks.length === 0) return signalRTrucks || [];
+    if (!signalRTrucks || signalRTrucks.length === 0) return apiTrucks;
 
-        const merged = [...prevTrucks];
-        signalRTrucks.forEach((sigTruck) => {
-          const idx = merged.findIndex((t) => t.id === sigTruck.id || t.registrationNumber === sigTruck.registrationNumber);
-          if (idx !== -1) {
-            merged[idx] = { ...merged[idx], ...sigTruck };
-          } else {
-            merged.push(sigTruck);
-          }
-        });
-        return merged;
-      });
-    }
-  }, [signalRTrucks]);
+    const merged = [...apiTrucks];
+    signalRTrucks.forEach((sigTruck) => {
+      const idx = merged.findIndex((t) => t.id === sigTruck.id || t.registrationNumber === sigTruck.registrationNumber);
+      if (idx !== -1) {
+        merged[idx] = { ...merged[idx], ...sigTruck };
+      } else {
+        merged.push(sigTruck);
+      }
+    });
+    return merged;
+  }, [apiTrucks, signalRTrucks]);
 
   const selectTruck = useCallback((id) => {
     setSelectedTruckId(id);

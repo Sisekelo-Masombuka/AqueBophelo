@@ -10,11 +10,14 @@ export default function TurnstileWidget({ onVerify, onError, onExpire, className
   const widgetIdRef = useRef(null);
 
   const onVerifyRef = useRef(onVerify);
-  onVerifyRef.current = onVerify;
   const onErrorRef = useRef(onError);
-  onErrorRef.current = onError;
   const onExpireRef = useRef(onExpire);
-  onExpireRef.current = onExpire;
+
+  useEffect(() => {
+    onVerifyRef.current = onVerify;
+    onErrorRef.current = onError;
+    onExpireRef.current = onExpire;
+  }, [onVerify, onError, onExpire]);
 
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
   const isDev = Boolean(import.meta.env.DEV);
@@ -85,7 +88,7 @@ export default function TurnstileWidget({ onVerify, onError, onExpire, className
       if (window.turnstile && widgetIdRef.current !== null) {
         try {
           window.turnstile.remove(widgetIdRef.current);
-        } catch (e) {
+        } catch {
           // ignore cleanup error
         }
         widgetIdRef.current = null;

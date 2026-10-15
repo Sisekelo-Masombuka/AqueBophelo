@@ -46,7 +46,26 @@ export function DriverStopsScreen() {
   };
 
   useEffect(() => {
-    fetchTodayTrip();
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const res = await apiClient.get('/api/v1/driver/today-trip');
+        if (isMounted) {
+          setTrip(res.data);
+          setError(null);
+        }
+      } catch (err) {
+        console.info('No active driver trip scheduled currently:', err?.response?.status || err.message);
+        if (isMounted) setTrip(null);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Step 1: Arrived at stop
@@ -55,7 +74,7 @@ export function DriverStopsScreen() {
       await apiClient.post(`/api/v1/driver/trips/${trip.id}/stops/${stop.id}/arrive`);
       setFeedback({ type: 'success', message: `Arrived at ${stop.stopName}` });
       fetchTodayTrip();
-    } catch (err) {
+    } catch {
       setFeedback({ type: 'info', message: `Marked Arrived at ${stop.stopName} (Preview)` });
       setTrip(prev => ({
         ...prev,
@@ -70,7 +89,7 @@ export function DriverStopsScreen() {
       await apiClient.post(`/api/v1/driver/trips/${trip.id}/stops/${stop.id}/start-delivery`);
       setFeedback({ type: 'success', message: `Delivery started at ${stop.stopName}` });
       fetchTodayTrip();
-    } catch (err) {
+    } catch {
       setFeedback({ type: 'info', message: `Delivery started at ${stop.stopName} (Preview)` });
       setTrip(prev => ({
         ...prev,
@@ -134,7 +153,7 @@ export function DriverStopsScreen() {
       setProofPhotoPreview(null);
       setProofPhotoUrl(null);
       fetchTodayTrip();
-    } catch (err) {
+    } catch {
       setFeedback({ type: 'success', message: `Delivery completed for ${selectedStopForComplete.stopName} (Preview)` });
       setTrip(prev => ({
         ...prev,
@@ -173,7 +192,7 @@ export function DriverStopsScreen() {
       setFeedback({ type: 'success', message: `Problem report (${problemCategory}) submitted to Dispatch.` });
       setIsProblemModalOpen(false);
       setProblemDescription('');
-    } catch (err) {
+    } catch {
       setFeedback({ type: 'success', message: `Problem report (${problemCategory}) logged (Preview).` });
       setIsProblemModalOpen(false);
       setProblemDescription('');
@@ -309,7 +328,7 @@ export function DriverStopsScreen() {
             No stops scheduled for today's trip.
           </div>
         ) : (
-          stops.map((stop, idx) => {
+          stops.map((stop) => {
             const isCompleted = stop.stopStatus === 'Completed';
             const isInDelivery = stop.stopStatus === 'In Delivery';
             const isArrived = stop.stopStatus === 'Arrived';

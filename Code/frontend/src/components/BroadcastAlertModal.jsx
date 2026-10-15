@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Send, X, CheckCircle2, Mail, MessageSquare } from 'lucide-react';
+import { AlertTriangle, Send, X, CheckCircle2, Mail } from 'lucide-react';
 import apiClient from '../api/client';
 
 export function BroadcastAlertModal({ isOpen, onClose, onAlertSent }) {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [severity, setSeverity] = useState('Warning');
-  const [type, setType] = useState('Announcement');
+  const type = 'Announcement';
   const [areaId, setAreaId] = useState('');
   const [sendEmail, setSendEmail] = useState(true);
   const [loading, setLoading] = useState(false);

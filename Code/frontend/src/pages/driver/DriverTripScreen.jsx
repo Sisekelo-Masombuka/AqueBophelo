@@ -80,8 +80,26 @@ export function DriverTripScreen() {
   }, []);
 
   useEffect(() => {
-    loadTodayTrip();
-  }, [loadTodayTrip]);
+    let isMounted = true;
+    const fetchTrip = async () => {
+      try {
+        const res = await apiClient.get('/api/v1/driver/today-trip');
+        if (isMounted) {
+          setActiveTrip(res.data || null);
+        }
+      } catch (err) {
+        console.info('No active driver trip scheduled currently:', err?.response?.status || err.message);
+        if (isMounted) setActiveTrip(null);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchTrip();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const currentPendingStop = activeTrip?.stops?.find((s) => !s.completed);
   const completedStopsCount = activeTrip?.stops?.filter((s) => s.completed).length || 0;
@@ -97,7 +115,7 @@ export function DriverTripScreen() {
         stops: prev.stops.map((s) => (s.id === stop.id ? { ...s, stopStatus: 'Arrived' } : s)),
       }));
       setFeedback({ type: 'success', message: `Arrived at "${stop.stopName}". Status: Arrived` });
-    } catch (err) {
+    } catch {
       setActiveTrip((prev) => ({
         ...prev,
         stops: prev.stops.map((s) => (s.id === stop.id ? { ...s, stopStatus: 'Arrived' } : s)),
@@ -115,7 +133,7 @@ export function DriverTripScreen() {
         stops: prev.stops.map((s) => (s.id === stop.id ? { ...s, stopStatus: 'Delivering' } : s)),
       }));
       setFeedback({ type: 'success', message: `Water delivery started at "${stop.stopName}".` });
-    } catch (err) {
+    } catch {
       setActiveTrip((prev) => ({
         ...prev,
         stops: prev.stops.map((s) => (s.id === stop.id ? { ...s, stopStatus: 'Delivering' } : s)),
@@ -197,7 +215,7 @@ export function DriverTripScreen() {
       setProofPhotoFile(null);
       setProofPhotoPreview(null);
       setProofPhotoUrl(null);
-    } catch (err) {
+    } catch {
       setActiveTrip((prev) => ({
         ...prev,
         stops: prev.stops.map((s) =>
@@ -244,7 +262,7 @@ export function DriverTripScreen() {
       });
       setIsReportProblemModalOpen(false);
       setProblemDescription('');
-    } catch (err) {
+    } catch {
       setFeedback({
         type: 'success',
         message: `Problem (${problemCategory}) logged to dispatch.`,
@@ -265,7 +283,7 @@ export function DriverTripScreen() {
       setActiveTrip((prev) => ({ ...prev, status: 'Completed' }));
       setIsEndTripModalOpen(false);
       setFeedback({ type: 'success', message: 'Trip successfully ended! Tanker returned to depot.' });
-    } catch (err) {
+    } catch {
       stopBroadcast();
       setActiveTrip((prev) => ({ ...prev, status: 'Completed' }));
       setIsEndTripModalOpen(false);

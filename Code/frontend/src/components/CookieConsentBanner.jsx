@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Check, X, Lock } from 'lucide-react';
+import { ShieldCheck, Check, Lock } from 'lucide-react';
 import { initGoogleAnalytics } from '../services/analytics';
 
 export default function CookieConsentBanner() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(() => {
+    try {
+      return !localStorage.getItem('aquabophelo_cookie_consent');
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
-    const consent = localStorage.getItem('aquabophelo_cookie_consent');
-    if (consent === 'granted') {
-      initGoogleAnalytics();
-    } else if (!consent) {
-      setIsVisible(true);
+    try {
+      const consent = localStorage.getItem('aquabophelo_cookie_consent');
+      if (consent === 'granted') {
+        initGoogleAnalytics();
+      }
+    } catch {
+      // Storage access blocked or restricted
     }
   }, []);
 

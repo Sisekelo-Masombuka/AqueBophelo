@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-import { Droplet, AlertCircle, KeyRound, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, KeyRound, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
 import BrandLogo from '../components/BrandLogo';
 import Footer from '../components/Footer';

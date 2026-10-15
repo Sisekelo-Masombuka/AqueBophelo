@@ -7,7 +7,6 @@ import {
   MapPin,
   Users,
   AlertTriangle,
-  Building2,
   BarChart3,
   Calendar,
 } from 'lucide-react';

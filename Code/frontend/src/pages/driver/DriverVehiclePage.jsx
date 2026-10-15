@@ -47,7 +47,7 @@ export function DriverDriverVehiclePage() {
             assignedDriver: `${user.fullName || user.email}`
           }));
         }
-      } catch (err) {
+      } catch {
         if (user) {
           setVehicle(prev => ({
             ...prev,
@@ -80,7 +80,7 @@ export function DriverDriverVehiclePage() {
           : 'Vehicle check submitted with flagged items. Fleet manager notified.'
       });
       setVehicle(prev => ({ ...prev, lastCheckAt: 'Just now (CAT)' }));
-    } catch (err) {
+    } catch {
       setFeedback({
         type: checkPassed ? 'success' : 'warning',
         message: checkPassed
@@ -105,7 +105,7 @@ export function DriverDriverVehiclePage() {
       setFeedback({ type: 'warning', message: 'Vehicle fault report dispatched to Municipal Maintenance Hub.' });
       setIsProblemModalOpen(false);
       setProblemDescription('');
-    } catch (err) {
+    } catch {
       setFeedback({ type: 'warning', message: 'Vehicle fault report logged (Preview Mode).' });
       setIsProblemModalOpen(false);
       setProblemDescription('');

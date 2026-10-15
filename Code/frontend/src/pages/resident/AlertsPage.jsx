@@ -9,14 +9,14 @@ export function AlertsPage() {
   const [selectedArea, setSelectedArea] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadAlerts() {
       try {
-        setLoading(true);
         const res = await apiClient.get('/api/v1/alerts');
-        if (Array.isArray(res.data)) {
+        if (isMounted && Array.isArray(res.data)) {
           setAlerts(res.data.map(a => ({
             id: a.id || `alt-${Math.random()}`,
             title: a.title,
@@ -29,10 +29,13 @@ export function AlertsPage() {
       } catch (err) {
         console.warn('Error loading alerts:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
     loadAlerts();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const filteredAlerts =
@@ -109,7 +112,11 @@ export function AlertsPage() {
 
       {/* Alerts Feed */}
       <div className="space-y-3">
-        {filteredAlerts.length === 0 ? (
+        {loading ? (
+          <div className="p-8 bg-white border border-slate-200 rounded-lg text-center shadow-xs">
+            <p className="text-xs text-slate-500">Loading water alerts and bulletins...</p>
+          </div>
+        ) : filteredAlerts.length === 0 ? (
           <div className="p-8 bg-white border border-slate-200 rounded-lg text-center shadow-xs">
             <Bell className="w-8 h-8 text-slate-300 mx-auto mb-2" />
             <h4 className="font-serif font-bold text-sm text-[#152e52]">No Active Water Alerts</h4>

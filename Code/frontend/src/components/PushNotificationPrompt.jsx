@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, X, ShieldCheck } from 'lucide-react';
+import { Bell, Check, X } from 'lucide-react';
 import { requestPushPermissionAndRegister } from '../services/firebase';
 import { useAuth } from '../auth/AuthContext';
 

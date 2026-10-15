@@ -163,7 +163,7 @@ export function useSignalR() {
             // Ignore if group join fails
           }
         }
-      } catch (err) {
+      } catch {
         // If the backend API isn't currently running, switch gracefully to simulated live GPS telemetry
         if (isMounted) {
           setConnectionStatus('Demo');

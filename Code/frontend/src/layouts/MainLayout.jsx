@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Menu, Droplet, LogOut } from 'lucide-react';
+import { Menu, LogOut } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import Sidebar from '../components/Sidebar';
 import BrandLogo from '../components/BrandLogo';

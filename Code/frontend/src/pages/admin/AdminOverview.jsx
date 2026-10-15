@@ -11,7 +11,6 @@ import {
   Send,
   AlertTriangle,
   CheckCircle2,
-  Clock,
   FileText,
   RefreshCw,
   ExternalLink,
@@ -93,7 +92,6 @@ export function AdminOverview() {
   // Water tankers data
   const [trucks, setTrucks] = useState([]);
 
-  const [activeAlertsCount, setActiveAlertsCount] = useState(0);
   const [signalrConnected, setSignalrConnected] = useState(false);
   const [isRefreshingIssues, setIsRefreshingIssues] = useState(false);
 
@@ -185,7 +183,7 @@ export function AdminOverview() {
         text: `Ticket ${selectedIssueModal.ticketId} updated to '${statusUpdateVal}'. Email notification sent to ${selectedIssueModal.userEmail || 'resident'}.`
       });
       setSelectedIssueModal(null);
-    } catch (err) {
+    } catch {
       setResidentIssues(prev => prev.map(item => item.id === selectedIssueModal.id ? {
         ...item,
         status: statusUpdateVal,

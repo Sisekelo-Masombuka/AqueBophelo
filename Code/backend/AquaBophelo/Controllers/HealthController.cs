@@ -49,15 +49,46 @@ public class HealthController : ControllerBase
     /// </summary>
     [HttpGet("ready")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetReadiness([FromServices] AquaBophelo.Data.AppDbContext context)
+    public async Task<IActionResult> GetReadiness(
+        [FromServices] AquaBophelo.Data.AppDbContext context,
+        [FromServices] AquaBophelo.Services.Notifications.IEmailQueue emailQueue)
     {
-        var canConnect = await context.Database.CanConnectAsync();
-        if (!canConnect)
+        var canConnect = false;
+        try
         {
-            return StatusCode(503, new { status = "unhealthy", message = "Database connection unavailable." });
+            canConnect = await context.Database.CanConnectAsync();
+        }
+        catch
+        {
+            canConnect = false;
         }
 
-        return Ok(new { status = "healthy", database = "connected", timestamp = DateTime.UtcNow });
+        var isQueueHealthy = false;
+        try
+        {
+            isQueueHealthy = emailQueue != null && emailQueue.IsOperational && emailQueue.IsWorkerHealthy;
+        }
+        catch
+        {
+            isQueueHealthy = false;
+        }
+
+        var isHealthy = canConnect && isQueueHealthy;
+        var responsePayload = new
+        {
+            status = isHealthy ? "healthy" : "unhealthy",
+            database = canConnect ? "connected" : "unavailable",
+            messageQueue = isQueueHealthy ? "active" : "offline",
+            lastWorkerHeartbeatUtc = emailQueue?.LastHeartbeatUtc,
+            timestamp = DateTime.UtcNow
+        };
+
+        if (!isHealthy)
+        {
+            return StatusCode(503, responsePayload);
+        }
+
+        return Ok(responsePayload);
     }
 
     [HttpPost("test-email")]
