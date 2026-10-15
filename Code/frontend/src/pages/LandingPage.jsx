@@ -30,83 +30,33 @@ export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
-  /* Operational telemetry data for Sol Plaatje Municipality dams & tankers */
-  const dams = [
-    {
-      id: 1,
-      name: 'Newton Reservoir',
-      areaName: 'Kimberley Central / Sol Plaatje',
-      latitude: -28.7511,
-      longitude: 24.7612,
-      capacityMegaLitres: 92.5,
-      volumeMegaLitres: 57.8,
-      latestLevel: 62.5,
-      lastUpdated: 'Today at 10:42 (CAT)',
-    },
-    {
-      id: 2,
-      name: 'Riverton Water Works',
-      areaName: 'Vaal River Extraction Plant',
-      latitude: -28.5369,
-      longitude: 24.7061,
-      capacityMegaLitres: 150.0,
-      volumeMegaLitres: 123.0,
-      latestLevel: 82.0,
-      lastUpdated: 'Today at 07:15 (CAT)',
-    },
-  ];
-
-  const [trucks, setTrucks] = useState([
-    {
-      id: 1,
-      registrationNumber: '542-KM NC',
-      capacityLitres: 10000,
-      status: 'Available',
-      lastLatitude: -28.7183,
-      lastLongitude: 24.7319,
-      driverName: 'Assigned Driver',
-      route: 'Galeshewe Distribution Area',
-      estimatedArrival: 'Standby',
-      speedKmh: 0,
-    },
-    {
-      id: 2,
-      registrationNumber: '882-KM NC',
-      capacityLitres: 15000,
-      status: 'Available',
-      lastLatitude: -28.7419,
-      lastLongitude: 24.7719,
-      driverName: 'Assigned Driver',
-      route: 'Kimberley Central Fleet Hub',
-      estimatedArrival: 'Standby',
-      speedKmh: 0,
-    },
-    {
-      id: 3,
-      registrationNumber: '104-KM NC',
-      capacityLitres: 10000,
-      status: 'Available',
-      lastLatitude: -28.6921,
-      lastLongitude: 24.7088,
-      driverName: 'Assigned Driver',
-      route: 'Roodepan Municipal Depot',
-      estimatedArrival: 'Standby',
-      speedKmh: 0,
-    },
-  ]);
+  const [dams, setDams] = useState([]);
+  const [trucks, setTrucks] = useState([]);
 
   useEffect(() => {
-    async function fetchFleet() {
+    async function fetchLiveTelemetry() {
       try {
-        const res = await apiClient.get('/api/v1/trucks');
-        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-          setTrucks(res.data);
+        const [damsRes, trucksRes] = await Promise.allSettled([
+          apiClient.get('/api/v1/dams'),
+          apiClient.get('/api/v1/trucks'),
+        ]);
+        if (damsRes.status === 'fulfilled' && Array.isArray(damsRes.value.data)) {
+          setDams(
+            damsRes.value.data.map((d) => ({
+              ...d,
+              latestLevel: d.latestLevelPercent ?? d.latestLevel ?? 50,
+              lastUpdated: d.lastUpdatedCAT || 'Live Telemetry',
+            }))
+          );
         }
-      } catch {
-        // Fallback to initial municipal assets
+        if (trucksRes.status === 'fulfilled' && Array.isArray(trucksRes.value.data)) {
+          setTrucks(trucksRes.value.data);
+        }
+      } catch (err) {
+        console.warn('Error fetching live telemetry:', err);
       }
     }
-    fetchFleet();
+    fetchLiveTelemetry();
   }, []);
 
   const handlePortalAction = () => {

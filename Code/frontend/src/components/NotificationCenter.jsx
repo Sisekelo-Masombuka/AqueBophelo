@@ -1,34 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Check, Trash2, X, AlertTriangle, Truck, Droplet, Info } from 'lucide-react';
+import apiClient from '../api/client';
 
 export function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: 'Scheduled Water Outage in Galeshewe',
-      message: 'Emergency maintenance scheduled for Zone 3 today from 08:00 to 14:00 (CAT).',
-      time: '10 mins ago',
-      read: false,
-      type: 'alert',
-    },
-    {
-      id: 2,
-      title: 'Tanker 542-KM NC Dispatched',
-      message: 'Water delivery tanker has arrived at Roodepan Community Water Point 2.',
-      time: '1 hour ago',
-      read: false,
-      type: 'truck',
-    },
-    {
-      id: 3,
-      title: 'Newton Reservoir Level Update',
-      message: 'Newton Reservoir gauge capacity is currently healthy at 62.5%.',
-      time: '3 hours ago',
-      read: true,
-      type: 'dam',
-    },
-  ]);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    let isCurrent = true;
+    const loadNotifications = async () => {
+      try {
+        const res = await apiClient.get('/api/v1/alerts');
+        if (isCurrent && Array.isArray(res.data)) {
+          setNotifications(
+            res.data.map((a) => ({
+              id: a.id,
+              title: a.title || 'Municipal Alert',
+              message: a.message || a.description || '',
+              time: a.createdAt
+                ? new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : 'Recent',
+              read: false,
+              type:
+                a.type?.toLowerCase() === 'dam'
+                  ? 'dam'
+                  : a.type?.toLowerCase() === 'truck'
+                  ? 'truck'
+                  : 'alert',
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn('Could not load alerts for notification center:', err);
+      }
+    };
+    loadNotifications();
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 

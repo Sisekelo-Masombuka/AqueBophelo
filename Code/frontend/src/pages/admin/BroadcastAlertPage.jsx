@@ -3,38 +3,7 @@ import { AlertTriangle, Send, Mail, History, CheckCircle2, Radio } from 'lucide-
 import apiClient from '../../api/client';
 
 export function BroadcastAlertPage() {
-  const [alerts, setAlerts] = useState([
-    {
-      id: 1,
-      type: 'Announcement',
-      severity: 'Warning',
-      title: 'Scheduled Water Outage in Galeshewe Zone 3',
-      message: 'Emergency pipe maintenance on Ramafalo Road. Water tankers 542-KM NC and 882-KM NC dispatched.',
-      areaName: 'Galeshewe',
-      createdAtCAT: 'Today at 07:30 AM (CAT)',
-      createdByName: 'Admin Desk',
-    },
-    {
-      id: 2,
-      type: 'DamCritical',
-      severity: 'Critical',
-      title: 'Newton Reservoir Level Alert',
-      message: 'Newton Reservoir level dropped below 50%. Stage 2 water shedding guidelines now in effect.',
-      areaName: 'Kimberley Central',
-      createdAtCAT: 'Yesterday at 16:45 (CAT)',
-      createdByName: 'SCADA Alert Evaluator',
-    },
-    {
-      id: 3,
-      type: 'Truck',
-      severity: 'Info',
-      title: 'Water Delivery Tanker En Route to Roodepan',
-      message: 'Tanker 104-KM NC arriving at Roodepan Municipal Depot community water point.',
-      areaName: 'Roodepan',
-      createdAtCAT: 'Yesterday at 11:20 (CAT)',
-      createdByName: 'Fleet Dispatcher',
-    },
-  ]);
+  const [alerts, setAlerts] = useState([]);
 
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
@@ -48,11 +17,11 @@ export function BroadcastAlertPage() {
     async function loadAlerts() {
       try {
         const res = await apiClient.get('/api/v1/alerts');
-        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res.data && Array.isArray(res.data)) {
           setAlerts(res.data);
         }
-      } catch {
-        // Backend unavailable, fallback to initial state
+      } catch (err) {
+        console.warn('Could not load live alerts:', err);
       }
     }
     loadAlerts();
@@ -73,30 +42,14 @@ export function BroadcastAlertPage() {
     try {
       setLoading(true);
       const res = await apiClient.post('/api/v1/alerts', payload);
-      const newAlert = res.data || {
-        id: Date.now(),
-        ...payload,
-        areaName: areaId === '1' ? 'Galeshewe' : areaId === '2' ? 'Kimberley Central' : areaId === '3' ? 'Roodepan' : 'All Sol Plaatje',
-        createdAtCAT: 'Just now (CAT)',
-        createdByName: 'Admin Desk',
-      };
+      const newAlert = res.data;
       setAlerts((prev) => [newAlert, ...prev]);
       setFeedback({ type: 'success', text: 'Emergency alert dispatched to registered Email subscribers!' });
       setTitle('');
       setMessage('');
     } catch (err) {
-      console.warn('API error sending alert, adding locally:', err);
-      const mockAlert = {
-        id: Date.now(),
-        ...payload,
-        areaName: areaId === '1' ? 'Galeshewe' : areaId === '2' ? 'Kimberley Central' : areaId === '3' ? 'Roodepan' : 'All Sol Plaatje',
-        createdAtCAT: 'Just now (CAT)',
-        createdByName: 'Admin Desk (Preview)',
-      };
-      setAlerts((prev) => [mockAlert, ...prev]);
-      setFeedback({ type: 'success', text: 'Email Alert dispatched successfully (Preview Mode)!' });
-      setTitle('');
-      setMessage('');
+      console.error('API error sending alert:', err);
+      setFeedback({ type: 'error', text: 'Failed to broadcast alert. Please check your connection.' });
     } finally {
       setLoading(false);
     }
@@ -234,34 +187,42 @@ export function BroadcastAlertPage() {
             </div>
 
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-              {alerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className="bg-[#f8fafc] border border-slate-200 rounded-md p-4 shadow-xs"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <h4 className="font-serif font-bold text-xs md:text-sm text-[#152e52]">{alert.title}</h4>
-                    <span
-                      className={`text-[10px] font-medium px-2 py-0.5 rounded ${
-                        alert.severity === 'Critical'
-                          ? 'bg-red-50 text-red-700 border border-red-200'
-                          : alert.severity === 'Warning'
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                          : 'bg-[#eaf4fb] text-[#1d70b8] border border-[#bcd6ea]'
-                      }`}
-                    >
-                      {alert.severity}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed mb-2.5">
-                    {alert.message}
-                  </p>
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200 font-normal">
-                    <span className="text-[#1d70b8] font-medium">{alert.areaName || 'All Kimberley'}</span>
-                    <span>{alert.createdAtCAT || 'Today (CAT)'}</span>
-                  </div>
+              {alerts.length === 0 ? (
+                <div className="p-8 text-center border border-dashed border-slate-200 rounded-md bg-slate-50/50">
+                  <History className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-slate-700">No Broadcast History</p>
+                  <p className="text-xs text-slate-500 mt-1">Official municipal alert notices dispatched via email will appear here.</p>
                 </div>
-              ))}
+              ) : (
+                alerts.map((alert) => (
+                  <div
+                    key={alert.id}
+                    className="bg-[#f8fafc] border border-slate-200 rounded-md p-4 shadow-xs"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <h4 className="font-serif font-bold text-xs md:text-sm text-[#152e52]">{alert.title}</h4>
+                      <span
+                        className={`text-[10px] font-medium px-2 py-0.5 rounded ${
+                          alert.severity === 'Critical'
+                            ? 'bg-red-50 text-red-700 border border-red-200'
+                            : alert.severity === 'Warning'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-[#eaf4fb] text-[#1d70b8] border border-[#bcd6ea]'
+                        }`}
+                      >
+                        {alert.severity}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed mb-2.5">
+                      {alert.message}
+                    </p>
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200 font-normal">
+                      <span className="text-[#1d70b8] font-medium">{alert.areaName || 'All Kimberley'}</span>
+                      <span>{alert.createdAtCAT || 'Today (CAT)'}</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

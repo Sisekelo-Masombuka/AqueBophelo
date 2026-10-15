@@ -6,35 +6,7 @@ import { useLanguage } from '../context/LanguageContext';
 
 export function ScheduledOutagesComponent({ isAdmin = false }) {
   const { t } = useLanguage();
-  const [outages, setOutages] = useState([
-    {
-      id: 1,
-      areaName: 'Galeshewe Zone 3 & Zone 4',
-      title: 'Newton Pumping Station Main Valve Replacement',
-      cutOffTime: '2026-09-29T08:00:00',
-      expectedReturnTime: '2026-09-29T16:30:00',
-      description: 'Pipe repairs and pressure testing',
-      postedBy: 'Sol Plaatje Municipal Admin',
-    },
-    {
-      id: 2,
-      areaName: 'Kimberley Central (Sol Plaatje Drive)',
-      title: 'Scheduled Bulk Main Pipe Flushing & Pressure Testing',
-      cutOffTime: '2026-09-30T07:00:00',
-      expectedReturnTime: '2026-09-30T13:00:00',
-      description: 'Scheduled maintenance for water quality assurance',
-      postedBy: 'Sol Plaatje Municipal Admin',
-    },
-    {
-      id: 3,
-      areaName: 'Roodepan Suburb (Blocks A-D)',
-      title: 'Filter Bed Maintenance at Riverton Treatment Facility',
-      cutOffTime: '2026-10-02T09:00:00',
-      expectedReturnTime: '2026-10-02T17:00:00',
-      description: 'Filter bed flushing',
-      postedBy: 'Sol Plaatje Municipal Admin',
-    },
-  ]);
+  const [outages, setOutages] = useState([]);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [areaName, setAreaName] = useState('Galeshewe Zone 1-4');
@@ -49,11 +21,11 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
     const loadOutages = async () => {
       try {
         const response = await apiClient.get('/api/v1/outages');
-        if (isCurrent && Array.isArray(response.data) && response.data.length > 0) {
+        if (isCurrent && Array.isArray(response.data)) {
           setOutages(response.data);
         }
       } catch (err) {
-        console.warn('Live API outages fallback to initial state:', err);
+        console.warn('Could not load live outages:', err);
       }
     };
     loadOutages();
@@ -77,29 +49,15 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
       });
 
       const newOutage = response.data;
-      setOutages([newOutage, ...outages]);
+      setOutages((prev) => [newOutage, ...prev]);
       setIsAddModalOpen(false);
       setTitle('');
       setCutOffTime('');
       setExpectedReturnTime('');
       setDescription('');
     } catch (err) {
-      console.warn('Backend outage post fallback:', err);
-      const fallbackOutage = {
-        id: Date.now(),
-        areaName,
-        title,
-        cutOffTime,
-        expectedReturnTime,
-        description,
-        postedBy: 'Sol Plaatje Municipal Admin',
-      };
-      setOutages([fallbackOutage, ...outages]);
-      setIsAddModalOpen(false);
-      setTitle('');
-      setCutOffTime('');
-      setExpectedReturnTime('');
-      setDescription('');
+      console.error('Failed to post outage to server:', err);
+      alert('Could not post scheduled water interruption notice to the database. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -111,8 +69,8 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
       await apiClient.delete(`/api/v1/outages/${id}`);
       setOutages((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
-      console.warn('Backend delete outage note:', err);
-      setOutages((prev) => prev.filter((item) => item.id !== id));
+      console.error('Failed to delete outage:', err);
+      alert('Could not delete scheduled outage from database.');
     }
   };
 
@@ -158,54 +116,62 @@ export function ScheduledOutagesComponent({ isAdmin = false }) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {outages.map((item) => (
-          <div
-            key={item.id}
-            className="bg-surface-muted border border-slate-200 rounded-md p-4 space-y-3 flex flex-col justify-between"
-          >
-            <div className="space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <span className="font-serif font-bold text-sm text-navy flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-navy shrink-0" />
-                  <span>{item.areaName || item.area}</span>
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <StatusBadge status="Watch" />
-                  {isAdmin && (
-                    <button
-                      onClick={() => handleDeleteOutage(item.id)}
-                      className="p-1 rounded text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer"
-                      title="Delete Outage Notice"
-                      aria-label="Delete Outage Notice"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+      {outages.length === 0 ? (
+        <div className="p-8 text-center border border-dashed border-slate-200 rounded-md bg-slate-50/50">
+          <Calendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <p className="text-sm font-semibold text-slate-700">No Scheduled Water Interruptions</p>
+          <p className="text-xs text-slate-500 mt-1">Water supply is running on normal schedule across all Sol Plaatje municipal zones.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {outages.map((item) => (
+            <div
+              key={item.id}
+              className="bg-surface-muted border border-slate-200 rounded-md p-4 space-y-3 flex flex-col justify-between"
+            >
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-serif font-bold text-sm text-navy flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-navy shrink-0" />
+                    <span>{item.areaName || item.area}</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <StatusBadge status="Watch" />
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDeleteOutage(item.id)}
+                        className="p-1 rounded text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer"
+                        title="Delete Outage Notice"
+                        aria-label="Delete Outage Notice"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-xs font-semibold text-slate-800 leading-snug">{item.title || item.reason}</p>
+
+                <div className="grid grid-cols-2 gap-2 bg-white p-2.5 rounded-md border border-slate-200 text-xs">
+                  <div>
+                    <span className="text-xs text-red-700 font-bold uppercase block">Water Cut Off:</span>
+                    <span className="font-mono text-slate-900 font-semibold text-xs">{formatDate(item.cutOffTime || item.cutTime)}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-success font-bold uppercase block">Expected Return:</span>
+                    <span className="font-mono text-slate-900 font-semibold text-xs">{formatDate(item.expectedReturnTime || item.restoreTime)}</span>
+                  </div>
                 </div>
               </div>
 
-              <p className="text-xs font-semibold text-slate-800 leading-snug">{item.title || item.reason}</p>
-
-              <div className="grid grid-cols-2 gap-2 bg-white p-2.5 rounded-md border border-slate-200 text-xs">
-                <div>
-                  <span className="text-xs text-red-700 font-bold uppercase block">Water Cut Off:</span>
-                  <span className="font-mono text-slate-900 font-semibold text-xs">{formatDate(item.cutOffTime || item.cutTime)}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-success font-bold uppercase block">Expected Return:</span>
-                  <span className="font-mono text-slate-900 font-semibold text-xs">{formatDate(item.expectedReturnTime || item.restoreTime)}</span>
-                </div>
+              <div className="pt-2 border-t border-slate-200 text-xs text-slate-600 font-normal flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                <span>{item.description || 'Water tanker support assigned on schedule.'}</span>
               </div>
             </div>
-
-            <div className="pt-2 border-t border-slate-200 text-xs text-slate-600 font-normal flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-              <span>{item.description || 'Water tanker support assigned on schedule.'}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Admin Post Outage Modal */}
       {isAddModalOpen && (

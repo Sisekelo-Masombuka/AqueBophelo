@@ -18,30 +18,7 @@ export function ResidentDashboard() {
   const [isReportIssueModalOpen, setIsReportIssueModalOpen] = useState(false);
 
   const [myIssues, setMyIssues] = useState([]);
-  const [dams, setDams] = useState([
-    {
-      id: 1,
-      name: 'Newton Reservoir',
-      areaName: 'Kimberley Central / Sol Plaatje',
-      latitude: -28.7511,
-      longitude: 24.7612,
-      capacityMegaLitres: 92.5,
-      volumeMegaLitres: 57.8,
-      latestLevel: 62.5,
-      lastUpdated: 'Today at 08:30 (CAT)',
-    },
-    {
-      id: 2,
-      name: 'Riverton Water Works',
-      areaName: 'Vaal River Extraction Plant',
-      latitude: -28.5369,
-      longitude: 24.7061,
-      capacityMegaLitres: 150.0,
-      volumeMegaLitres: 123.0,
-      latestLevel: 82.0,
-      lastUpdated: 'Today at 07:15 (CAT)',
-    },
-  ]);
+  const [dams, setDams] = useState([]);
   const [trucks, setTrucks] = useState([]);
 
   useEffect(() => {
@@ -57,7 +34,7 @@ export function ResidentDashboard() {
         if (isCurrent && issuesRes.status === 'fulfilled' && Array.isArray(issuesRes.value.data)) {
           setMyIssues(issuesRes.value.data);
         }
-        if (isCurrent && damsRes.status === 'fulfilled' && Array.isArray(damsRes.value.data) && damsRes.value.data.length > 0) {
+        if (isCurrent && damsRes.status === 'fulfilled' && Array.isArray(damsRes.value.data)) {
           setDams(damsRes.value.data.map(d => ({
             ...d,
             latestLevel: d.latestLevelPercent ?? d.latestLevel ?? 50

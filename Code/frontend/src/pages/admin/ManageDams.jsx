@@ -4,34 +4,7 @@ import apiClient from '../../api/client';
 import StatusBadge from '../../components/StatusBadge';
 
 export function ManageDams() {
-  const [dams, setDams] = useState([
-    {
-      id: 1,
-      name: 'Newton Reservoir',
-      areaName: 'Kimberley Central / Sol Plaatje',
-      latitude: -28.7511,
-      longitude: 24.7612,
-      capacityMegaLitres: 92.5,
-      volumeMegaLitres: 57.8,
-      latestLevelPercent: 62.5,
-      statusBand: 'Healthy',
-      statusColor: 'Green',
-      lastUpdatedCAT: 'Today at 08:30 (CAT)',
-    },
-    {
-      id: 2,
-      name: 'Riverton Water Works',
-      areaName: 'Vaal River Extraction Plant',
-      latitude: -28.5369,
-      longitude: 24.7061,
-      capacityMegaLitres: 150.0,
-      volumeMegaLitres: 123.0,
-      latestLevelPercent: 82.0,
-      statusBand: 'Healthy',
-      statusColor: 'Green',
-      lastUpdatedCAT: 'Today at 07:15 (CAT)',
-    },
-  ]);
+  const [dams, setDams] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -55,11 +28,11 @@ export function ManageDams() {
       try {
         setLoading(true);
         const res = await apiClient.get('/api/v1/dams');
-        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res.data && Array.isArray(res.data)) {
           setDams(res.data);
         }
-      } catch {
-        // Backend unavailable, fallback to initial seeded data
+      } catch (err) {
+        console.warn('Could not load dams:', err);
       } finally {
         setLoading(false);
       }
@@ -162,19 +135,8 @@ export function ManageDams() {
       setNewDamName('');
       setNewDamCapacity('');
     } catch (err) {
-      console.warn('API error creating dam, applying locally for preview:', err);
-      const mockDam = {
-        id: Date.now(),
-        ...payload,
-        latestLevelPercent: 50.0,
-        volumeMegaLitres: payload.capacityMegaLitres * 0.5,
-        statusBand: 'Watch',
-        statusColor: 'Amber',
-        lastUpdatedCAT: 'Just now (CAT)',
-      };
-      setDams((prev) => [...prev, mockDam]);
-      setFeedback({ type: 'success', message: `Reservoir "${newDamName}" added (Preview Mode).` });
-      setIsCreateModalOpen(false);
+      console.error('API error creating dam:', err);
+      setFeedback({ type: 'error', message: `Failed to register reservoir "${newDamName}". Please check your connection.` });
     }
   };
 
