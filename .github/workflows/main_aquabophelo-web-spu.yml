@@ -25,6 +25,10 @@ jobs:
 
       - name: Install dependencies and build frontend
         working-directory: Code/frontend
+        env:
+          VITE_API_BASE_URL: https://aquabophelo-api-spu-hkahhxcqe0b0c5ek.southafricanorth-01.azurewebsites.net
+          VITE_SIGNALR_URL: https://aquabophelo-api-spu-hkahhxcqe0b0c5ek.southafricanorth-01.azurewebsites.net/hubs/trucks
+          VITE_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
         run: |
           npm ci
           npm run build

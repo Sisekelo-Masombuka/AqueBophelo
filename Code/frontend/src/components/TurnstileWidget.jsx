@@ -19,7 +19,10 @@ export default function TurnstileWidget({ onVerify, onError, onExpire, className
     onExpireRef.current = onExpire;
   }, [onVerify, onError, onExpire]);
 
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+  const siteKey = 
+    (typeof window !== 'undefined' && window.__CONFIG__?.VITE_TURNSTILE_SITE_KEY) ||
+    import.meta.env.VITE_TURNSTILE_SITE_KEY || 
+    '1x00000000000000000000AA';
   const isDev = Boolean(import.meta.env.DEV);
 
   useEffect(() => {
