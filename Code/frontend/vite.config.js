@@ -15,12 +15,12 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:5094',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:5094',
         changeOrigin: true,
         secure: false,
       },
       '/hubs': {
-        target: 'http://localhost:5094',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:5094',
         ws: true,
         changeOrigin: true,
       },
