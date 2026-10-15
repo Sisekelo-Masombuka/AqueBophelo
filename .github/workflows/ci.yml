@@ -11,8 +11,26 @@ env:
 
 jobs:
   backend-ci:
-    name: Backend Build & Test (.NET 10)
+    name: Backend Build & Test (.NET 10 & SQL Server)
     runs-on: ubuntu-latest
+
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: 'YourStrong!Passw0rd2026'
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong!Passw0rd2026' -C -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      SQLSERVER_CONNECTION_STRING: 'Server=127.0.0.1,1433;Database=master;User Id=sa;Password=YourStrong!Passw0rd2026;TrustServerCertificate=True;Encrypt=True;MultipleActiveResultSets=true;'
+      REQUIRE_SQL_SERVER_TEST: 'true'
 
     steps:
       - name: Checkout Repository
@@ -102,7 +120,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
 
@@ -117,7 +135,7 @@ jobs:
         run: dotnet build Code/backend/AquaBophelo.slnx --configuration Release
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
 
   container-security:
     name: Container Security Scanning (Trivy)

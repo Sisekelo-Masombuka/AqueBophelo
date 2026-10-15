@@ -25,12 +25,21 @@ public class RealSqlServerIntegrationTests
 
     private static string GetSqlServerConnectionString()
     {
+        var testDbName = $"AquaBophelo_RealSql_Test_{Guid.NewGuid():N}";
+
         // 1. Check environment variable override (e.g. CI runner or Azure SQL)
         var envConn = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING");
-        if (!string.IsNullOrWhiteSpace(envConn)) return envConn;
+        if (!string.IsNullOrWhiteSpace(envConn))
+        {
+            var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(envConn)
+            {
+                InitialCatalog = testDbName,
+                ConnectTimeout = 10
+            };
+            return builder.ConnectionString;
+        }
 
         // 2. Check localdb instances
-        var testDbName = $"AquaBophelo_RealSql_Test_{Guid.NewGuid():N}";
         return $"Server=(localdb)\\AquaBopheloDbInstance;Database={testDbName};Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;Connect Timeout=5";
     }
 
@@ -61,12 +70,15 @@ public class RealSqlServerIntegrationTests
     public async Task RealSqlServer_EndToEndIdentityAndRelationalPersistenceTest()
     {
         var connectionString = GetSqlServerConnectionString();
+        bool isReachable = await IsSqlServerReachableAsync(connectionString);
 
-        // Check if SQL Server / LocalDB is accessible
-        if (!await IsSqlServerReachableAsync(connectionString))
+        bool isCiEnvironment = string.Equals(Environment.GetEnvironmentVariable("CI"), "true", StringComparison.OrdinalIgnoreCase) ||
+                               string.Equals(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"), "true", StringComparison.OrdinalIgnoreCase) ||
+                               string.Equals(Environment.GetEnvironmentVariable("REQUIRE_SQL_SERVER_TEST"), "true", StringComparison.OrdinalIgnoreCase);
+
+        if (!isReachable)
         {
-            _output.WriteLine("SQL Server / LocalDB instance not available in this runtime environment. Skipping real SQL Server integration test.");
-            return;
+            Xunit.Assert.Fail($"SQL Server connection failed! Connection String: '{connectionString}'. Ensure the SQL Server service container is running in CI or start LocalDB locally with 'sqllocaldb start AquaBopheloDbInstance'.");
         }
 
         _output.WriteLine($"Connected successfully to real SQL Server. Running integration test against temporary database.");
