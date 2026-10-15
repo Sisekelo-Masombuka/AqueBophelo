@@ -22,7 +22,7 @@ export default function TurnstileWidget({ onVerify, onError, onExpire, className
   const siteKey = 
     (typeof window !== 'undefined' && window.__CONFIG__?.VITE_TURNSTILE_SITE_KEY) ||
     import.meta.env.VITE_TURNSTILE_SITE_KEY || 
-    '1x00000000000000000000AA';
+    '0x4AAAAAAFX34am4KffRSjme';
   const isDev = Boolean(import.meta.env.DEV);
 
   useEffect(() => {
