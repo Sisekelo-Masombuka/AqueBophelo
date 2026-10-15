@@ -58,7 +58,7 @@ jobs:
         run: npm run lint
 
       - name: Audit Frontend Dependencies for Vulnerabilities
-        run: npm audit --audit-level=high || true
+        run: npm audit --audit-level=high
 
       - name: Build Frontend SPA
         run: npm run build
@@ -81,7 +81,6 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
 
   codeql-analysis:
     name: CodeQL Security Analysis
@@ -123,11 +122,10 @@ jobs:
 
       - name: Run Trivy Scanner on Backend Image
         uses: aquasecurity/trivy-action@v0.36.0
-        continue-on-error: true
         with:
           image-ref: 'aquabophelo-backend:ci'
           format: 'table'
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
@@ -136,10 +134,9 @@ jobs:
 
       - name: Run Trivy Scanner on Frontend Image
         uses: aquasecurity/trivy-action@v0.36.0
-        continue-on-error: true
         with:
           image-ref: 'aquabophelo-frontend:ci'
           format: 'table'
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'

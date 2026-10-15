@@ -458,7 +458,13 @@ app.MapGet("/health/ready", async (AppDbContext context, IEmailQueue emailQueue)
     }
     catch { isDbHealthy = false; }
 
-    var isQueueHealthy = emailQueue != null;
+    var isQueueHealthy = false;
+    try
+    {
+        isQueueHealthy = emailQueue != null && emailQueue.IsOperational;
+    }
+    catch { isQueueHealthy = false; }
+
     var isHealthy = isDbHealthy && isQueueHealthy;
 
     var result = new

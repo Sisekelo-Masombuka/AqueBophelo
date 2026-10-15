@@ -9,12 +9,24 @@ export default function TurnstileWidget({ onVerify, onError, onExpire, className
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
 
+  const onVerifyRef = useRef(onVerify);
+  onVerifyRef.current = onVerify;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+  const onExpireRef = useRef(onExpire);
+  onExpireRef.current = onExpire;
+
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+  const isDev = Boolean(import.meta.env.DEV);
 
   useEffect(() => {
-    // If siteKey is missing or invalid placeholder, bypass for local dev testing
+    // If siteKey is missing or invalid placeholder, only bypass in local development
     if (!siteKey || siteKey === 'your-turnstile-site-key-here') {
-      if (onVerify) onVerify('dev-turnstile-pass');
+      if (isDev) {
+        onVerifyRef.current?.('dev-turnstile-pass');
+      } else {
+        onErrorRef.current?.('Security challenge is unconfigured in production.');
+      }
       return;
     }
 
@@ -26,13 +38,13 @@ export default function TurnstileWidget({ onVerify, onError, onExpire, className
           widgetIdRef.current = window.turnstile.render(containerRef.current, {
             sitekey: siteKey,
             callback: (token) => {
-              if (onVerify && isMounted) onVerify(token);
+              if (isMounted) onVerifyRef.current?.(token);
             },
             'error-callback': () => {
-              if (onError && isMounted) onError();
+              if (isMounted) onErrorRef.current?.('Security challenge failed verification.');
             },
             'expired-callback': () => {
-              if (onExpire && isMounted) onExpire();
+              if (isMounted) onExpireRef.current?.();
             },
             theme: 'light',
           });
@@ -55,8 +67,12 @@ export default function TurnstileWidget({ onVerify, onError, onExpire, className
         script.defer = true;
         script.onload = () => renderWidget();
         script.onerror = () => {
-          console.warn('Failed to load Cloudflare Turnstile script.');
-          if (onVerify) onVerify('dev-turnstile-pass');
+          console.error('Failed to load Cloudflare Turnstile script.');
+          if (isDev) {
+            onVerifyRef.current?.('dev-turnstile-pass');
+          } else {
+            onErrorRef.current?.('Failed to load security challenge. Please verify your connection.');
+          }
         };
         document.head.appendChild(script);
       } else {
@@ -75,10 +91,17 @@ export default function TurnstileWidget({ onVerify, onError, onExpire, className
         widgetIdRef.current = null;
       }
     };
-  }, [siteKey]);
+  }, [siteKey, isDev]);
 
   if (!siteKey || siteKey === 'your-turnstile-site-key-here') {
-    return null; // Don't show anything if unconfigured in local dev
+    if (isDev) {
+      return null; // Don't show anything if unconfigured in local dev
+    }
+    return (
+      <div className="p-3 my-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded text-center">
+        Security verification (Turnstile) is not configured. Form submissions are disabled in production.
+      </div>
+    );
   }
 
   return (

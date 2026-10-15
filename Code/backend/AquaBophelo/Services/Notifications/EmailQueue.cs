@@ -8,6 +8,7 @@ public interface IEmailQueue
     ValueTask<EmailWorkItem> DequeueAsync(CancellationToken cancellationToken);
     int GetDailySentCount();
     void RecordEmailSent();
+    bool IsOperational { get; }
 }
 
 public class EmailQueue : IEmailQueue
@@ -16,6 +17,8 @@ public class EmailQueue : IEmailQueue
     private int _dailySentCount = 0;
     private DateTime _lastResetDate = DateTime.UtcNow.Date;
     private readonly object _counterLock = new();
+
+    public bool IsOperational => !_channel.Reader.Completion.IsCompleted;
 
     public EmailQueue()
     {

@@ -36,7 +36,7 @@ AquaBophelo/
 │   ├── backend/                      ASP.NET Core 10 Web API + Entity Framework Core + SignalR
 │   │   ├── AquaBophelo.slnx          Modern solution file (open in Visual Studio / VS Code)
 │   │   ├── AquaBophelo/              Controllers, DTOs, Hubs, Migrations, Models & Services
-│   │   └── AquaBophelo.Tests/        xUnit unit and integration test suite (20/20 passing)
+│   │   └── AquaBophelo.Tests/        xUnit unit and integration test suite (40/40 passing)
 │   └── frontend/                     React 19 + Vite + Tailwind CSS Single-Page Application
 │       ├── src/                      UI components, pages, hooks, context & state management
 │       ├── public/                   Static assets, icons, and Firebase service workers

@@ -46,7 +46,7 @@ AquaBophelo provides explicit environment variables to control database schema m
 
 1. **Build and Tag Container Images:**
    ```bash
-   docker build -t aquabophelo-api:latest -f Code/backend/Dockerfile .
+   docker build -f Code/backend/Dockerfile -t aquabophelo-api:latest Code/backend
    docker tag aquabophelo-api:latest myregistry.azurecr.io/aquabophelo-api:latest
    docker push myregistry.azurecr.io/aquabophelo-api:latest
    ```
@@ -126,3 +126,25 @@ curl -X POST https://api.aquabophelo.app/hubs/trucks/negotiate?negotiateVersion=
 2. Register with a test citizen email.
 3. Confirm an email OTP is received in the inbox (from `alerts@aquabophelo.app`).
 4. Enter code and verify registration success.
+
+### 7. Role-Based Access Control (RBAC) Enforcement
+Verify that resident credentials cannot invoke administrative endpoints:
+```bash
+# Resident attempting to create a municipal zone (must return HTTP 403 Forbidden)
+curl -i -X POST https://api.aquabophelo.app/api/v1/areas \
+  -H "Authorization: Bearer <RESIDENT_JWT>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Unauthorized Area"}' | grep -E "403 Forbidden|Access denied"
+```
+
+### 8. Incident Reporting & Cloudflare R2 Verification
+Submit a test water leak report with an image and confirm that magic-byte validation and R2 object storage succeed:
+```bash
+curl -i -X POST https://api.aquabophelo.app/api/v1/reports \
+  -H "Authorization: Bearer <RESIDENT_JWT>" \
+  -F "title=Test Pipe Leak Smoke Test" \
+  -F "description=Verification of R2 image upload pipeline" \
+  -F "category=Leak" \
+  -F "areaId=<VALID_AREA_ID>" \
+  -F "image=@test_sample.jpg" | grep -E "201 Created|reportId"
+```
