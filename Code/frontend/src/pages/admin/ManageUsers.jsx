@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, CheckCircle2, UserPlus, Search, X, Settings, Activity, Bell, Server, Trash2 } from 'lucide-react';
+import { Users, CheckCircle2, UserPlus, Search, X, Settings, Activity, Bell, Server, Trash2, AlertTriangle, RefreshCw } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import apiClient from '../../api/client';
 
@@ -30,6 +30,8 @@ export function ManageUsers() {
   const [newTruck, setNewTruck] = useState('542-KM NC');
   const [initialPassword, setInitialPassword] = useState('SolPlaatje2026!');
   const [feedback, setFeedback] = useState(null);
+  const [modalError, setModalError] = useState('');
+  const [isSubmittingUser, setIsSubmittingUser] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -94,8 +96,19 @@ export function ManageUsers() {
 
   const handleAddUser = async (e) => {
     e.preventDefault();
-    if (!newFullName.trim() || !newEmail.trim()) return;
+    setModalError('');
 
+    if (!newFullName.trim() || !newEmail.trim()) {
+      setModalError('Full name and email address are required.');
+      return;
+    }
+
+    if (!initialPassword || initialPassword.length < 6) {
+      setModalError('Initial temporary password must be at least 6 characters long.');
+      return;
+    }
+
+    setIsSubmittingUser(true);
     try {
       await apiClient.post('/api/v1/users', {
         fullName: newFullName.trim(),
@@ -115,13 +128,14 @@ export function ManageUsers() {
       setNewFullName('');
       setNewEmail('');
       setNewPhone('');
+      setModalError('');
       await fetchUsers();
       await fetchAuditLogs();
     } catch (err) {
-      setFeedback({
-        type: 'error',
-        text: err?.response?.data?.message || 'Failed to create user account.',
-      });
+      const errMsg = err?.response?.data?.message || err?.message || 'Failed to create user account. Please check password criteria.';
+      setModalError(errMsg);
+    } finally {
+      setIsSubmittingUser(false);
     }
   };
 
@@ -215,8 +229,16 @@ export function ManageUsers() {
 
       {/* Feedback Banner */}
       {feedback && (
-        <div className="p-3.5 rounded-md bg-[#f2f9f3] border border-[#b8e3bd] text-[#2e7d32] flex items-center space-x-3 text-xs md:text-sm font-medium">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
+        <div className={`p-3.5 rounded-md border flex items-center space-x-3 text-xs md:text-sm font-medium ${
+          feedback.type === 'error'
+            ? 'bg-red-50 border-red-200 text-red-700'
+            : 'bg-[#f2f9f3] border-[#b8e3bd] text-[#2e7d32]'
+        }`}>
+          {feedback.type === 'error' ? (
+            <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-[#2e7d32]" />
+          )}
           <span>{feedback.text}</span>
         </div>
       )}
@@ -509,15 +531,28 @@ export function ManageUsers() {
           <div className="bg-white border border-slate-200 rounded-lg p-6 w-full max-w-lg shadow-xl text-slate-800">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
               <h3 className="font-serif text-lg font-bold text-[#152e52]">
-                Create Personnel / Driver Account
+                Create {newRole} Account
               </h3>
-              <button onClick={() => setIsInviteModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button
+                onClick={() => {
+                  setIsInviteModalOpen(false);
+                  setModalError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <p className="text-xs text-slate-500 mb-4 font-normal">
-              Provision credentials for municipal staff or driver personnel.
+              Provision credentials for municipal {newRole.toLowerCase()} access.
             </p>
+
+            {modalError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-xs font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
+                <span>{modalError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleAddUser} className="space-y-4">
               <div>
@@ -536,7 +571,7 @@ export function ManageUsers() {
                 <label className="block text-xs font-medium text-slate-700 mb-1.5">Email Address</label>
                 <input
                   type="email"
-                  placeholder="driver@aquabophelo.ac.za"
+                  placeholder={`${newRole.toLowerCase()}@aquabophelo.app`}
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   required
@@ -566,8 +601,8 @@ export function ManageUsers() {
                     onChange={(e) => setNewRole(e.target.value)}
                     className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs md:text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                   >
-                    <option value="Driver">Driver (Vehicle Telemetry Access)</option>
                     <option value="Admin">Admin (Municipal Staff Access)</option>
+                    <option value="Driver">Driver (Vehicle Telemetry Access)</option>
                     <option value="Resident">Resident (Community Access)</option>
                   </select>
                 </div>
@@ -611,22 +646,35 @@ export function ManageUsers() {
                   required
                   className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">Driver will use this password on first sign-in</p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Must be at least 6 characters with uppercase, lowercase, number, and symbol (e.g. SolPlaatje2026!)
+                </p>
               </div>
 
               <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
-                  onClick={() => setIsInviteModalOpen(false)}
+                  onClick={() => {
+                    setIsInviteModalOpen(false);
+                    setModalError('');
+                  }}
                   className="px-4 py-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 border border-slate-300 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs transition-colors cursor-pointer"
+                  disabled={isSubmittingUser}
+                  className="px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
-                  Create Personnel Account
+                  {isSubmittingUser ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Creating {newRole}...</span>
+                    </>
+                  ) : (
+                    <span>Create {newRole} Account</span>
+                  )}
                 </button>
               </div>
             </form>

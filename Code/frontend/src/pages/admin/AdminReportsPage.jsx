@@ -77,7 +77,7 @@ export function AdminReportsPage() {
   }, []);
 
   const handleExportCSV = () => {
-    const reportData = report || defaultEmptyReport;
+    const reportData = report || DEFAULT_EMPTY_REPORT;
     const dateStr = new Date().toISOString().split('T')[0];
 
     let csvContent = `Sol Plaatje Local Municipality - Water Operations Analytics Report\n`;
@@ -114,7 +114,7 @@ export function AdminReportsPage() {
   };
 
   const handleExportPDF = () => {
-    const reportData = report || defaultEmptyReport;
+    const reportData = report || DEFAULT_EMPTY_REPORT;
     const dateStr = new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
 
     const printWindow = window.open('', '_blank');
@@ -227,7 +227,7 @@ export function AdminReportsPage() {
     printWindow.document.close();
   };
 
-  const data = report || defaultEmptyReport;
+  const data = report || DEFAULT_EMPTY_REPORT;
 
   return (
     <div className="space-y-6">
