@@ -28,3 +28,6 @@ scratch/
 ~$*
 *.tmp
 *.zip
+
+## Local Documentation & Exports
+docs/

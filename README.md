@@ -3,8 +3,7 @@
 **Smart Municipal Water Monitoring, Tanker Telemetry, and Resident Alerting Platform**  
 *Sol Plaatje Municipality · Kimberley, Northern Cape, South Africa*  
 *Developed by VibeTech · Sol Plaatje University*  
-*Production Deployment:* [https://aquabophelo.app/](https://aquabophelo.app/)  
-*Master Examination Guide:* [📖 **AquaBophelo Complete Capstone System Guide**](docs/AQUABOPHELO_SYSTEM_GUIDE.md)
+*Production Deployment:* [https://aquabophelo.app/](https://aquabophelo.app/)
 
 ---
 
@@ -44,8 +43,6 @@ AquaBophelo/
 │       └── package.json              Vite build scripts and client dependency specifications
 ├── Demo/
 │   └── AquaBophelo_System_Demonstration.mp4    Official system demonstration video (Git LFS)
-├── docs/
-│   └── AQUABOPHELO_SYSTEM_GUIDE.md   Master Capstone System Guide & Examination Masterclass
 ├── Dox/
 │   ├── Project Proposal.pdf          Phase 1: Project Proposal & Scope Definition
 │   ├── Requirements Specifications.pdf Phase 2: Software Requirements Specification (SRS)
