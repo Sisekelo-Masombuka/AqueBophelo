@@ -18,15 +18,18 @@ export function ForgotPasswordModal({ isOpen, onClose }) {
     setAccountNotFound(false);
     setSuccessMessage('');
 
-    if (!email || !email.includes('@')) {
+    const cleanEmail = email.trim().toLowerCase();
+    setEmail(cleanEmail);
+
+    if (!cleanEmail || !cleanEmail.includes('@')) {
       setError('Please enter a valid email address.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const response = await api.post('/api/v1/auth/forgot-password', { email });
-      setSuccessMessage(response.data?.message || `A password reset code has been sent to ${email}.`);
+      const response = await api.post('/api/v1/auth/forgot-password', { email: cleanEmail });
+      setSuccessMessage(response.data?.message || `A password reset code has been sent to ${cleanEmail}.`);
     } catch (err) {
       if (
         err.response?.data?.notFound ||
@@ -156,6 +159,9 @@ export function ForgotPasswordModal({ isOpen, onClose }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue focus:ring-1 focus:ring-blue"
               />
             </div>

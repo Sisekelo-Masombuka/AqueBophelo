@@ -129,14 +129,15 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password, turnstileToken) => {
     setIsLoading(true);
+    const cleanEmail = (email || '').trim().toLowerCase();
     try {
       // Attempt live API authentication
-      const response = await apiClient.post('/api/v1/auth/login', { email, password, turnstileToken });
+      const response = await apiClient.post('/api/v1/auth/login', { email: cleanEmail, password, turnstileToken });
       if (response.data && response.data.token) {
         const loggedUser = {
           id: response.data.userId || response.data.id || `usr-${Date.now()}`,
-          email: response.data.email || email,
-          fullName: response.data.fullName || email.split('@')[0],
+          email: response.data.email || cleanEmail,
+          fullName: response.data.fullName || cleanEmail.split('@')[0],
           role: response.data.role || 'Resident',
           preferredLanguage: response.data.preferredLanguage || localStorage.getItem('aquabophelo_lang') || 'EN',
           area: response.data.areaName || 'Galeshewe',
@@ -179,13 +180,14 @@ export function AuthProvider({ children }) {
   const register = async ({ email, password, fullName, area, phoneNumber, turnstileToken, otpCode }) => {
     setIsLoading(true);
     const chosenLang = localStorage.getItem('aquabophelo_lang') || 'EN';
+    const cleanEmail = (email || '').trim().toLowerCase();
     try {
       const response = await apiClient.post('/api/v1/auth/register', {
-        email,
+        email: cleanEmail,
         password,
-        fullName,
+        fullName: fullName?.trim(),
         areaName: area,
-        phoneNumber,
+        phoneNumber: phoneNumber?.trim(),
         preferredLanguage: chosenLang,
         turnstileToken,
         otpCode,
@@ -193,12 +195,12 @@ export function AuthProvider({ children }) {
       if (response.data && response.data.token) {
         const newUser = {
           id: response.data.userId || response.data.id || `usr-${Date.now()}`,
-          email,
-          fullName,
+          email: cleanEmail,
+          fullName: fullName?.trim(),
           role: 'Resident',
           preferredLanguage: response.data.preferredLanguage || chosenLang,
           area: area || 'Galeshewe',
-          phoneNumber: phoneNumber || response.data.phoneNumber || '',
+          phoneNumber: phoneNumber?.trim() || response.data.phoneNumber || '',
           profilePictureUrl: response.data.profilePictureUrl || null,
         };
         saveAuthSession(response.data.token, newUser);

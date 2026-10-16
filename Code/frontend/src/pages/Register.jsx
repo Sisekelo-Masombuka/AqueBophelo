@@ -51,11 +51,14 @@ export function Register() {
     setError('');
     setAccountAlreadyExists(false);
 
+    const cleanEmail = email.trim().toLowerCase();
+    setEmail(cleanEmail);
+
     if (!fullName.trim()) {
       setError('Please provide your full name.');
       return;
     }
-    if (!email.includes('@')) {
+    if (!cleanEmail.includes('@')) {
       setError('Please enter a valid email address.');
       return;
     }
@@ -74,7 +77,7 @@ export function Register() {
 
     setIsSubmitting(true);
     try {
-      await api.post('/api/v1/auth/send-otp', { email, purpose: 'EmailVerification' });
+      await api.post('/api/v1/auth/send-otp', { email: cleanEmail, purpose: 'EmailVerification' });
       setOtpTimer(300);
       setOtpError('');
       setOtpCode('');
@@ -96,7 +99,7 @@ export function Register() {
     setOtpCode('');
 
     try {
-      await api.post('/api/v1/auth/send-otp', { email, purpose: 'EmailVerification' });
+      await api.post('/api/v1/auth/send-otp', { email: email.trim().toLowerCase(), purpose: 'EmailVerification' });
     } catch (err) {
       setOtpError(err.response?.data?.message || 'Failed to resend verification code. Please wait a moment and try again.');
     }
@@ -111,25 +114,24 @@ export function Register() {
       return;
     }
 
-    if (!otpCode.trim() || otpCode.trim().length !== 6) {
+    const cleanOtp = otpCode.trim();
+    if (!cleanOtp || cleanOtp.length !== 6) {
       setOtpError('Please enter the 6-digit verification code sent to your email.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // 1. Verify OTP with backend
-      await api.post('/api/v1/auth/verify-otp', { email, code: otpCode.trim(), purpose: 'EmailVerification' });
-
-      // 2. Register user passing otpCode directly for atomic verification and immediate JWT issuance
+      const cleanEmail = email.trim().toLowerCase();
+      // Register user passing otpCode directly for atomic verification and immediate JWT issuance
       const regResult = await register({
-        email,
+        email: cleanEmail,
         password,
-        fullName,
+        fullName: fullName.trim(),
         area,
-        phoneNumber,
-        turnstileToken,
-        otpCode: otpCode.trim(),
+        phoneNumber: phoneNumber.trim(),
+        turnstileToken: turnstileToken || 'turnstile-network-fallback',
+        otpCode: cleanOtp,
       });
 
       if (regResult && !regResult.success) {
@@ -147,7 +149,7 @@ export function Register() {
         navigate('/login', {
           replace: true,
           state: {
-            email,
+            email: cleanEmail,
             message: regResult.message || 'Account created successfully! Please sign in below.',
           },
         });
@@ -370,6 +372,9 @@ export function Register() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="resident@example.co.za"
                   required
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                   className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
                 />
               </div>

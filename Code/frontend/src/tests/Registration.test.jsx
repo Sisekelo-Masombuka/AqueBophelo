@@ -189,9 +189,11 @@ describe('Registration & Email Verification OTP Flow', () => {
   });
 
   it('displays error when OTP verification API fails', async () => {
-    api.post
-      .mockResolvedValueOnce({ data: { success: true } }) // send-otp
-      .mockRejectedValueOnce({ response: { data: { message: 'Invalid or expired verification code.' } } }); // verify-otp
+    api.post.mockResolvedValueOnce({ data: { success: true } }); // send-otp
+    mockRegister.mockResolvedValueOnce({
+      success: false,
+      error: 'Invalid or expired verification code.',
+    });
 
     render(
       <MemoryRouter>
@@ -224,11 +226,8 @@ describe('Registration & Email Verification OTP Flow', () => {
   });
 
   it('completes full OTP verification and calls register() with form state', async () => {
-    api.post
-      .mockResolvedValueOnce({ data: { success: true } }) // send-otp
-      .mockResolvedValueOnce({ data: { success: true, verified: true } }); // verify-otp
-
-    mockRegister.mockResolvedValueOnce({ success: true });
+    api.post.mockResolvedValueOnce({ data: { success: true } }); // send-otp
+    mockRegister.mockResolvedValueOnce({ success: true, user: { id: 'usr-1', email: 'nomcebo@gmail.com' } });
 
     render(
       <MemoryRouter>
@@ -256,18 +255,13 @@ describe('Registration & Email Verification OTP Flow', () => {
     fireEvent.submit(verifyBtn.closest('form'));
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/api/v1/auth/verify-otp', {
-        email: 'nomcebo@gmail.com',
-        code: '482915',
-        purpose: 'EmailVerification',
-      });
       expect(mockRegister).toHaveBeenCalledWith({
         fullName: 'Nomcebo Zungu',
         email: 'nomcebo@gmail.com',
         phoneNumber: '0821234567',
         area: 'Galeshewe',
         password: 'Secret123!',
-        turnstileToken: '',
+        turnstileToken: 'turnstile-network-fallback',
         otpCode: '482915',
       });
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true });
@@ -275,9 +269,7 @@ describe('Registration & Email Verification OTP Flow', () => {
   });
 
   it('navigates to /login with state message when registration requires verification', async () => {
-    api.post
-      .mockResolvedValueOnce({ data: { success: true } })
-      .mockResolvedValueOnce({ data: { success: true, verified: true } });
+    api.post.mockResolvedValueOnce({ data: { success: true } });
 
     mockRegister.mockResolvedValueOnce({
       success: true,

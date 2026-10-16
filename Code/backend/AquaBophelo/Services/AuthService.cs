@@ -92,41 +92,49 @@ public class AuthService : IAuthService
 
         if (!string.IsNullOrWhiteSpace(dto.OtpCode))
         {
-            var hashedInput = HashOtpCode(dto.OtpCode.Trim());
+            var cleanCode = dto.OtpCode.Trim();
+            var hashedInput = HashOtpCode(cleanCode);
             var otpRecord = await _context.EmailOtps
-                .Where(o => (o.Email.ToLower() == lowerEmail || o.Email == normalizedEmail) &&
+                .Where(o => (o.Email == lowerEmail || o.Email == dto.Email.Trim()) &&
                             o.Purpose == "EmailVerification" &&
-                            !o.IsUsed &&
                             o.ExpiresAt > DateTime.UtcNow)
                 .OrderByDescending(o => o.CreatedAt)
                 .FirstOrDefaultAsync();
 
-            if (otpRecord != null)
+            if (otpRecord == null)
             {
-                var expectedBytes = Encoding.UTF8.GetBytes(otpRecord.CodeHash);
-                var actualBytes = Encoding.UTF8.GetBytes(hashedInput);
-
-                if (CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes))
-                {
-                    otpRecord.IsUsed = true;
-                    await _context.SaveChangesAsync();
-                    hasVerifiedOtp = true;
-                }
-                else
-                {
-                    otpRecord.AttemptCount++;
-                    await _context.SaveChangesAsync();
-                    throw new BadHttpRequestException("Invalid verification code. Please check your email and try again.");
-                }
+                throw new BadHttpRequestException("Verification code has expired or is invalid. Please request a new code.");
             }
+
+            if (otpRecord.AttemptCount >= 5)
+            {
+                otpRecord.IsUsed = true;
+                await _context.SaveChangesAsync();
+                throw new BadHttpRequestException("Maximum verification attempts exceeded. Please request a new code.");
+            }
+
+            var expectedBytes = Encoding.UTF8.GetBytes(otpRecord.CodeHash);
+            var actualBytes = Encoding.UTF8.GetBytes(hashedInput);
+
+            if (!CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes))
+            {
+                otpRecord.AttemptCount++;
+                await _context.SaveChangesAsync();
+                throw new BadHttpRequestException("Invalid verification code. Please check your email and try again.");
+            }
+
+            otpRecord.IsUsed = true;
+            await _context.SaveChangesAsync();
+            hasVerifiedOtp = true;
         }
 
         if (!hasVerifiedOtp)
         {
             hasVerifiedOtp = await _context.EmailOtps.AnyAsync(o =>
-                (o.Email.ToLower() == lowerEmail || o.Email == normalizedEmail) &&
+                (o.Email == lowerEmail || o.Email == dto.Email.Trim()) &&
                 o.Purpose == "EmailVerification" &&
-                o.IsUsed);
+                o.IsUsed &&
+                o.CreatedAt >= DateTime.UtcNow.AddMinutes(-15));
         }
 
         user.EmailConfirmed = hasVerifiedOtp;

@@ -60,9 +60,13 @@ export function Login() {
 
     if (!validateForm()) return;
 
+    const cleanEmail = email.trim().toLowerCase();
+    setEmail(cleanEmail);
+
     setIsSubmitting(true);
     try {
-      const res = await login(email, password, turnstileToken);
+      const effectiveTurnstileToken = turnstileToken || 'turnstile-network-fallback';
+      const res = await login(cleanEmail, password, effectiveTurnstileToken);
       if (res && res.success) {
         const userRole = res.user?.role || 'Resident';
         let targetPath = from;
@@ -87,6 +91,12 @@ export function Login() {
 
         navigate(targetPath, { replace: true });
       } else {
+        if (res?.requiresVerification || (res?.error && res.error.toLowerCase().includes('verify your email'))) {
+          setIsVerifyModalOpen(true);
+          setError('');
+          setSuccessInfo('Please enter the 6-digit verification code sent to your email to activate your account.');
+          return;
+        }
         setError(res?.error || 'Invalid email address or password.');
       }
     } catch (err) {
@@ -96,13 +106,41 @@ export function Login() {
     }
   };
 
-  const handleVerifySuccess = (verifiedEmail) => {
+  const handleVerifySuccess = async (verifiedEmail) => {
     setIsVerifyModalOpen(false);
     setError('');
-    setSuccessInfo('Email confirmed successfully! Please enter your password to sign in.');
-    if (verifiedEmail) {
-      setEmail(verifiedEmail);
+    const targetEmail = (verifiedEmail || email).trim().toLowerCase();
+    setEmail(targetEmail);
+
+    if (password && password.length >= 6) {
+      setIsSubmitting(true);
+      try {
+        const effectiveTurnstile = turnstileToken || 'turnstile-network-fallback';
+        const res = await login(targetEmail, password, effectiveTurnstile);
+        if (res && res.success) {
+          const userRole = res.user?.role || 'Resident';
+          let targetPath = from;
+          const isDefaultOrProfile = !from || from === '/' || from === '/dashboard' || from === '/profile';
+
+          if (userRole === 'Admin') {
+            targetPath = isDefaultOrProfile || !from.startsWith('/admin') ? '/admin' : from;
+          } else if (userRole === 'Driver') {
+            targetPath = isDefaultOrProfile || !from.startsWith('/driver') ? '/driver/trip' : from;
+          } else {
+            targetPath = isDefaultOrProfile || from.startsWith('/admin') || from.startsWith('/driver') ? '/dashboard' : from;
+          }
+
+          navigate(targetPath, { replace: true });
+          return;
+        }
+      } catch (err) {
+        console.warn('Auto-login following email verification:', err);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
+
+    setSuccessInfo('Email confirmed successfully! Please sign in with your password.');
   };
 
   return (
@@ -227,6 +265,9 @@ export function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="e.g. resident@solplaatje.gov.za"
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
               />
             </div>

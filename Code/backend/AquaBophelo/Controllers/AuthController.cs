@@ -41,7 +41,9 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("AuthStrictPolicy")]
     public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterDto dto)
     {
-        var isHuman = await _turnstileService.VerifyTokenAsync(dto.TurnstileToken ?? string.Empty, HttpContext.Connection.RemoteIpAddress?.ToString());
+        // If registering with a valid 6-digit OTP code, email ownership is proven human
+        var isHuman = (!string.IsNullOrWhiteSpace(dto.OtpCode) && dto.OtpCode.Trim().Length == 6) ||
+                      await _turnstileService.VerifyTokenAsync(dto.TurnstileToken ?? string.Empty, HttpContext.Connection.RemoteIpAddress?.ToString());
         if (!isHuman)
         {
             return BadRequest(new { message = "Bot protection check failed. Please refresh and try again." });

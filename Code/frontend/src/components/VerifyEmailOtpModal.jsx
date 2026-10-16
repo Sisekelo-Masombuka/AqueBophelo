@@ -23,7 +23,10 @@ export function VerifyEmailOtpModal({ isOpen, onClose, initialEmail = '', onSucc
     setError('');
     setSuccessMessage('');
 
-    if (!email || !email.includes('@')) {
+    const cleanEmail = email.trim().toLowerCase();
+    setEmail(cleanEmail);
+
+    if (!cleanEmail || !cleanEmail.includes('@')) {
       setError('Please provide a valid email address.');
       return;
     }
@@ -36,13 +39,13 @@ export function VerifyEmailOtpModal({ isOpen, onClose, initialEmail = '', onSucc
     setIsSubmitting(true);
     try {
       await api.post('/api/v1/auth/confirm-email', {
-        email: email.trim(),
+        email: cleanEmail,
         token: otpCode.trim(),
       });
-      setSuccessMessage('Email verified successfully! You can now sign in.');
+      setSuccessMessage('Email verified successfully! Signing you in...');
       setTimeout(() => {
-        onSuccess?.(email.trim());
-      }, 1000);
+        onSuccess?.(cleanEmail);
+      }, 750);
     } catch (err) {
       const msg = err.response?.data?.message || 'Verification failed. Please check the code and try again.';
       setError(msg);
@@ -55,7 +58,10 @@ export function VerifyEmailOtpModal({ isOpen, onClose, initialEmail = '', onSucc
     setError('');
     setSuccessMessage('');
 
-    if (!email || !email.includes('@')) {
+    const cleanEmail = email.trim().toLowerCase();
+    setEmail(cleanEmail);
+
+    if (!cleanEmail || !cleanEmail.includes('@')) {
       setError('Please provide a valid email address.');
       return;
     }
@@ -63,10 +69,10 @@ export function VerifyEmailOtpModal({ isOpen, onClose, initialEmail = '', onSucc
     setIsResending(true);
     try {
       await api.post('/api/v1/auth/send-otp', {
-        email: email.trim(),
+        email: cleanEmail,
         purpose: 'EmailVerification',
       });
-      setSuccessMessage(`A fresh 6-digit code has been dispatched to ${email.trim()}.`);
+      setSuccessMessage(`A fresh 6-digit code has been dispatched to ${cleanEmail}.`);
     } catch (err) {
       const msg = err.response?.data?.message || 'Failed to resend code. Please wait a minute and try again.';
       setError(msg);
@@ -129,6 +135,9 @@ export function VerifyEmailOtpModal({ isOpen, onClose, initialEmail = '', onSucc
               onChange={(e) => setEmail(e.target.value)}
               placeholder="resident@solplaatje.gov.za"
               required
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck="false"
               className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8] focus:ring-1 focus:ring-[#1d70b8]"
             />
           </div>

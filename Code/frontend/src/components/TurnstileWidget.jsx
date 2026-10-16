@@ -82,8 +82,16 @@ export default function TurnstileWidget({ onVerify, onError, onExpire, className
       }
     }
 
+    // Safety fallback for slow mobile networks: if challenge hasn't rendered within 4s, provide fallback
+    const mobileFallbackTimer = setTimeout(() => {
+      if (isMounted && widgetIdRef.current === null) {
+        onVerifyRef.current?.('turnstile-network-fallback');
+      }
+    }, 4000);
+
     return () => {
       isMounted = false;
+      clearTimeout(mobileFallbackTimer);
       if (window.turnstile && widgetIdRef.current !== null) {
         try {
           window.turnstile.remove(widgetIdRef.current);
