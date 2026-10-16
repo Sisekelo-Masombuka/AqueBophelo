@@ -29,6 +29,7 @@ jobs:
           VITE_API_BASE_URL: https://aquabophelo-api-spu-hkahhxcqe0b0c5ek.southafricanorth-01.azurewebsites.net
           VITE_SIGNALR_URL: https://aquabophelo-api-spu-hkahhxcqe0b0c5ek.southafricanorth-01.azurewebsites.net/hubs/trucks
           VITE_TURNSTILE_SITE_KEY: 0x4AAAAAAFX34am4KffRSjme
+          VITE_SENTRY_DSN: https://6c504531adc85ab5b688877a7ad1dcc6@o4512233493692416.ingest.de.sentry.io/4512234972446800
         run: |
           npm ci
           npm run build
