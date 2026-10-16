@@ -235,6 +235,9 @@ export function LandingPage() {
                   <img
                     src={kimberleyReservoirImg}
                     alt="Kimberley Water Landscape"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     className="w-full h-64 sm:h-80 object-cover"
                   />
                   

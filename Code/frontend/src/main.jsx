@@ -20,7 +20,30 @@ if (sentryDsn && sentryDsn !== 'your-sentry-dsn-here') {
     tracesSampleRate: 1.0,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
-    beforeSend(event) {
+    ignoreErrors: [
+      /Object Not Found Matching Id/i,
+      /MethodName:update/i,
+      /ResizeObserver loop/i,
+      /chrome-extension:\/\//i,
+      /moz-extension:\/\//i,
+      /safari-extension:\/\//i,
+    ],
+    beforeSend(event, hint) {
+      const errorMsg =
+        event?.message ||
+        event?.exception?.values?.[0]?.value ||
+        (typeof hint?.originalException === 'string' ? hint.originalException : '');
+
+      if (
+        /Object Not Found Matching Id/i.test(errorMsg) ||
+        /MethodName:update/i.test(errorMsg) ||
+        /chrome-extension/i.test(errorMsg) ||
+        /moz-extension/i.test(errorMsg) ||
+        /safari-extension/i.test(errorMsg)
+      ) {
+        return null; // Drop bot crawler & browser extension noise
+      }
+
       if (event.request && event.request.headers) {
         delete event.request.headers['Authorization'];
       }
