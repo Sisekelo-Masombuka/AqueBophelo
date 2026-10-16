@@ -44,7 +44,7 @@ export function useGeolocationBroadcast({ tripId, initialActive = false } = {}) 
       .withUrl(`${API_BASE_URL}/hubs/trucks`, {
         skipNegotiation: false,
         transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,
-        accessTokenFactory: () => localStorage.getItem('aquabophelo_token') || '',
+        accessTokenFactory: () => sessionStorage.getItem('aquabophelo_token') || localStorage.getItem('aquabophelo_token') || '',
       })
       .withAutomaticReconnect([0, 2000, 5000, 10000])
       .configureLogging(signalR.LogLevel.Warning)

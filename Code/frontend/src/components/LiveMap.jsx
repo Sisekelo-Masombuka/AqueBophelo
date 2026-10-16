@@ -489,7 +489,7 @@ export function LiveMap({
       .withUrl(`${API_BASE_URL}/hubs/trucks`, {
         skipNegotiation: false,
         transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,
-        accessTokenFactory: () => localStorage.getItem('aquabophelo_token') || '',
+        accessTokenFactory: () => sessionStorage.getItem('aquabophelo_token') || localStorage.getItem('aquabophelo_token') || '',
       })
       .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Warning)

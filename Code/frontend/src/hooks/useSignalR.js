@@ -103,7 +103,7 @@ export function useSignalR() {
     // 1. Build SignalR Connection
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(HUB_URL, {
-        accessTokenFactory: () => localStorage.getItem('aquabophelo_token') || '',
+        accessTokenFactory: () => sessionStorage.getItem('aquabophelo_token') || localStorage.getItem('aquabophelo_token') || '',
         skipNegotiation: false,
       })
       .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])

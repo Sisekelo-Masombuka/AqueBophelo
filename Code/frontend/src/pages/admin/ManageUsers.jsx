@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, CheckCircle2, UserPlus, Search, X, Settings, Activity, Bell, Server, Trash2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Users, CheckCircle2, UserPlus, Search, X, Settings, Activity, Bell, Server, Trash2, AlertTriangle, RefreshCw, Key } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import apiClient from '../../api/client';
 
@@ -20,6 +20,13 @@ export function ManageUsers() {
   const [roleFilter, setRoleFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
+  // Reset Password Modal State (Admin Helpdesk)
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetTargetUser, setResetTargetUser] = useState(null);
+  const [adminNewPassword, setAdminNewPassword] = useState('SolPlaatje2026!');
+  const [isSubmittingReset, setIsSubmittingReset] = useState(false);
+  const [resetError, setResetError] = useState('');
 
   // Form State
   const [newFullName, setNewFullName] = useState('');
@@ -148,6 +155,40 @@ export function ManageUsers() {
       await fetchAuditLogs();
     } catch {
       setFeedback({ type: 'error', text: 'Failed to deactivate user.' });
+    }
+  };
+
+  const handleOpenResetPasswordModal = (user) => {
+    setResetTargetUser(user);
+    setAdminNewPassword('SolPlaatje2026!');
+    setResetError('');
+    setIsResetModalOpen(true);
+  };
+
+  const handleAdminResetPassword = async (e) => {
+    e.preventDefault();
+    if (!resetTargetUser || !adminNewPassword || adminNewPassword.length < 6) {
+      setResetError('Temporary password must be at least 6 characters long.');
+      return;
+    }
+
+    setIsSubmittingReset(true);
+    setResetError('');
+    try {
+      const res = await apiClient.post(`/api/v1/users/${resetTargetUser.id}/reset-password`, {
+        newPassword: adminNewPassword.trim()
+      });
+      setFeedback({
+        type: 'success',
+        text: res.data?.message || `Password for ${resetTargetUser.fullName} reset to: ${adminNewPassword}`
+      });
+      setIsResetModalOpen(false);
+      setResetTargetUser(null);
+      await fetchAuditLogs();
+    } catch (err) {
+      setResetError(err?.response?.data?.message || err?.message || 'Failed to reset user password.');
+    } finally {
+      setIsSubmittingReset(false);
     }
   };
 
@@ -328,17 +369,26 @@ export function ManageUsers() {
                         <td className="py-3 px-4 text-xs font-semibold text-[#152e52]">{user.assignedTruck}</td>
                         <td className="py-3 px-4 text-slate-600 font-normal">{user.areaName}</td>
                         <td className="py-3 px-4">
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-1">
                             <StatusBadge status={user.status} />
-                            {user.role !== 'Admin' && (
+                            <div className="flex items-center space-x-1">
                               <button
-                                onClick={() => handleDeleteUser(user.id, user.fullName)}
-                                className="text-slate-400 hover:text-red-600 p-1 transition-colors cursor-pointer"
-                                title="Deactivate user"
+                                onClick={() => handleOpenResetPasswordModal(user)}
+                                className="text-slate-400 hover:text-[#1d70b8] p-1 transition-colors cursor-pointer"
+                                title={`Reset Password for ${user.fullName}`}
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Key className="w-3.5 h-3.5" />
                               </button>
-                            )}
+                              {user.role !== 'Admin' && (
+                                <button
+                                  onClick={() => handleDeleteUser(user.id, user.fullName)}
+                                  className="text-slate-400 hover:text-red-600 p-1 transition-colors cursor-pointer"
+                                  title="Deactivate user"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -674,6 +724,94 @@ export function ManageUsers() {
                     </>
                   ) : (
                     <span>Create {newRole} Account</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal (Admin IT Helpdesk) */}
+      {isResetModalOpen && resetTargetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 w-full max-w-md shadow-xl text-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+              <div className="flex items-center space-x-2">
+                <Key className="w-5 h-5 text-[#1d70b8]" />
+                <h3 className="font-serif text-lg font-bold text-[#152e52]">
+                  Reset Personnel Password
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsResetModalOpen(false);
+                  setResetTargetUser(null);
+                  setResetError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-[#f8fafc] border border-slate-200 rounded-md p-3 mb-4 text-xs space-y-1">
+              <p><span className="text-slate-500">Personnel:</span> <strong>{resetTargetUser.fullName}</strong></p>
+              <p><span className="text-slate-500">Email:</span> <span className="font-mono text-slate-700">{resetTargetUser.email}</span></p>
+              <p><span className="text-slate-500">Role:</span> <span className="font-bold text-[#152e52]">{resetTargetUser.role}</span></p>
+            </div>
+
+            <p className="text-xs text-slate-500 mb-4 font-normal">
+              Assign a new temporary password for this user. You cannot see their existing password, but you can set a fresh password they can use to log in immediately.
+            </p>
+
+            {resetError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-xs font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
+                <span>{resetError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleAdminResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">New Temporary Password *</label>
+                <input
+                  type="text"
+                  value={adminNewPassword}
+                  onChange={(e) => setAdminNewPassword(e.target.value)}
+                  required
+                  placeholder="e.g. SolPlaatje2026!"
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#1d70b8]"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Must be at least 6 characters with uppercase, lowercase, number, and symbol
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsResetModalOpen(false);
+                    setResetTargetUser(null);
+                    setResetError('');
+                  }}
+                  className="px-4 py-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 border border-slate-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReset}
+                  className="px-4 py-2 rounded-md bg-[#152e52] hover:bg-[#0f223d] text-white font-medium text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isSubmittingReset ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <span>Update Password</span>
                   )}
                 </button>
               </div>

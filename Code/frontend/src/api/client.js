@@ -25,7 +25,10 @@ export const apiClient = axios.create({
  */
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('aquabophelo_token');
+    let token = null;
+    try {
+      token = sessionStorage.getItem('aquabophelo_token') || localStorage.getItem('aquabophelo_token');
+    } catch {}
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -55,9 +58,14 @@ apiClient.interceptors.response.use(
       );
 
       // Only redirect if an existing token was present and this is not an auth form attempt
-      if (!isAuthEndpoint && localStorage.getItem('aquabophelo_token')) {
-        localStorage.removeItem('aquabophelo_token');
-        localStorage.removeItem('aquabophelo_user');
+      const hasToken = sessionStorage.getItem('aquabophelo_token') || localStorage.getItem('aquabophelo_token');
+      if (!isAuthEndpoint && hasToken) {
+        try {
+          sessionStorage.removeItem('aquabophelo_token');
+          sessionStorage.removeItem('aquabophelo_user');
+          localStorage.removeItem('aquabophelo_token');
+          localStorage.removeItem('aquabophelo_user');
+        } catch {}
         if (window.location.pathname !== '/login') {
           window.location.href = '/login?expired=true';
         }

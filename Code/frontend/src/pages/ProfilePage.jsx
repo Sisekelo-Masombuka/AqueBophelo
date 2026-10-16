@@ -962,23 +962,35 @@ export function ProfilePage() {
             )}
           </div>
 
-          {/* ITEM 1.5: DELETE OWN ACCOUNT WITH REAL EMAIL OTP */}
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 space-y-3">
-            <h3 className="font-serif font-bold text-base text-red-800 flex items-center space-x-2">
-              <Trash2 className="w-4 h-4 text-red-600" />
-              <span>Delete Own Account</span>
-            </h3>
-            <p className="text-xs text-red-700 leading-relaxed font-normal">
-              Permanently remove your account and personal details from Sol Plaatje Municipal database. Requires confirmation and a real email OTP verification code.
-            </p>
-            <button
-              type="button"
-              onClick={() => { setIsDeleteModalOpen(true); setDeleteStep(1); }}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium text-xs rounded-md transition-colors cursor-pointer"
-            >
-              Delete My Account
-            </button>
-          </div>
+          {/* ITEM 1.5: DELETE OWN ACCOUNT (RESIDENTS ONLY) */}
+          {currentRole === 'Resident' ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 space-y-3">
+              <h3 className="font-serif font-bold text-base text-red-800 flex items-center space-x-2">
+                <Trash2 className="w-4 h-4 text-red-600" />
+                <span>Delete Own Account</span>
+              </h3>
+              <p className="text-xs text-red-700 leading-relaxed font-normal">
+                Permanently remove your account and personal details from Sol Plaatje Municipal database. Requires confirmation and a real email OTP verification code.
+              </p>
+              <button
+                type="button"
+                onClick={() => { setIsDeleteModalOpen(true); setDeleteStep(1); }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium text-xs rounded-md transition-colors cursor-pointer"
+              >
+                Delete My Account
+              </button>
+            </div>
+          ) : (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 space-y-2">
+              <h3 className="font-serif font-bold text-sm text-[#152e52] flex items-center space-x-2">
+                <ShieldCheck className="w-4 h-4 text-[#1d70b8]" />
+                <span>Municipal Personnel Account Security Policy</span>
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                Municipal {currentRole.toLowerCase()} and operational staff accounts are governed by municipal IT policy and cannot be self-deleted. Account lifecycle management, vehicle transfers, and personnel offboarding are strictly managed by Municipal Administrators.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

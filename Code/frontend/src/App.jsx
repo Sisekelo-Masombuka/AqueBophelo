@@ -32,18 +32,32 @@ import ScheduledOutagesComponent from './components/ScheduledOutagesComponent';
 import PushNotificationPrompt from './components/PushNotificationPrompt';
 import CookieConsentBanner from './components/CookieConsentBanner';
 
-function RootRedirect() {
+function PublicLandingRoute() {
   const { isAuthenticated, user, isLoading } = useAuth();
 
   if (isLoading && !user) return null;
 
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/landing" replace />;
+  if (isAuthenticated && user) {
+    if (user.role === 'Admin') return <Navigate to="/admin" replace />;
+    if (user.role === 'Driver') return <Navigate to="/driver/trip" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
-  if (user.role === 'Admin') return <Navigate to="/admin" replace />;
-  if (user.role === 'Driver') return <Navigate to="/driver/trip" replace />;
-  return <Navigate to="/dashboard" replace />;
+  return <LandingPage />;
+}
+
+function GuestOnlyRoute({ children }) {
+  const { isAuthenticated, user, isLoading } = useAuth();
+
+  if (isLoading && !user) return null;
+
+  if (isAuthenticated && user) {
+    if (user.role === 'Admin') return <Navigate to="/admin" replace />;
+    if (user.role === 'Driver') return <Navigate to="/driver/trip" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
 }
 
 export function App() {
@@ -51,21 +65,37 @@ export function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/landing" element={<LandingPage />} />
+          {/* Root Landing Route (Clean URL: serves Landing for guests, role dashboard for authenticated users) */}
+          <Route path="/" element={<PublicLandingRoute />} />
+          <Route path="/landing" element={<Navigate to="/" replace />} />
+
+          {/* Guest-only Auth Routes */}
+          <Route
+            path="/login"
+            element={
+              <GuestOnlyRoute>
+                <Login />
+              </GuestOnlyRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <GuestOnlyRoute>
+                <Register />
+              </GuestOnlyRoute>
+            }
+          />
+
+          {/* Public Informational Routes */}
           <Route path="/about" element={<AboutUsPage />} />
           <Route path="/contact" element={<ContactUsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
 
           {/* Alias Navigation Links */}
           <Route path="/water-services" element={<AboutUsPage />} />
           <Route path="/notices" element={<ContactUsPage />} />
-
-          {/* Root Smart Redirect */}
-          <Route path="/" element={<RootRedirect />} />
 
           {/* Protected Application Routes inside MainLayout */}
           <Route

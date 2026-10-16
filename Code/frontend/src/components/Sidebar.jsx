@@ -8,7 +8,6 @@ import {
   MapPin,
   Users,
   X,
-  Globe,
   ShieldCheck,
   User,
   BarChart3,
@@ -51,13 +50,14 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
   ];
 
   const links = currentRole === 'Admin' ? adminLinks : currentRole === 'Driver' ? driverLinks : residentLinks;
+  const homePath = currentRole === 'Admin' ? '/admin' : currentRole === 'Driver' ? '/driver/trip' : '/dashboard';
 
   return (
     <aside className="w-64 bg-white border-r border-slate-200 min-h-screen flex flex-col justify-between p-4 text-slate-800 select-none shadow-xs">
       <div>
         {/* Logo and Title */}
         <div className="flex items-center justify-between px-2 py-3.5 border-b border-slate-200 mb-5">
-          <Link to="/" className="flex items-center group">
+          <Link to={homePath} className="flex items-center group">
             <BrandLogo size="md" showText={true} />
           </Link>
 
@@ -108,18 +108,6 @@ export function Sidebar({ currentRole = 'Resident', onClose }) {
           <LanguageSwitcher />
         </div>
 
-        <Link
-          to="/"
-          className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium text-slate-600 hover:text-navy hover:bg-slate-100 transition-colors"
-        >
-          <span className="flex items-center space-x-2">
-            <Globe className="w-3.5 h-3.5 text-blue" />
-            <span>{t('publicPortal')}</span>
-          </span>
-          <span className="text-xs bg-info-bg text-blue border border-info-border px-1.5 py-0.5 rounded-md font-semibold">
-            {t('view')}
-          </span>
-        </Link>
 
         <Link
           to="/privacy"

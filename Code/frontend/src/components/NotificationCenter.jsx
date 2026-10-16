@@ -1,8 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Check, Trash2, X, AlertTriangle, Truck, Droplet, Info } from 'lucide-react';
 import apiClient from '../api/client';
+import { useAuth } from '../auth/AuthContext';
+
+const READ_STORAGE_KEY = 'aquabophelo_read_alerts';
+const DISMISSED_STORAGE_KEY = 'aquabophelo_dismissed_alerts';
+
+function getStoredSet(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveStoredSet(key, setObj) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(Array.from(setObj)));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
 
 export function NotificationCenter() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
@@ -12,15 +34,37 @@ export function NotificationCenter() {
       try {
         const res = await apiClient.get('/api/v1/alerts');
         if (isCurrent && Array.isArray(res.data)) {
+          const readSet = getStoredSet(READ_STORAGE_KEY);
+          const dismissedSet = getStoredSet(DISMISSED_STORAGE_KEY);
+
+          const filtered = res.data.filter((a) => {
+            // 1. Exclude dismissed notifications
+            if (dismissedSet.has(a.id)) return false;
+
+            // 2. Filter out actions the current user performed themselves
+            if (user?.id && a.createdByUserId && (a.createdByUserId === user.id || a.createdByUserId === user.email)) {
+              return false;
+            }
+
+            // 3. Role-based notification filtering
+            if (user?.role === 'Driver') {
+              // Drivers should only receive tanker/route/trip dispatches, outages, and emergency warnings
+              const alertType = (a.type || '').toLowerCase();
+              return alertType === 'truck' || alertType === 'outage' || alertType === 'announcement';
+            }
+
+            return true;
+          });
+
           setNotifications(
-            res.data.map((a) => ({
+            filtered.map((a) => ({
               id: a.id,
               title: a.title || 'Municipal Alert',
               message: a.message || a.description || '',
               time: a.createdAt
                 ? new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 : 'Recent',
-              read: false,
+              read: readSet.has(a.id),
               type:
                 a.type?.toLowerCase() === 'dam'
                   ? 'dam'
@@ -38,15 +82,30 @@ export function NotificationCenter() {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [user]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  const markNotificationAsRead = (id) => {
+    const readSet = getStoredSet(READ_STORAGE_KEY);
+    readSet.add(id);
+    saveStoredSet(READ_STORAGE_KEY, readSet);
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
   const markAllAsRead = () => {
+    const readSet = getStoredSet(READ_STORAGE_KEY);
+    notifications.forEach((n) => readSet.add(n.id));
+    saveStoredSet(READ_STORAGE_KEY, readSet);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
   const removeNotification = (id) => {
+    const dismissedSet = getStoredSet(DISMISSED_STORAGE_KEY);
+    dismissedSet.add(id);
+    saveStoredSet(DISMISSED_STORAGE_KEY, dismissedSet);
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
@@ -111,21 +170,30 @@ export function NotificationCenter() {
                 notifications.map((n) => (
                   <div
                     key={n.id}
-                    className={`p-3.5 transition-colors flex items-start justify-between gap-2 ${
-                      n.read ? 'bg-white' : 'bg-[#f4f8fb]'
+                    onClick={() => markNotificationAsRead(n.id)}
+                    className={`p-3.5 transition-colors flex items-start justify-between gap-2 cursor-pointer ${
+                      n.read ? 'bg-white hover:bg-slate-50' : 'bg-[#f4f8fb] hover:bg-[#eaf1f7]'
                     }`}
                   >
                     <div className="flex items-start space-x-2.5">
                       <div className="mt-0.5 shrink-0">{getIcon(n.type)}</div>
                       <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-navy leading-snug">{n.title}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-navy leading-snug">{n.title}</p>
+                          {!n.read && (
+                            <span className="w-2 h-2 rounded-full bg-[#1d70b8] shrink-0 inline-block" title="Unread" />
+                          )}
+                        </div>
                         <p className="text-xs text-slate-600 leading-relaxed font-normal">{n.message}</p>
                         <span className="text-xs text-slate-400 font-normal block pt-1">{n.time}</span>
                       </div>
                     </div>
 
                     <button
-                      onClick={() => removeNotification(n.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeNotification(n.id);
+                      }}
                       className="text-slate-300 hover:text-red-600 p-1 shrink-0 cursor-pointer"
                       title="Clear Notification"
                     >

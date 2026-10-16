@@ -187,6 +187,44 @@ public class UsersController : ControllerBase
 
         return Ok(new { message = $"User '{user.FullName}' deactivated successfully." });
     }
+
+    /// <summary>
+    /// POST: api/v1/users/{id}/reset-password
+    /// Admin resets password for staff/driver personnel who forgot credentials (IT helpdesk functionality).
+    /// </summary>
+    [HttpPost("{id}/reset-password")]
+    public async Task<IActionResult> AdminResetPassword(string id, [FromBody] AdminResetPasswordDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
+        {
+            return BadRequest(new { message = "New temporary password must be at least 6 characters long." });
+        }
+
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null || user.IsDeleted)
+        {
+            return NotFound(new { message = "User account not found or has been deactivated." });
+        }
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword.Trim());
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { message = string.Join("; ", result.Errors.Select(e => e.Description)) });
+        }
+
+        await _userManager.UpdateSecurityStampAsync(user);
+
+        return Ok(new
+        {
+            message = $"Password for '{user.FullName ?? user.Email}' ({user.UserName}) has been successfully updated by Administrator."
+        });
+    }
+}
+
+public class AdminResetPasswordDto
+{
+    public string NewPassword { get; set; } = string.Empty;
 }
 
 public class CreateAdminUserDto

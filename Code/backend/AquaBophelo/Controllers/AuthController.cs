@@ -263,6 +263,12 @@ public class AuthController : ControllerBase
             return NotFound(new { message = "User account not found." });
         }
 
+        var roles = await _userManager.GetRolesAsync(user);
+        if (roles.Contains("Driver") || roles.Contains("Admin"))
+        {
+            return BadRequest(new { message = "Municipal staff and driver accounts cannot be self-deleted. Contact your municipal system administrator for offboarding and credentials management." });
+        }
+
         if (dto == null || string.IsNullOrWhiteSpace(dto.OtpCode))
         {
             return BadRequest(new { message = "Account deletion requires a valid 6-digit email OTP code. Please request a verification code first." });
