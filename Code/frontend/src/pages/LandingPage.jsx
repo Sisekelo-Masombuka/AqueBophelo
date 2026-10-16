@@ -288,9 +288,9 @@ export function LandingPage() {
               </div>
             </div>
 
-            <Link to="/contact" className="shrink-0 font-medium text-amber-300 hover:text-white hover:underline text-xs">
+            <a href="#outages" className="shrink-0 font-medium text-amber-300 hover:text-white hover:underline text-xs">
               {t('readNoticeDetails')} &rarr;
-            </Link>
+            </a>
           </div>
         </section>
 
@@ -428,7 +428,7 @@ export function LandingPage() {
         </section>
 
         {/* ==================== 8. SCHEDULED WATER OUTAGES CALENDAR ==================== */}
-        <section className="py-16 bg-white border-b border-slate-200">
+        <section id="outages" className="py-16 bg-white border-b border-slate-200 scroll-mt-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <ScheduledOutagesComponent isAdmin={user?.role === 'Admin'} />
           </div>

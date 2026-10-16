@@ -38,7 +38,7 @@ export function ContactUsPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await api.post('/contact', {
+      const response = await api.post('/api/v1/contact', {
         fullName,
         email,
         subject,
