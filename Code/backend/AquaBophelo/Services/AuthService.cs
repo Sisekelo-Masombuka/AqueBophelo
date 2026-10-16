@@ -137,33 +137,8 @@ public class AuthService : IAuthService
                 o.CreatedAt >= DateTime.UtcNow.AddMinutes(-15));
         }
 
-        user.EmailConfirmed = hasVerifiedOtp;
+        user.EmailConfirmed = true;
         await _userManager.UpdateAsync(user);
-
-        if (!hasVerifiedOtp)
-        {
-            // Send initial Email Verification OTP if not yet verified
-            try
-            {
-                await SendEmailOtpAsync(dto.Email, "EmailVerification");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Initial OTP send notice: {ex.Message}");
-            }
-
-            // Security assertion: unverified accounts must not receive a JWT
-            return new AuthResponseDto
-            {
-                Token = string.Empty,
-                Email = user.Email ?? string.Empty,
-                FullName = user.FullName,
-                Role = "Resident",
-                AreaName = dto.AreaName,
-                PreferredLanguage = user.PreferredLanguage,
-                Message = "Registration successful. Please verify your email with the 6-digit verification code sent to your inbox before signing in."
-            };
-        }
 
         return await GenerateJwtTokenAsync(user);
     }
@@ -217,21 +192,11 @@ public class AuthService : IAuthService
             throw new BadHttpRequestException("Invalid email address or password. Please check your credentials and try again.");
         }
 
-        // Enforce Email Verification on Resident Accounts
-        var roles = await _userManager.GetRolesAsync(user);
-        var isAdminOrDriver = roles.Contains("Admin") || roles.Contains("Driver");
-        if (!user.EmailConfirmed && !isAdminOrDriver)
+        // Ensure resident account is marked confirmed upon entering valid credentials
+        if (!user.EmailConfirmed)
         {
-            try
-            {
-                await SendEmailOtpAsync(user.Email!, "EmailVerification");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Login auto-resend OTP notice: {ex.Message}");
-            }
-
-            throw new BadHttpRequestException("Please verify your email address before signing in. A fresh 6-digit verification code has been dispatched to your email.");
+            user.EmailConfirmed = true;
+            await _userManager.UpdateAsync(user);
         }
 
         // Reset failed count on successful login
@@ -272,13 +237,13 @@ public class AuthService : IAuthService
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
-        // If purpose is EmailVerification, verify the account does not already exist
+        // If purpose is EmailVerification, verify the account does not already exist with an active confirmed status
         if (purpose == "EmailVerification")
         {
             var existingUser = await _context.Users
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail.ToUpperInvariant());
-            if (existingUser != null)
+            if (existingUser != null && existingUser.EmailConfirmed)
             {
                 if (existingUser.IsDeleted)
                 {
