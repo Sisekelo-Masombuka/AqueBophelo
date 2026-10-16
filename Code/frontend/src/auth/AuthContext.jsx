@@ -150,14 +150,33 @@ export function AuthProvider({ children }) {
       return { success: false, error: 'Authentication failed. Please check your credentials.' };
     } catch (apiError) {
       console.warn('API auth response error:', apiError);
-      const errorMsg = apiError.response?.data?.message || 'Invalid email address or password.';
-      return { success: false, error: errorMsg };
+      let errorMsg =
+        apiError.response?.data?.message ||
+        apiError.response?.data?.title ||
+        (typeof apiError.response?.data === 'string' ? apiError.response.data : null);
+
+      if (!errorMsg) {
+        if (apiError.response?.status === 401) {
+          errorMsg = 'Invalid email address or password. Please check your credentials and try again.';
+        } else if (apiError.response?.status === 429) {
+          errorMsg = 'Too many attempts. Please wait a moment before trying again.';
+        } else {
+          errorMsg = 'Invalid email address or password.';
+        }
+      }
+
+      return {
+        success: false,
+        error: errorMsg,
+        status: apiError.response?.status,
+        requiresVerification: Boolean(errorMsg && errorMsg.toLowerCase().includes('verify your email')),
+      };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async ({ email, password, fullName, area, phoneNumber, turnstileToken }) => {
+  const register = async ({ email, password, fullName, area, phoneNumber, turnstileToken, otpCode }) => {
     setIsLoading(true);
     const chosenLang = localStorage.getItem('aquabophelo_lang') || 'EN';
     try {
@@ -169,6 +188,7 @@ export function AuthProvider({ children }) {
         phoneNumber,
         preferredLanguage: chosenLang,
         turnstileToken,
+        otpCode,
       });
       if (response.data && response.data.token) {
         const newUser = {
@@ -192,8 +212,17 @@ export function AuthProvider({ children }) {
       return { success: false, error: 'Registration failed. Please check your details.' };
     } catch (apiError) {
       console.warn('API registration response error:', apiError);
-      const errorMsg = apiError.response?.data?.message || 'Registration failed. Please try again.';
-      return { success: false, error: errorMsg };
+      let errorMsg =
+        apiError.response?.data?.message ||
+        apiError.response?.data?.title ||
+        (typeof apiError.response?.data === 'string' ? apiError.response.data : null) ||
+        'Registration failed. Please try again.';
+
+      return {
+        success: false,
+        error: errorMsg,
+        accountExists: Boolean(errorMsg && errorMsg.toLowerCase().includes('already exists')),
+      };
     } finally {
       setIsLoading(false);
     }

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-import { AlertCircle, KeyRound, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, KeyRound, CheckCircle2, Eye, EyeOff, MailCheck } from 'lucide-react';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
+import VerifyEmailOtpModal from '../components/VerifyEmailOtpModal';
 import BrandLogo from '../components/BrandLogo';
 import Footer from '../components/Footer';
 import TurnstileWidget from '../components/TurnstileWidget';
@@ -16,15 +17,30 @@ export function Login() {
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
   const isExpired = new URLSearchParams(location.search).get('expired') === 'true';
+  const stateMessage = location.state?.message;
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => {
+    return new URLSearchParams(location.search).get('email') || location.state?.email || '';
+  });
   const [password, setPassword] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
   const [error, setError] = useState('');
+  const [successInfo, setSuccessInfo] = useState(stateMessage || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const queryEmail = new URLSearchParams(location.search).get('email') || location.state?.email;
+    if (queryEmail && !email) {
+      setEmail(queryEmail);
+    }
+    if (location.state?.message) {
+      setSuccessInfo(location.state.message);
+    }
+  }, [location.search, location.state]);
 
   const validateForm = () => {
     if (!email || !email.includes('@')) {
@@ -77,6 +93,15 @@ export function Login() {
       setError(err?.message || 'Unable to connect to AquaBophelo service. Please try again.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleVerifySuccess = (verifiedEmail) => {
+    setIsVerifyModalOpen(false);
+    setError('');
+    setSuccessInfo('Email confirmed successfully! Please enter your password to sign in.');
+    if (verifiedEmail) {
+      setEmail(verifiedEmail);
     }
   };
 
@@ -137,19 +162,56 @@ export function Login() {
             </p>
           </div>
 
+          {/* Info / Registration Success Banner */}
+          {successInfo && !error && (
+            <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-md flex items-start space-x-2 text-xs text-emerald-800 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+              <span className="leading-relaxed">{successInfo}</span>
+            </div>
+          )}
+
           {/* Session Expired Banner */}
-          {isExpired && !error && (
+          {isExpired && !error && !successInfo && (
             <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start space-x-2 text-xs text-amber-800 animate-in fade-in">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
               <span>Your session has expired. Please sign in again to continue.</span>
             </div>
           )}
 
-          {/* Error Banner */}
+          {/* Error Banner with Actionable Shortcuts */}
           {error && (
-            <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-md flex items-start space-x-2 text-xs text-red-700">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-              <span>{error}</span>
+            <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 space-y-2.5 animate-in fade-in">
+              <div className="flex items-start space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                <span className="leading-relaxed font-medium">{error}</span>
+              </div>
+              {error.toLowerCase().includes('verify your email') && (
+                <div className="pt-2 border-t border-red-200 flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-[11px] text-slate-600">Have your 6-digit OTP code?</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError('');
+                      setIsVerifyModalOpen(true);
+                    }}
+                    className="bg-[#152e52] hover:bg-[#0f223d] text-white px-3 py-1.5 rounded-md font-medium text-xs cursor-pointer transition-colors"
+                  >
+                    Enter Verification Code →
+                  </button>
+                </div>
+              )}
+              {error.toLowerCase().includes('invalid email') && (
+                <div className="pt-1.5 border-t border-red-200 flex items-center gap-2 text-[11px] text-slate-600">
+                  <span>Forgot your password?</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotModalOpen(true)}
+                    className="text-[#1d70b8] hover:underline font-medium cursor-pointer"
+                  >
+                    Click here to reset it
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -233,6 +295,12 @@ export function Login() {
 
       <Footer />
       <ForgotPasswordModal isOpen={isForgotModalOpen} onClose={() => setIsForgotModalOpen(false)} />
+      <VerifyEmailOtpModal
+        isOpen={isVerifyModalOpen}
+        onClose={() => setIsVerifyModalOpen(false)}
+        initialEmail={email}
+        onSuccess={handleVerifySuccess}
+      />
     </div>
   );
 }

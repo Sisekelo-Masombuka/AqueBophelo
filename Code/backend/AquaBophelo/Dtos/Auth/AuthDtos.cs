@@ -18,6 +18,7 @@ public class RegisterDto
     public string? AreaName { get; set; }
     public string PreferredLanguage { get; set; } = "EN";
     public string? TurnstileToken { get; set; }
+    public string? OtpCode { get; set; }
 }
 
 public class LoginDto

@@ -271,4 +271,60 @@ public class EndToEndAuthAndHealthIntegrationTests
         Assert.Contains("\"status\":\"unhealthy\"", json);
         Assert.Contains("\"messageQueue\":\"offline\"", json);
     }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task SendEmailOtpAsync_WhenEmailAlreadyExists_ThrowsDuplicateError()
+    {
+        var dbName = "AquaBophelo_Otp_Dup_" + Guid.NewGuid();
+        var provider = CreateTestServices(dbName, out _, out _);
+        using var scope = provider.CreateScope();
+        var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var existingUser = new ApplicationUser
+        {
+            UserName = "existing.resident@solplaatje.gov.za",
+            Email = "existing.resident@solplaatje.gov.za",
+            FullName = "Existing Resident",
+            EmailConfirmed = true
+        };
+        await userManager.CreateAsync(existingUser, "Password123!");
+
+        var ex = await Assert.ThrowsAsync<BadHttpRequestException>(() =>
+            authService.SendEmailOtpAsync("existing.resident@solplaatje.gov.za", "EmailVerification"));
+
+        Assert.Contains("already exists", ex.Message);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task RegisterAsync_WithDirectOtpCode_ConfirmsAndReturnsJwtDirectly()
+    {
+        var dbName = "AquaBophelo_Reg_DirectOtp_" + Guid.NewGuid();
+        var provider = CreateTestServices(dbName, out var emailSender, out _);
+        using var scope = provider.CreateScope();
+        var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+
+        var testEmail = "new.direct.otp@solplaatje.gov.za";
+        var otpCode = await authService.SendEmailOtpAsync(testEmail, "EmailVerification");
+        Assert.Equal(6, otpCode.Length);
+
+        var regDto = new RegisterDto
+        {
+            FullName = "Direct OTP Resident",
+            Email = testEmail,
+            Password = "Password123!",
+            PhoneNumber = "0821234567",
+            AreaName = "Galeshewe",
+            OtpCode = otpCode
+        };
+
+        var response = await authService.RegisterAsync(regDto);
+
+        Assert.NotNull(response);
+        Assert.False(string.IsNullOrWhiteSpace(response.Token), "JWT Token should be returned immediately when verified with direct OtpCode");
+        Assert.Equal("Resident", response.Role);
+        Assert.Equal(testEmail, response.Email);
+    }
 }

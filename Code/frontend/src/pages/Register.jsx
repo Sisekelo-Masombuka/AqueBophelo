@@ -32,6 +32,7 @@ export function Register() {
   const [otpError, setOtpError] = useState('');
 
   const [error, setError] = useState('');
+  const [accountAlreadyExists, setAccountAlreadyExists] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isPasswordLongEnough = password.length >= 6;
@@ -48,6 +49,7 @@ export function Register() {
   const handleInitialSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setAccountAlreadyExists(false);
 
     if (!fullName.trim()) {
       setError('Please provide your full name.');
@@ -80,6 +82,9 @@ export function Register() {
     } catch (err) {
       const msg = err.response?.data?.message || 'Failed to dispatch verification code to your email. Please check your email and network connection and try again.';
       setError(msg);
+      if (msg.toLowerCase().includes('already exists')) {
+        setAccountAlreadyExists(true);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -113,16 +118,42 @@ export function Register() {
 
     setIsSubmitting(true);
     try {
+      // 1. Verify OTP with backend
       await api.post('/api/v1/auth/verify-otp', { email, code: otpCode.trim(), purpose: 'EmailVerification' });
-      const regResult = await register({ email, password, fullName, area, phoneNumber, turnstileToken });
+
+      // 2. Register user passing otpCode directly for atomic verification and immediate JWT issuance
+      const regResult = await register({
+        email,
+        password,
+        fullName,
+        area,
+        phoneNumber,
+        turnstileToken,
+        otpCode: otpCode.trim(),
+      });
+
       if (regResult && !regResult.success) {
         setOtpError(regResult.error || 'Registration failed. Please try again.');
         return;
       }
-      if (regResult?.requiresVerification) {
-        navigate('/login', { replace: true, state: { message: regResult.message } });
+
+      // If user received valid JWT token from registration, navigate directly into dashboard
+      if (regResult?.user && regResult?.success) {
+        navigate('/dashboard', { replace: true });
         return;
       }
+
+      if (regResult?.requiresVerification) {
+        navigate('/login', {
+          replace: true,
+          state: {
+            email,
+            message: regResult.message || 'Account created successfully! Please sign in below.',
+          },
+        });
+        return;
+      }
+
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setOtpError(err?.response?.data?.message || err?.message || 'Verification failed. Please try again.');
@@ -219,9 +250,21 @@ export function Register() {
               </div>
 
               {otpError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex items-start space-x-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-                  <span className="leading-relaxed">{otpError}</span>
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex flex-col gap-2">
+                  <div className="flex items-start space-x-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                    <span className="leading-relaxed">{otpError}</span>
+                  </div>
+                  {otpError.toLowerCase().includes('already exists') && (
+                    <div className="pt-1 flex items-center gap-2">
+                      <Link
+                        to={`/login?email=${encodeURIComponent(email)}`}
+                        className="bg-[#152e52] hover:bg-[#0f223d] text-white px-3 py-1.5 rounded text-xs font-medium inline-block"
+                      >
+                        Go to Sign In →
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -270,7 +313,33 @@ export function Register() {
           ) : (
             /* STEP 1: REGISTRATION DETAILS */
             <form onSubmit={handleInitialSubmit} className="space-y-4">
-              {error && (
+              {accountAlreadyExists && (
+                <div className="p-4 bg-amber-50 border border-amber-300 rounded-md text-xs text-amber-900 space-y-2 animate-in fade-in">
+                  <div className="flex items-center gap-2 font-semibold text-sm text-amber-950">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Account Already Registered</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    An account with <strong>{email}</strong> already exists. Please sign in below or reset your password if you forgot it.
+                  </p>
+                  <div className="pt-2 flex items-center gap-2 flex-wrap">
+                    <Link
+                      to={`/login?email=${encodeURIComponent(email)}`}
+                      className="bg-[#152e52] hover:bg-[#0f223d] text-white px-3.5 py-1.5 rounded-md font-medium text-xs transition-colors cursor-pointer"
+                    >
+                      Go to Sign In →
+                    </Link>
+                    <Link
+                      to={`/reset-password?email=${encodeURIComponent(email)}`}
+                      className="text-[#1d70b8] hover:underline font-medium text-xs px-2 py-1.5"
+                    >
+                      Reset Password
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {error && !accountAlreadyExists && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-start space-x-2 text-xs text-red-700">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
                   <span className="leading-relaxed">{error}</span>

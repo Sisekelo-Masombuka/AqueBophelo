@@ -268,6 +268,7 @@ describe('Registration & Email Verification OTP Flow', () => {
         area: 'Galeshewe',
         password: 'Secret123!',
         turnstileToken: '',
+        otpCode: '482915',
       });
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true });
     });
@@ -312,7 +313,10 @@ describe('Registration & Email Verification OTP Flow', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/login', {
         replace: true,
-        state: { message: 'Account created. Please check your email to activate.' },
+        state: {
+          email: 'nomcebo@gmail.com',
+          message: 'Account created. Please check your email to activate.',
+        },
       });
     });
   });

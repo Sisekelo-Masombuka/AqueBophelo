@@ -54,7 +54,11 @@ apiClient.interceptors.response.use(
         originalRequest.url.includes('/auth/login') ||
         originalRequest.url.includes('/auth/register') ||
         originalRequest.url.includes('/auth/forgot-password') ||
-        originalRequest.url.includes('/auth/reset-password')
+        originalRequest.url.includes('/auth/reset-password') ||
+        originalRequest.url.includes('/auth/me') ||
+        originalRequest.url.includes('/auth/send-otp') ||
+        originalRequest.url.includes('/auth/verify-otp') ||
+        originalRequest.url.includes('/auth/confirm-email')
       );
 
       // Only redirect if an existing token was present and this is not an auth form attempt

@@ -86,13 +86,48 @@ public class AuthService : IAuthService
         }
         await _userManager.AddToRoleAsync(user, "Resident");
 
-        // Check if user already verified their email during the registration flow (e.g. Step 2 OTP in Register.jsx)
+        // Check if user verified their email during registration flow (either direct OtpCode or prior VerifyOtp)
         var lowerEmail = dto.Email.Trim().ToLowerInvariant();
-        var hasVerifiedOtp = await _context.EmailOtps.AnyAsync(o =>
-            (o.Email.ToLower() == lowerEmail || o.Email == normalizedEmail) &&
-            o.Purpose == "EmailVerification" &&
-            o.IsUsed &&
-            o.CreatedAt >= DateTime.UtcNow.AddMinutes(-30));
+        bool hasVerifiedOtp = false;
+
+        if (!string.IsNullOrWhiteSpace(dto.OtpCode))
+        {
+            var hashedInput = HashOtpCode(dto.OtpCode.Trim());
+            var otpRecord = await _context.EmailOtps
+                .Where(o => (o.Email.ToLower() == lowerEmail || o.Email == normalizedEmail) &&
+                            o.Purpose == "EmailVerification" &&
+                            !o.IsUsed &&
+                            o.ExpiresAt > DateTime.UtcNow)
+                .OrderByDescending(o => o.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (otpRecord != null)
+            {
+                var expectedBytes = Encoding.UTF8.GetBytes(otpRecord.CodeHash);
+                var actualBytes = Encoding.UTF8.GetBytes(hashedInput);
+
+                if (CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes))
+                {
+                    otpRecord.IsUsed = true;
+                    await _context.SaveChangesAsync();
+                    hasVerifiedOtp = true;
+                }
+                else
+                {
+                    otpRecord.AttemptCount++;
+                    await _context.SaveChangesAsync();
+                    throw new BadHttpRequestException("Invalid verification code. Please check your email and try again.");
+                }
+            }
+        }
+
+        if (!hasVerifiedOtp)
+        {
+            hasVerifiedOtp = await _context.EmailOtps.AnyAsync(o =>
+                (o.Email.ToLower() == lowerEmail || o.Email == normalizedEmail) &&
+                o.Purpose == "EmailVerification" &&
+                o.IsUsed);
+        }
 
         user.EmailConfirmed = hasVerifiedOtp;
         await _userManager.UpdateAsync(user);
@@ -109,7 +144,7 @@ public class AuthService : IAuthService
                 System.Diagnostics.Debug.WriteLine($"Initial OTP send notice: {ex.Message}");
             }
 
-            // CRITICAL SECURITY ENFORCEMENT: Do NOT issue a JWT token until email verification is complete!
+            // Security assertion: unverified accounts must not receive a JWT
             return new AuthResponseDto
             {
                 Token = string.Empty,
@@ -134,7 +169,7 @@ public class AuthService : IAuthService
 
         if (user == null)
         {
-            throw new BadHttpRequestException("Invalid email or password.");
+            throw new BadHttpRequestException("Invalid email address or password. Please check your credentials and try again.");
         }
 
         // AUTH-05: Check deactivated / soft-deleted accounts
@@ -171,7 +206,7 @@ public class AuthService : IAuthService
                 throw new BadHttpRequestException("Account has been temporarily locked due to 5 failed login attempts. Please try again in 15 minutes.");
             }
 
-            throw new BadHttpRequestException("Invalid email or password.");
+            throw new BadHttpRequestException("Invalid email address or password. Please check your credentials and try again.");
         }
 
         // Enforce Email Verification on Resident Accounts
@@ -179,7 +214,16 @@ public class AuthService : IAuthService
         var isAdminOrDriver = roles.Contains("Admin") || roles.Contains("Driver");
         if (!user.EmailConfirmed && !isAdminOrDriver)
         {
-            throw new BadHttpRequestException("Please verify your email address before signing in. Check your inbox for your 6-digit verification code.");
+            try
+            {
+                await SendEmailOtpAsync(user.Email!, "EmailVerification");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Login auto-resend OTP notice: {ex.Message}");
+            }
+
+            throw new BadHttpRequestException("Please verify your email address before signing in. A fresh 6-digit verification code has been dispatched to your email.");
         }
 
         // Reset failed count on successful login
@@ -219,6 +263,22 @@ public class AuthService : IAuthService
     public async Task<string> SendEmailOtpAsync(string email, string purpose = "EmailVerification")
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
+
+        // If purpose is EmailVerification, verify the account does not already exist
+        if (purpose == "EmailVerification")
+        {
+            var existingUser = await _context.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail.ToUpperInvariant());
+            if (existingUser != null)
+            {
+                if (existingUser.IsDeleted)
+                {
+                    throw new BadHttpRequestException("This account was previously deactivated. Please contact municipal support to reactivate your account.");
+                }
+                throw new BadHttpRequestException("An account with this email address already exists. Please sign in instead.");
+            }
+        }
 
         // If purpose is PasswordReset, check if user exists.
         // Prevents wasting email delivery quota on non-existent accounts.

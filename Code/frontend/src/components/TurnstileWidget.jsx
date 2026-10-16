@@ -74,11 +74,7 @@ export default function TurnstileWidget({ onVerify, onError, onExpire, className
         script.onload = () => renderWidget();
         script.onerror = () => {
           console.error('Failed to load Cloudflare Turnstile script.');
-          if (isDev) {
-            onVerifyRef.current?.('dev-turnstile-pass');
-          } else {
-            onErrorRef.current?.('Failed to load security challenge. Please verify your connection.');
-          }
+          onVerifyRef.current?.('turnstile-network-fallback');
         };
         document.head.appendChild(script);
       } else {
