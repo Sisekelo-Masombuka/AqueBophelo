@@ -18,9 +18,11 @@ vi.mock('../api/client', () => ({
 }));
 
 const mockRegister = vi.fn();
+const mockLogin = vi.fn();
 vi.mock('../auth/AuthContext', () => ({
   useAuth: () => ({
     register: mockRegister,
+    login: mockLogin,
     user: null,
   }),
 }));

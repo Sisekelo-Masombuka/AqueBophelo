@@ -69,24 +69,25 @@ export function Login() {
       const res = await login(cleanEmail, password, effectiveTurnstileToken);
       if (res && res.success) {
         const userRole = res.user?.role || 'Resident';
-        let targetPath = from;
 
-        // If coming from default fallbacks, root, profile, or a role-incompatible route, navigate to the role's dashboard
-        const isDefaultOrProfile = !from || from === '/' || from === '/dashboard' || from === '/profile';
+        // Never redirect authenticated users to guest/auth routes or landing
+        const isAuthOrLandingRoute =
+          !from ||
+          from === '/' ||
+          from === '/login' ||
+          from === '/register' ||
+          from === '/reset-password' ||
+          from === '/dashboard' ||
+          from === '/profile';
 
+        let targetPath = '/dashboard';
         if (userRole === 'Admin') {
-          if (isDefaultOrProfile || !from.startsWith('/admin')) {
-            targetPath = '/admin';
-          }
+          targetPath = isAuthOrLandingRoute || !from.startsWith('/admin') ? '/admin' : from;
         } else if (userRole === 'Driver') {
-          if (isDefaultOrProfile || !from.startsWith('/driver')) {
-            targetPath = '/driver/trip';
-          }
+          targetPath = isAuthOrLandingRoute || !from.startsWith('/driver') ? '/driver/trip' : from;
         } else {
           // Resident
-          if (isDefaultOrProfile || from.startsWith('/admin') || from.startsWith('/driver')) {
-            targetPath = '/dashboard';
-          }
+          targetPath = isAuthOrLandingRoute || from.startsWith('/admin') || from.startsWith('/driver') ? '/dashboard' : from;
         }
 
         navigate(targetPath, { replace: true });
@@ -119,15 +120,22 @@ export function Login() {
         const res = await login(targetEmail, password, effectiveTurnstile);
         if (res && res.success) {
           const userRole = res.user?.role || 'Resident';
-          let targetPath = from;
-          const isDefaultOrProfile = !from || from === '/' || from === '/dashboard' || from === '/profile';
+          const isAuthOrLandingRoute =
+            !from ||
+            from === '/' ||
+            from === '/login' ||
+            from === '/register' ||
+            from === '/reset-password' ||
+            from === '/dashboard' ||
+            from === '/profile';
 
+          let targetPath = '/dashboard';
           if (userRole === 'Admin') {
-            targetPath = isDefaultOrProfile || !from.startsWith('/admin') ? '/admin' : from;
+            targetPath = isAuthOrLandingRoute || !from.startsWith('/admin') ? '/admin' : from;
           } else if (userRole === 'Driver') {
-            targetPath = isDefaultOrProfile || !from.startsWith('/driver') ? '/driver/trip' : from;
+            targetPath = isAuthOrLandingRoute || !from.startsWith('/driver') ? '/driver/trip' : from;
           } else {
-            targetPath = isDefaultOrProfile || from.startsWith('/admin') || from.startsWith('/driver') ? '/dashboard' : from;
+            targetPath = isAuthOrLandingRoute || from.startsWith('/admin') || from.startsWith('/driver') ? '/dashboard' : from;
           }
 
           navigate(targetPath, { replace: true });

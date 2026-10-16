@@ -10,7 +10,7 @@ import Footer from '../components/Footer';
 import TurnstileWidget from '../components/TurnstileWidget';
 
 export function Register() {
-  const { register } = useAuth();
+  const { register, login } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
@@ -146,6 +146,24 @@ export function Register() {
       }
 
       if (regResult?.requiresVerification) {
+        // Confirm email with OTP directly in case backend created account prior to verification
+        try {
+          await api.post('/api/v1/auth/confirm-email', { email: cleanEmail, token: cleanOtp });
+        } catch {
+          // If already confirmed or unsupported, proceed to login attempt
+        }
+
+        // Attempt immediate login so resident is directed straight into their dashboard
+        try {
+          const loginRes = await login(cleanEmail, password, turnstileToken || 'turnstile-network-fallback');
+          if (loginRes && loginRes.success) {
+            navigate('/dashboard', { replace: true });
+            return;
+          }
+        } catch {
+          // Fall through to /login with state only if immediate login failed
+        }
+
         navigate('/login', {
           replace: true,
           state: {

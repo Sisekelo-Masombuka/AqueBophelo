@@ -4,7 +4,13 @@
 name: Build and deploy ASP.Net Core app to Azure Web App - aquabophelo-api-spu
 
 on:
-  workflow_dispatch: # Controlled manual trigger to prevent unintended deployments during frontend work
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'Code/backend/**'
+      - '.github/workflows/main_aquabophelo-api-spu.yml'
+  workflow_dispatch:
 
 jobs:
   build:
