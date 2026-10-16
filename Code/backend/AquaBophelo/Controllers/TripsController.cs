@@ -302,6 +302,18 @@ public class TripsController : ControllerBase
             trip.Truck.Status = "Available";
         }
 
+        var completionAlert = new Alert
+        {
+            Type = "Truck",
+            Severity = "Info",
+            Title = $"Delivery Trip #{trip.Id} Completed",
+            Message = $"Driver {trip.Driver?.FullName ?? "Personnel"} completed water deliveries on route '{trip.Route?.Name ?? "Municipal Grid"}'. Tanker {trip.Truck?.RegistrationNumber ?? "Assigned Fleet"} is back at depot and Available.",
+            CreatedAt = DateTime.UtcNow,
+            CreatedByUserId = trip.DriverId,
+            AreaId = trip.Route?.AreaId
+        };
+        _context.Alerts.Add(completionAlert);
+
         await _context.SaveChangesAsync();
 
         await _auditLogger.LogAsync(

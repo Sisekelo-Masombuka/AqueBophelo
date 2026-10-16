@@ -278,6 +278,18 @@ public class DriverController : ControllerBase
         };
 
         _context.DriverProblems.Add(problem);
+
+        var incidentAlert = new Alert
+        {
+            Type = "Truck",
+            Severity = "Critical",
+            Title = $"Driver Incident: {problem.Category}",
+            Message = $"Driver {driverName} reported: {problem.Description} (Tanker: {problem.VehicleRegistration})",
+            CreatedAt = DateTime.UtcNow,
+            CreatedByUserId = driverId
+        };
+        _context.Alerts.Add(incidentAlert);
+
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Problem reported successfully to Sol Plaatje Municipal Operations Desk.", problemId = problem.Id });
