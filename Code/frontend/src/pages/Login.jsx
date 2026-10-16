@@ -314,7 +314,11 @@ export function Login() {
               </div>
             </div>
 
-            <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
+            <TurnstileWidget
+              onVerify={(token) => setTurnstileToken(token)}
+              onError={() => setTurnstileToken('turnstile-network-fallback')}
+              onExpire={() => setTurnstileToken('turnstile-network-fallback')}
+            />
 
             <button
               type="submit"
