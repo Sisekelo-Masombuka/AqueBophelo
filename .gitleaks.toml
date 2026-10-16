@@ -1,0 +1,16 @@
+title = "gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Cloudflare Web Analytics public site token"
+regexes = [
+    '''578c00615ddd42bd8739c92ce5dbfba8''',
+]
+paths = [
+    '''Code/frontend/index.html''',
+]
+commits = [
+    "adc37554af91e3b2e715d2e994d6b7a0fc2bc81c",
+]

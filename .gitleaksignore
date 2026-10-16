@@ -1,0 +1,3 @@
+# Gitleaks ignore file
+# Ignores false positive for public Cloudflare Web Analytics site token
+adc37554af91e3b2e715d2e994d6b7a0fc2bc81c:Code/frontend/index.html:generic-api-key:18
