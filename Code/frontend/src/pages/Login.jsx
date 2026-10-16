@@ -82,12 +82,12 @@ export function Login() {
 
         let targetPath = '/dashboard';
         if (userRole === 'Admin') {
-          targetPath = isAuthOrLandingRoute || !from.startsWith('/admin') ? '/admin' : from;
+          targetPath = (!isAuthOrLandingRoute && from.startsWith('/admin')) ? from : '/admin';
         } else if (userRole === 'Driver') {
-          targetPath = isAuthOrLandingRoute || !from.startsWith('/driver') ? '/driver/trip' : from;
+          targetPath = (!isAuthOrLandingRoute && from.startsWith('/driver')) ? from : '/driver/trip';
         } else {
           // Resident
-          targetPath = isAuthOrLandingRoute || from.startsWith('/admin') || from.startsWith('/driver') ? '/dashboard' : from;
+          targetPath = (!isAuthOrLandingRoute && !from.startsWith('/admin') && !from.startsWith('/driver')) ? from : '/dashboard';
         }
 
         navigate(targetPath, { replace: true });
@@ -131,11 +131,11 @@ export function Login() {
 
           let targetPath = '/dashboard';
           if (userRole === 'Admin') {
-            targetPath = isAuthOrLandingRoute || !from.startsWith('/admin') ? '/admin' : from;
+            targetPath = (!isAuthOrLandingRoute && from.startsWith('/admin')) ? from : '/admin';
           } else if (userRole === 'Driver') {
-            targetPath = isAuthOrLandingRoute || !from.startsWith('/driver') ? '/driver/trip' : from;
+            targetPath = (!isAuthOrLandingRoute && from.startsWith('/driver')) ? from : '/driver/trip';
           } else {
-            targetPath = isAuthOrLandingRoute || from.startsWith('/admin') || from.startsWith('/driver') ? '/dashboard' : from;
+            targetPath = (!isAuthOrLandingRoute && !from.startsWith('/admin') && !from.startsWith('/driver')) ? from : '/dashboard';
           }
 
           navigate(targetPath, { replace: true });

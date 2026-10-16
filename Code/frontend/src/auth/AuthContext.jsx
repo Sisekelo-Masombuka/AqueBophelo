@@ -12,10 +12,8 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => {
     try {
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        // Clear any old legacy persistent localStorage token to enforce session security
-        try { localStorage.removeItem('aquabophelo_token'); localStorage.removeItem('aquabophelo_user'); } catch {}
-        return sessionStorage.getItem('aquabophelo_token') || null;
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem('aquabophelo_token') || sessionStorage.getItem('aquabophelo_token') || null;
       }
     } catch {
       // Storage access restricted
@@ -25,8 +23,8 @@ export function AuthProvider({ children }) {
 
   const [user, setUser] = useState(() => {
     try {
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        const savedUser = sessionStorage.getItem('aquabophelo_user');
+      if (typeof window !== 'undefined') {
+        const savedUser = localStorage.getItem('aquabophelo_user') || sessionStorage.getItem('aquabophelo_user');
         if (savedUser) {
           const parsed = JSON.parse(savedUser);
           if (parsed?.preferredLanguage) {
@@ -38,6 +36,7 @@ export function AuthProvider({ children }) {
     } catch {
       try {
         sessionStorage.removeItem('aquabophelo_user');
+        localStorage.removeItem('aquabophelo_user');
       } catch {
         // Storage access restricted
       }
@@ -47,8 +46,8 @@ export function AuthProvider({ children }) {
 
   const [isLoading, setIsLoading] = useState(() => {
     try {
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        return !!sessionStorage.getItem('aquabophelo_token');
+      if (typeof window !== 'undefined') {
+        return !!(localStorage.getItem('aquabophelo_token') || sessionStorage.getItem('aquabophelo_token'));
       }
     } catch {
       return false;
@@ -80,6 +79,7 @@ export function AuthProvider({ children }) {
             };
             try {
               sessionStorage.setItem('aquabophelo_user', JSON.stringify(freshProfile));
+              localStorage.setItem('aquabophelo_user', JSON.stringify(freshProfile));
             } catch {
               // Ignore storage errors
             }
@@ -108,9 +108,8 @@ export function AuthProvider({ children }) {
     try {
       sessionStorage.setItem('aquabophelo_token', authToken);
       sessionStorage.setItem('aquabophelo_user', JSON.stringify(authUser));
-      // Clean up legacy localStorage keys
-      localStorage.removeItem('aquabophelo_token');
-      localStorage.removeItem('aquabophelo_user');
+      localStorage.setItem('aquabophelo_token', authToken);
+      localStorage.setItem('aquabophelo_user', JSON.stringify(authUser));
     } catch {}
     if (authUser?.preferredLanguage) {
       localStorage.setItem('aquabophelo_lang', authUser.preferredLanguage);
@@ -122,6 +121,7 @@ export function AuthProvider({ children }) {
       const merged = { ...prev, ...updatedFields };
       try {
         sessionStorage.setItem('aquabophelo_user', JSON.stringify(merged));
+        localStorage.setItem('aquabophelo_user', JSON.stringify(merged));
       } catch {}
       return merged;
     });
